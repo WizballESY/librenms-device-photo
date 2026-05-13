@@ -1,0 +1,21 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.log
+
+# Secrets/config
+.env
+config.php
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Uploaded device photos - do not publish real images
+html/device-photos/*
+!html/device-photos/.gitkeep
+device-photos/*
+!device-photos/.gitkeep
