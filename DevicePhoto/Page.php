@@ -110,6 +110,26 @@ class Page extends PageHook
         return null;
     }
 
+    private function countStaleThumbnails(string $photoDir): int
+    {
+        $thumbDir = $photoDir . '/thumbs';
+        $count = 0;
+
+        if (! is_dir($thumbDir) || ! is_dir($photoDir)) {
+            return 0;
+        }
+
+        foreach (glob($thumbDir . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [] as $thumbPath) {
+            $filename = basename($thumbPath);
+
+            if (! is_file($photoDir . '/' . $filename)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     private function buildGlobalOverview(string $photoDir): array
     {
         $photoFilesByDevice = [];
@@ -342,6 +362,7 @@ class Page extends PageHook
             'gd_available' => $gdAvailable,
             'thumbnail_count' => $thumbnailCount,
             'missing_thumbnail_count' => $missingThumbnailCount,
+            'stale_thumbnail_count' => $this->countStaleThumbnails($photoDir),
             'thumbnail_bytes' => $thumbnailBytes,
             'thumbnail_mb' => round($thumbnailBytes / 1024 / 1024, 2),
             'thumb_dir_writable' => $thumbDirWritable,
@@ -505,6 +526,7 @@ class Page extends PageHook
             'link_added' => 'Photo link added.',
             'link_removed' => 'Photo link removed.',
             'thumbnails_generated' => 'Missing thumbnails were generated.',
+            'thumbnails_cleaned' => 'Stale thumbnails were removed.',
             'thumbnails_none_missing' => 'No missing thumbnails found.',
         ];
 

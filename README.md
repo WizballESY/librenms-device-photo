@@ -1,103 +1,192 @@
-# LibreNMS Device Photo Plugin
+# LibreNMS Device Photos Plugin
 
 A LibreNMS plugin for adding, viewing, linking and managing photos for devices.
 
-The plugin adds a **Device Photos** box on the LibreNMS device overview page, a **Device Photo Manager** per device, and a global **Device Photos Overview** page for administration and maintenance.
+The plugin adds a **Device Photos** box on the normal LibreNMS device overview page, a **Manage Device Photos** page for each device, and a global **Device Photos Overview** page for administration and maintenance.
 
 > **Notice**
 >
-> This plugin was created and tested in a local LibreNMS environment. Use at your own risk. Test thoroughly before using it in production.
+> This plugin was created and tested in a local LibreNMS environment. Use at your own risk.
+> Test thoroughly before using it in production.
 
 ---
 
 ## Table of contents
 
 - [Features](#features)
-- [Pages](#pages)
-- [How it works](#how-it-works)
+- [Terminology](#terminology)
+- [Pages and navigation](#pages-and-navigation)
+- [How the plugin works](#how-the-plugin-works)
 - [File and directory structure](#file-and-directory-structure)
+- [Runtime data directories](#runtime-data-directories)
 - [Requirements](#requirements)
+- [Optional features and dependencies](#optional-features-and-dependencies)
 - [Installation](#installation)
-- [Permissions](#permissions)
+- [Ownership and permissions](#ownership-and-permissions)
 - [Usage](#usage)
 - [Device Photos Overview](#device-photos-overview)
-- [Device Photo Manager](#device-photo-manager)
+- [Manage Device Photos](#manage-device-photos)
 - [Device overview widget](#device-overview-widget)
+- [Shared photo viewer](#shared-photo-viewer)
 - [Linked photos](#linked-photos)
 - [Orphaned photos](#orphaned-photos)
 - [Broken links](#broken-links)
 - [Thumbnails](#thumbnails)
+- [Missing and stale thumbnails](#missing-and-stale-thumbnails)
 - [HEIC/HEIF upload conversion](#heicheif-upload-conversion)
 - [Photo dates](#photo-dates)
+- [Upload behavior](#upload-behavior)
 - [Backup and restore](#backup-and-restore)
 - [Maintenance commands](#maintenance-commands)
 - [Troubleshooting](#troubleshooting)
 - [Security notes](#security-notes)
 - [Development notes](#development-notes)
+- [Recommended test checklist](#recommended-test-checklist)
 
 ---
 
 ## Features
 
 - Add photos to LibreNMS devices.
-- Show photos on the LibreNMS device overview page.
-- Per-device photo manager.
-- Global photo overview and maintenance page.
-- Upload multiple photos.
+- Show device photos directly on the normal LibreNMS device overview page.
+- Global overview of all device photos, links and maintenance status.
+- Per-device photo management page.
+- Upload one or more photos.
 - Drag and drop upload.
-- Multiple drag/drop rounds before upload.
-- Drag and drop photo ordering.
+- Multiple drag/drop rounds before upload. Newly dropped files are appended instead of replacing the current selection.
+- Upload mixed file types in the same upload, for example JPG and HEIC together.
+- Drag and drop ordering of owned photos.
 - Thumbnail generation.
+- Shared full-size image viewer used across all plugin views.
 - Full-size image viewer with zoom and pan.
 - Photo date information:
-  - `Photo taken` from EXIF when available.
+  - `Photo taken` from EXIF where available.
   - `File date` from the file timestamp on the LibreNMS server.
 - Link photos between devices.
 - Show linked photos on other devices.
 - Detect orphaned photos.
 - Assign orphaned photos to existing devices.
 - Detect and remove broken photo links.
+- Detect missing thumbnails.
+- Detect and clean stale thumbnails.
 - Soft-delete photos by moving them to a deleted folder.
 - HEIC/HEIF upload support through automatic conversion to JPG when ImageMagick supports HEIC/HEIF.
-- Plugin menu entry under `Overview -> Plugins -> Device Photos Overview`.
+- Plugin menu entry under LibreNMS:
+  - `Overview -> Plugins -> Device Photos Overview`
 
 ---
 
-## Pages
+## Terminology
+
+### Device Photos
+
+The general plugin name.
 
 ### Device Photos Overview
+
+The global overview and maintenance page.
+
+URL:
 
 ```text
 /plugin/DevicePhoto
 ```
 
-Menu location:
+### Manage Device Photos
 
-```text
-Overview -> Plugins -> Device Photos Overview
-```
+The per-device management page.
 
-This is the global overview and maintenance page.
-
-### Device Photo Manager
+URL:
 
 ```text
 /plugin/DevicePhoto?device_id=<device_id>
 ```
 
-This is the per-device management page.
+### Device Photos widget
 
-### Device Photo Settings
+The small photo box shown on the normal LibreNMS device overview page.
+
+### Owned photos
+
+Photos physically owned by a device.
+
+Example:
+
+```text
+device-42-1.jpg
+```
+
+### Linked in
+
+Photos owned by other devices but shown on the current device.
+
+### Linked out
+
+Photos owned by the current device but shown on other devices.
+
+### Orphaned photos
+
+Original photo files where the original LibreNMS Device ID no longer exists.
+
+### Broken links
+
+Photo link entries that point to a missing original photo file.
+
+### Missing thumbnails
+
+Active photos without a generated thumbnail.
+
+### Stale thumbnails
+
+Thumbnail files where the matching original active photo no longer exists.
+
+---
+
+## Pages and navigation
+
+### Device Photos Overview
+
+LibreNMS menu:
+
+```text
+Overview -> Plugins -> Device Photos Overview
+```
+
+Direct URL:
+
+```text
+/plugin/DevicePhoto
+```
+
+This page shows photo library status, maintenance status, devices with photos or links, orphaned photos, broken links and thumbnail maintenance.
+
+### Manage Device Photos
+
+Direct URL:
+
+```text
+/plugin/DevicePhoto?device_id=<device_id>
+```
+
+Example:
+
+```text
+/plugin/DevicePhoto?device_id=42
+```
+
+This page is used to manage photos for one device.
+
+### Device Photos settings
+
+Direct URL:
 
 ```text
 /plugin/settings/DevicePhoto
 ```
 
-This is the settings page.
-
 ---
 
-## How it works
+## How the plugin works
 
 The plugin stores photos as files on disk. It does not store photos in the LibreNMS database.
 
@@ -111,7 +200,7 @@ device-42-2.jpg
 device-42-3.webp
 ```
 
-This keeps filenames stable even if a device hostname, sysName or display name changes.
+This makes photo filenames stable if the device hostname, sysName or display name changes.
 
 The plugin uses:
 
@@ -120,6 +209,7 @@ The plugin uses:
 - JSON files for links between devices.
 - File timestamps for `File date`.
 - EXIF metadata for `Photo taken` when available.
+- Generated thumbnails as cache/derived files.
 
 ---
 
@@ -138,43 +228,116 @@ app/Plugins/DevicePhoto/
         ├── device-overview.blade.php
         ├── menu.blade.php
         ├── page.blade.php
-        └── settings.blade.php
+        ├── settings.blade.php
+        └── partials/
+            ├── footer.blade.php
+            └── photo-modal.blade.php
 
 html/plugins/DevicePhoto/
 └── DevicePhoto.inc.php
 ```
 
-### File purpose
+### Main responsibilities
 
 #### `DeviceOverview.php`
 
-LibreNMS device overview hook. Provides the Device Photos widget on a device page.
+LibreNMS device overview hook. Provides the Device Photos widget on a normal LibreNMS device page.
 
 #### `device-overview.blade.php`
 
-Renders the Device Photos box on the normal LibreNMS device overview page.
+Renders the Device Photos widget on the normal LibreNMS device overview page.
 
-Includes thumbnail display, linked photo indicator, full-size image modal, zoom/pan and photo date footer in the modal.
+Includes:
+
+- Thumbnail display.
+- Linked photo indicator.
+- Manage device photos button.
+- Shared full-size photo viewer through the shared modal partial.
 
 #### `Menu.php`
 
-LibreNMS plugin menu hook. Adds the plugin menu entry.
+LibreNMS plugin menu hook. Adds the menu entry:
+
+```text
+Overview -> Plugins -> Device Photos Overview
+```
 
 #### `menu.blade.php`
 
-Renders the menu link.
+Renders the plugin menu link.
 
 #### `Page.php`
 
-Backend/data provider for Device Photos Overview and Device Photo Manager.
+Backend/data provider for Device Photos Overview and Manage Device Photos.
 
-Builds data for active photos, deleted photos, orphaned photos, broken links, linked photos, thumbnails, upload status and photo dates.
+It builds arrays for:
+
+- Active photos.
+- Deleted photos.
+- Orphaned photos.
+- Broken links.
+- Linked photos.
+- Thumbnail status.
+- Stale thumbnail status.
+- Photo dates.
+- Upload status.
+- HEIC/HEIF conversion status.
 
 #### `page.blade.php`
 
-Main UI for Device Photos Overview and Device Photo Manager.
+Main UI for:
 
-Includes upload form, drag/drop upload, photo viewer, ordering, orphan handling, broken link handling and thumbnail maintenance.
+- Device Photos Overview.
+- Manage Device Photos.
+- Upload form.
+- Drag/drop upload.
+- Photo ordering.
+- Photo linking.
+- Orphaned photo handling.
+- Broken link handling.
+- Thumbnail maintenance.
+- Shared photo viewer include.
+- Footer include.
+
+#### `partials/photo-modal.blade.php`
+
+Shared full-size photo viewer.
+
+Used by:
+
+- Device Photos Overview.
+- Manage Device Photos.
+- Device Photos widget on the normal LibreNMS device overview page.
+
+Provides:
+
+- Modal HTML.
+- Modal CSS.
+- JavaScript click handler.
+- Zoom.
+- Pan.
+- Reset.
+- Close with button, backdrop or Escape.
+- Date footer in the modal.
+
+Photos open the shared viewer when an element has:
+
+```html
+data-device-photo-preview-src="..."
+```
+
+Optional date attributes:
+
+```html
+data-device-photo-taken="..."
+data-device-photo-file-date="..."
+```
+
+#### `partials/footer.blade.php`
+
+Shared footer for plugin pages.
+
+Contains plugin credit and GitHub link.
 
 #### `Settings.php`
 
@@ -188,11 +351,25 @@ Settings UI.
 
 Action handler for POST requests.
 
-Handles upload, HEIC/HEIF conversion, delete, reorder, link, unlink, orphan handling, thumbnail generation and broken link cleanup.
+Handles:
+
+- Upload.
+- HEIC/HEIF conversion.
+- Delete.
+- Reorder.
+- Link photo.
+- Remove link.
+- Assign orphaned photo.
+- Delete orphaned photo.
+- Generate missing thumbnails.
+- Clean stale thumbnails.
+- Remove broken link.
 
 ---
 
-## Data directories
+## Runtime data directories
+
+These directories contain runtime data and should normally not be committed to Git.
 
 ### Active photos
 
@@ -219,6 +396,8 @@ Example:
 html/device-photos/thumbs/device-42-1.jpg
 ```
 
+Thumbnails are cache/derived files.
+
 ### Deleted photos
 
 ```text
@@ -239,7 +418,7 @@ device-42-1.deleted-20260514-120000.jpg
 html/device-photos/deleted/thumbs/
 ```
 
-When a photo is deleted, the thumbnail is moved here if it exists.
+When a photo is deleted, its thumbnail is moved here if it exists.
 
 ### Photo order
 
@@ -253,6 +432,8 @@ Example:
 storage/app/device-photos-order/device-42.json
 ```
 
+This stores the manual photo order for a device.
+
 ### Photo links
 
 ```text
@@ -265,7 +446,9 @@ Example:
 storage/app/device-photos-links/device-43.json
 ```
 
-Example content:
+This stores photos shown on a device but owned by another device.
+
+Example:
 
 ```json
 [
@@ -281,11 +464,21 @@ Example content:
 ## Requirements
 
 - LibreNMS with the v2 plugin system.
-- PHP GD extension for thumbnail generation.
-- PHP EXIF extension for reading `Photo taken` from JPG/JPEG images.
-- Writable photo and JSON directories for the LibreNMS user.
+- PHP with:
+  - GD extension for thumbnail generation.
+  - EXIF extension for reading `Photo taken` from JPG/JPEG images.
+- Writable runtime directories for the PHP/LibreNMS web process.
+- Webserver access to serve files from:
+  - `html/device-photos/`
 
-Check PHP modules:
+Recommended PHP modules:
+
+```text
+gd
+exif
+```
+
+Check:
 
 ```bash
 php -m | grep -Ei 'gd|exif'
@@ -293,7 +486,7 @@ php -m | grep -Ei 'gd|exif'
 
 ---
 
-## Optional dependencies
+## Optional features and dependencies
 
 ### HEIC/HEIF conversion
 
@@ -319,15 +512,27 @@ If HEIC/HEIF conversion is available, the upload form shows:
 HEIC/HEIF: Available
 ```
 
+If not available, HEIC/HEIF upload will fail with a clear error.
+
+### exiftool
+
+`exiftool` is not required by the plugin.
+
+It is useful for testing metadata:
+
+```bash
+exiftool html/device-photos/device-42-1.jpg | grep -Ei "Date/Time Original|Create Date|Modify Date"
+```
+
 ---
 
 ## Installation
 
-> Adjust paths if LibreNMS is not installed in `/opt/librenms`.
+> Adjust paths if your LibreNMS installation is not located in `/opt/librenms`.
 
 ### 1. Copy plugin files
 
-Copy the plugin files into:
+Copy the plugin into the LibreNMS plugin directories:
 
 ```text
 app/Plugins/DevicePhoto/
@@ -343,7 +548,7 @@ cp -a /path/to/app/Plugins/DevicePhoto app/Plugins/DevicePhoto
 cp -a /path/to/html/plugins/DevicePhoto html/plugins/DevicePhoto
 ```
 
-### 2. Create data directories
+### 2. Create runtime data directories
 
 ```bash
 cd /opt/librenms
@@ -358,34 +563,73 @@ mkdir -p storage/app/device-photos-links
 
 ### 3. Set ownership and permissions
 
+The runtime directories must be writable by the user/group used by your LibreNMS PHP/web process.
+
+Common LibreNMS installations use:
+
+```text
+librenms:librenms
+```
+
+Some installations may use:
+
+```text
+www-data:www-data
+apache:apache
+nginx:nginx
+```
+
+Use the user/group that matches your environment.
+
+Common LibreNMS example:
+
 ```bash
 cd /opt/librenms
 
-chown -R librenms:librenms \
-  app/Plugins/DevicePhoto \
-  html/plugins/DevicePhoto \
-  html/device-photos \
-  storage/app/device-photos-order \
-  storage/app/device-photos-links
-
-find html/device-photos storage/app/device-photos-order storage/app/device-photos-links \
-  -type d -exec chmod 2775 {} \;
-
-find html/device-photos storage/app/device-photos-order storage/app/device-photos-links \
-  -type f -exec chmod 664 {} \;
+chown -R librenms:librenms   app/Plugins/DevicePhoto   html/plugins/DevicePhoto   html/device-photos   storage/app/device-photos-order   storage/app/device-photos-links
 ```
 
-Optional ACL defaults:
+Alternative example if your PHP/webserver runs as `www-data`:
 
 ```bash
-setfacl -R -m u:librenms:rwx,g:librenms:rwx \
-  html/device-photos storage/app/device-photos-order storage/app/device-photos-links
+cd /opt/librenms
 
-setfacl -R -d -m u:librenms:rwx,g:librenms:rwx \
-  html/device-photos storage/app/device-photos-order storage/app/device-photos-links
+chown -R www-data:www-data   html/device-photos   storage/app/device-photos-order   storage/app/device-photos-links
 ```
 
-### 4. Clear LibreNMS cache
+Set directory and file permissions:
+
+```bash
+cd /opt/librenms
+
+find html/device-photos storage/app/device-photos-order storage/app/device-photos-links   -type d -exec chmod 2775 {} \;
+
+find html/device-photos storage/app/device-photos-order storage/app/device-photos-links   -type f -exec chmod 664 {} \;
+```
+
+The `2` in `2775` enables the setgid bit so new files and folders normally inherit the group from the parent directory.
+
+Optional ACL defaults if your environment uses ACLs:
+
+```bash
+setfacl -R -m u:librenms:rwx,g:librenms:rwx html/device-photos storage/app/device-photos-order storage/app/device-photos-links
+setfacl -R -d -m u:librenms:rwx,g:librenms:rwx html/device-photos storage/app/device-photos-order storage/app/device-photos-links
+```
+
+Adjust `librenms` in the ACL example if your PHP/web process uses another user/group.
+
+### 4. Check which user PHP runs as
+
+Examples:
+
+```bash
+ps aux | grep -E 'php-fpm|apache|nginx' | head
+grep -R "^[[:space:]]*user\|^[[:space:]]*group" /etc/php/*/fpm/pool.d/*.conf
+```
+
+The plugin does not force `chown()` on uploaded files. It only sets file mode with `chmod()`. Owner and group are determined by your PHP/webserver environment and directory permissions.
+
+### 5. Clear LibreNMS caches
 
 ```bash
 cd /opt/librenms
@@ -395,17 +639,19 @@ sudo -u librenms php artisan cache:clear
 sudo -u librenms php artisan optimize:clear
 ```
 
-### 5. Enable the plugin
+If your LibreNMS user is not `librenms`, run the artisan commands as the correct LibreNMS user for your installation.
 
-Enable the plugin if required by your LibreNMS plugin setup.
+### 6. Enable the plugin
 
-After enabling, the menu entry should appear here:
+Enable the plugin in LibreNMS if required by your LibreNMS plugin setup.
+
+After enabling, you should see:
 
 ```text
 Overview -> Plugins -> Device Photos Overview
 ```
 
-### 6. Syntax check
+### 7. Syntax check
 
 ```bash
 cd /opt/librenms
@@ -425,29 +671,66 @@ No syntax errors detected
 
 ---
 
-## Permissions
+## Ownership and permissions
 
-The plugin menu is visible to users with:
+Uploaded files are created by the PHP/webserver process.
+
+After upload or conversion, the plugin sets file mode to:
 
 ```text
-global-read
+664
 ```
 
-Administrative actions are controlled by plugin settings.
+Example:
 
-Typical permission-controlled actions:
+```text
+-rw-rw-r--
+```
 
-- Upload photos.
-- Delete photos.
-- Reorder photos.
-- Link photos.
-- Remove links.
-- Assign orphaned photos.
-- Delete orphaned photos.
-- Generate thumbnails.
-- Remove broken links.
+The plugin does not hardcode or force ownership to `librenms`.
 
-Admins are allowed by default.
+This is intentional. It makes the plugin more portable.
+
+Correct ownership depends on your environment:
+
+```text
+librenms:librenms
+www-data:www-data
+apache:apache
+nginx:nginx
+custom-user:custom-group
+```
+
+The important rule is:
+
+```text
+The PHP/LibreNMS web process must be able to read and write:
+- html/device-photos
+- html/device-photos/thumbs
+- html/device-photos/deleted
+- html/device-photos/deleted/thumbs
+- storage/app/device-photos-order
+- storage/app/device-photos-links
+```
+
+Check uploaded files:
+
+```bash
+cd /opt/librenms
+
+ls -lh html/device-photos | head
+ls -lh html/device-photos/thumbs | head
+```
+
+If uploads work but later actions fail, check:
+
+- file owner
+- file group
+- directory permissions
+- setgid bit
+- ACLs
+- PHP-FPM pool user/group
+- webserver user/group
 
 ---
 
@@ -465,9 +748,9 @@ or:
 /plugin/DevicePhoto
 ```
 
-### Open a device manager
+### Open Manage Device Photos for a device
 
-From a device page, click the options button in the Device Photos box.
+From a normal LibreNMS device page, click the options button in the Device Photos widget.
 
 Direct URL:
 
@@ -487,23 +770,59 @@ Example:
 
 The global overview shows:
 
+- Photo library status.
+- Maintenance status.
 - Devices with photos or links.
-- Active files.
-- Active size.
-- Orphans.
-- Deleted files.
-- Deleted size.
+- Orphaned photos.
 - Broken links.
-- Thumbnails.
-- Missing thumbnails.
+- Thumbnail maintenance.
 
-Problem counters turn red when the value is greater than zero:
+### Photo library panel
 
-- `orphans`
-- `broken links`
-- `missing thumbnails`
+Shows:
 
-The table includes tooltips for:
+- Devices
+- Active photos
+- Active size
+- Deleted photos
+- Deleted size
+
+Size counters do not include thumbnails.
+
+### Maintenance panel
+
+Shows health/cleanup status.
+
+If no issues are found, it shows:
+
+```text
+No maintenance issues found
+```
+
+If issues are found, it only shows the counters that need attention, for example:
+
+```text
+1 missing thumbnails
+```
+
+Possible maintenance counters:
+
+- Orphans
+- Broken links
+- Missing thumbnails
+- Stale thumbnails
+
+### Filter
+
+The overview page includes a filter field:
+
+```text
+Filter by Device ID, device name or filename
+```
+
+### Devices table
+
+Columns:
 
 - Device
 - Owned photos
@@ -512,45 +831,27 @@ The table includes tooltips for:
 - Preview
 - Actions
 
-### Terms
-
-#### Owned photos
-
-Photos physically owned by the device.
-
-Example:
-
-```text
-device-42-1.jpg
-```
-
-#### Linked in
-
-Photos owned by another device but shown on this device.
-
-#### Linked out
-
-Photos owned by this device but shown on other devices.
+Header tooltips explain the meaning of each column.
 
 ---
 
-## Device Photo Manager
+## Manage Device Photos
 
-The manager is used to manage photos for a single device.
+The per-device page is used to manage photos for one device.
 
 Features:
 
-- Upload one or more photos.
+- Upload photos.
 - Drag/drop photos.
 - Append multiple drag/drop rounds before upload.
 - Upload mixed file types, for example JPG and HEIC together.
-- Reorder photos using drag and drop.
+- Reorder owned photos using drag and drop.
 - Download photos.
 - Delete photos.
 - Link photos to another device.
-- Add photos from another owner device.
+- Add linked photos from another owner device.
 - Remove links.
-- Open full-size image modal.
+- Open photos in the shared full-size viewer.
 - See `Photo taken` and `File date`.
 
 ### Upload status
@@ -575,17 +876,60 @@ Apache: LimitRequestBody
 
 ## Device overview widget
 
-The normal LibreNMS device overview page shows a Device Photos box.
+The normal LibreNMS device overview page shows a Device Photos widget.
 
 Features:
 
-- Shows photos for the current device.
+- Shows owned photos for the current device.
 - Shows linked photos.
 - Linked photos have a link indicator.
 - Hovering the link indicator shows the owner device.
-- Clicking a photo opens the full-size modal.
-- Modal supports zoom and pan.
-- Modal shows `Photo taken` and `File date` when available.
+- Clicking a photo opens the shared full-size photo viewer.
+- The viewer supports zoom and pan.
+- The viewer shows `Photo taken` and `File date` when available.
+- The options button opens Manage Device Photos for the device.
+
+---
+
+## Shared photo viewer
+
+The shared viewer is implemented in:
+
+```text
+app/Plugins/DevicePhoto/resources/views/partials/photo-modal.blade.php
+```
+
+It is included by:
+
+```text
+app/Plugins/DevicePhoto/resources/views/page.blade.php
+app/Plugins/DevicePhoto/resources/views/device-overview.blade.php
+```
+
+Any element with this attribute opens the shared viewer:
+
+```html
+data-device-photo-preview-src="URL_TO_ORIGINAL_PHOTO"
+```
+
+Optional date attributes:
+
+```html
+data-device-photo-taken="2026-05-05T22:03:02+02:00"
+data-device-photo-file-date="2026-05-13T12:23:00+02:00"
+```
+
+The viewer supports:
+
+- Click to open.
+- Zoom in/out buttons.
+- Mouse wheel zoom.
+- Pan/drag.
+- Reset.
+- Close button.
+- Backdrop close.
+- Escape key close.
+- Date footer.
 
 ---
 
@@ -654,6 +998,30 @@ html/device-photos/deleted/
 ```
 
 It is not permanently removed.
+
+### Orphaned thumbnails
+
+If an orphaned photo has a thumbnail, the thumbnail follows the original photo.
+
+Assign orphaned photo:
+
+```text
+html/device-photos/device-99999-1.jpg
+-> html/device-photos/device-62-5.jpg
+
+html/device-photos/thumbs/device-99999-1.jpg
+-> html/device-photos/thumbs/device-62-5.jpg
+```
+
+Delete orphaned photo:
+
+```text
+html/device-photos/device-99999-1.jpg
+-> html/device-photos/deleted/...
+
+html/device-photos/thumbs/device-99999-1.jpg
+-> html/device-photos/deleted/thumbs/...
+```
 
 ---
 
@@ -731,7 +1099,7 @@ If thumbnail is missing:
     use original image
 ```
 
-The full-size image modal always opens the original image.
+The full-size image viewer always opens the original image.
 
 ### Generate missing thumbnails
 
@@ -743,9 +1111,65 @@ If missing thumbnails are found, use:
 Generate missing thumbnails
 ```
 
-This creates thumbnails for active photos that do not already have one. Existing thumbnails are not overwritten.
+This creates thumbnails for active photos that do not already have one. Existing thumbnails are not overwritten unless the related function refreshes a specific thumbnail after a rename/assign operation.
 
 If GD is missing, thumbnail generation is skipped and original images are used as fallback.
+
+---
+
+## Missing and stale thumbnails
+
+### Missing thumbnails
+
+A missing thumbnail means:
+
+```text
+Original active photo exists
+Thumbnail does not exist
+```
+
+Example:
+
+```text
+html/device-photos/device-42-1.jpg exists
+html/device-photos/thumbs/device-42-1.jpg missing
+```
+
+Use:
+
+```text
+Generate missing thumbnails
+```
+
+### Stale thumbnails
+
+A stale thumbnail means:
+
+```text
+Thumbnail exists
+Original active photo does not exist
+```
+
+Example:
+
+```text
+html/device-photos/thumbs/device-99999-1.jpg exists
+html/device-photos/device-99999-1.jpg missing
+```
+
+Use:
+
+```text
+Clean stale thumbnails
+```
+
+This only deletes files from:
+
+```text
+html/device-photos/thumbs/
+```
+
+It does not delete original photos.
 
 ---
 
@@ -858,13 +1282,52 @@ This is expected behavior.
 
 ### Where dates are shown
 
-- Device Photo Manager:
-  - Under the small photo card, date only.
-  - In the full-size modal, date and time.
+- Manage Device Photos:
+  - Under the small owned-photo card, date-only.
+  - In the full-size viewer, date and time.
 - Device Photos Overview:
-  - In the full-size modal.
-- Device overview widget:
-  - In the full-size modal.
+  - In the full-size viewer.
+- Device Photos widget on the normal LibreNMS device page:
+  - In the full-size viewer.
+
+---
+
+## Upload behavior
+
+Allowed upload types:
+
+```text
+jpg
+jpeg
+png
+webp
+heic
+heif
+```
+
+Upload behavior:
+
+```text
+jpg/jpeg/png/webp -> stored as uploaded
+heic/heif        -> converted to jpg
+```
+
+Uploaded and converted files are stored as:
+
+```text
+device-<device_id>-<number>.<extension>
+```
+
+Examples:
+
+```text
+device-42-1.jpg
+device-42-2.png
+device-42-3.webp
+device-42-4.jpg   # from HEIC/HEIF conversion
+```
+
+The plugin validates normal image uploads and checks HEIC/HEIF conversion availability before converting HEIC/HEIF files.
 
 ---
 
@@ -877,12 +1340,7 @@ Recommended backup:
 ```bash
 cd /opt/librenms
 
-tar czf /root/DevicePhoto-backup-$(date +%F-%H%M).tar.gz \
-  app/Plugins/DevicePhoto \
-  html/plugins/DevicePhoto \
-  html/device-photos \
-  storage/app/device-photos-order \
-  storage/app/device-photos-links
+tar czf /root/DevicePhoto-backup-$(date +%F-%H%M).tar.gz   app/Plugins/DevicePhoto   html/plugins/DevicePhoto   html/device-photos   storage/app/device-photos-order   storage/app/device-photos-links
 ```
 
 Check:
@@ -899,13 +1357,14 @@ Example:
 cd /opt/librenms
 
 tar xzf /root/DevicePhoto-backup-YYYY-MM-DD-HHMM.tar.gz -C /opt/librenms
+```
 
-chown -R librenms:librenms \
-  app/Plugins/DevicePhoto \
-  html/plugins/DevicePhoto \
-  html/device-photos \
-  storage/app/device-photos-order \
-  storage/app/device-photos-links
+Then set ownership to match your LibreNMS/PHP environment.
+
+Common LibreNMS example:
+
+```bash
+chown -R librenms:librenms   app/Plugins/DevicePhoto   html/plugins/DevicePhoto   html/device-photos   storage/app/device-photos-order   storage/app/device-photos-links
 ```
 
 Clear cache:
@@ -925,9 +1384,23 @@ sudo -u librenms php artisan optimize:clear
 ```bash
 cd /opt/librenms
 
-find app/Plugins/DevicePhoto html/plugins/DevicePhoto \
-  -type f \( -name "*.php" -o -name "*.blade.php" \) \
-  -printf '%p\n' | sort
+find app/Plugins/DevicePhoto html/plugins/DevicePhoto   -type f \( -name "*.php" -o -name "*.blade.php" \)   -printf '%p\n' | sort
+```
+
+Expected structure:
+
+```text
+app/Plugins/DevicePhoto/DeviceOverview.php
+app/Plugins/DevicePhoto/Menu.php
+app/Plugins/DevicePhoto/Page.php
+app/Plugins/DevicePhoto/Settings.php
+app/Plugins/DevicePhoto/resources/views/device-overview.blade.php
+app/Plugins/DevicePhoto/resources/views/menu.blade.php
+app/Plugins/DevicePhoto/resources/views/page.blade.php
+app/Plugins/DevicePhoto/resources/views/partials/footer.blade.php
+app/Plugins/DevicePhoto/resources/views/partials/photo-modal.blade.php
+app/Plugins/DevicePhoto/resources/views/settings.blade.php
+html/plugins/DevicePhoto/DevicePhoto.inc.php
 ```
 
 ### PHP syntax check
@@ -992,6 +1465,14 @@ cd /opt/librenms
 find storage/app/device-photos-links -maxdepth 1 -type f -printf '%f\n' | sort
 ```
 
+### Check for stale thumbnails manually
+
+```bash
+cd /opt/librenms
+
+comm -23   <(find html/device-photos/thumbs -maxdepth 1 -type f -printf '%f\n' | sort)   <(find html/device-photos -maxdepth 1 -type f -printf '%f\n' | sort)
+```
+
 ### Check HEIC support
 
 ```bash
@@ -1009,9 +1490,16 @@ The webserver upload limit is too low.
 
 Examples:
 
+Nginx:
+
 ```text
-Nginx: client_max_body_size
-Apache: LimitRequestBody
+client_max_body_size
+```
+
+Apache:
+
+```text
+LimitRequestBody
 ```
 
 Also check PHP:
@@ -1021,9 +1509,29 @@ upload_max_filesize
 post_max_size
 ```
 
+### Upload fails because of permissions
+
+Check that runtime directories are writable by your PHP/LibreNMS web process.
+
+```bash
+cd /opt/librenms
+
+ls -ld html/device-photos
+ls -ld html/device-photos/thumbs
+ls -ld storage/app/device-photos-order
+ls -ld storage/app/device-photos-links
+```
+
+Check PHP-FPM/webserver user:
+
+```bash
+ps aux | grep -E 'php-fpm|apache|nginx' | head
+grep -R "^[[:space:]]*user\|^[[:space:]]*group" /etc/php/*/fpm/pool.d/*.conf
+```
+
 ### Thumbnail is missing
 
-Use:
+Use the global overview:
 
 ```text
 Device Photos Overview -> Generate missing thumbnails
@@ -1035,6 +1543,16 @@ Also check PHP GD:
 php -m | grep -i gd
 ```
 
+### Stale thumbnails found
+
+Use the global overview:
+
+```text
+Device Photos Overview -> Clean stale thumbnails
+```
+
+This removes thumbnails without matching original active photos.
+
 ### HEIC upload fails
 
 Check ImageMagick:
@@ -1044,11 +1562,13 @@ which magick
 magick -list format 2>/dev/null | grep -Ei 'HEIC|HEIF'
 ```
 
-The manager page should show:
+The Manage Device Photos page should show:
 
 ```text
 HEIC/HEIF: Available
 ```
+
+If it says `Not available`, install ImageMagick with HEIC/HEIF support.
 
 ### Photo taken is missing
 
@@ -1099,7 +1619,7 @@ Delete moves it to the deleted folder.
 - HEIC/HEIF files are converted server-side and stored as JPG.
 - Deleted files are moved to a deleted folder, not permanently removed.
 - Permissions should be configured so only trusted users can upload or delete photos.
-- The webserver must not execute scripts from the image upload directory.
+- The webserver must be configured so PHP code cannot execute from the image upload directory.
 
 Recommended webserver behavior:
 
@@ -1112,7 +1632,7 @@ Do not execute scripts from this directory.
 
 ## Development notes
 
-Current design choices:
+### Current design choices
 
 - Photos are stored on disk, not in the database.
 - Filenames use LibreNMS `device_id`.
@@ -1123,19 +1643,59 @@ Current design choices:
 - WebP is kept as WebP.
 - Thumbnails are optional and fail-safe.
 - If thumbnail generation fails, original images are used as fallback.
+- Missing thumbnails can be generated from the overview page.
+- Stale thumbnails can be cleaned from the overview page.
 - `Photo taken` is based on EXIF where supported.
 - `File date` is based on file timestamp.
+- The photo viewer is shared between plugin pages and the normal device overview widget.
+- The footer is shared between plugin pages.
 
-Known future improvement ideas:
+### Why owner is part of the filename
 
-- Refactor the image modal into a shared Blade partial.
+Current filename format:
+
+```text
+device-<device_id>-<number>.<extension>
+```
+
+Example:
+
+```text
+device-42-1.jpg
+```
+
+This makes files easy to understand and repair manually.
+
+Tradeoff:
+
+- Moving ownership to another device requires renaming the original file and thumbnail.
+- Link JSON entries must be updated if ownership is moved.
+- This is simpler than a full metadata/index database.
+
+### Runtime data should not be committed
+
+Recommended `.gitignore` entries for a GitHub repository:
+
+```gitignore
+html/device-photos/
+storage/app/device-photos-order/
+storage/app/device-photos-links/
+```
+
+If your repository only contains the plugin source directories, do not include local photos or runtime JSON data.
+
+### Known future improvement ideas
+
+- Add a "Move photo to another device" function for owned photos.
 - Add optional `exiftool` support for broader metadata reading.
 - Add duplicate detection in drag/drop upload.
 - Add restore UI for deleted photos.
 - Add optional configurable thumbnail size.
 - Add optional configurable max upload size.
 - Add optional PNG-to-JPG conversion setting.
-- Improve modal layout consistency across all views.
+- Extend JSON structures with optional `sort_order`, captions or labels.
+- Add cleanup/repair tools for JSON order/link files.
+- Package the plugin as a Composer package later if needed.
 
 ---
 
@@ -1143,26 +1703,31 @@ Known future improvement ideas:
 
 After installation or upgrade, test:
 
-1. Open a device page with no photos.
-2. Open Device Photo Manager for the device.
-3. Upload JPG.
-4. Upload HEIC if supported.
-5. Confirm HEIC becomes JPG.
-6. Confirm thumbnail is generated.
-7. Confirm photo opens in full-size modal.
-8. Confirm zoom and pan work.
-9. Confirm `File date` appears.
-10. Confirm `Photo taken` appears when EXIF exists.
-11. Upload multiple files.
-12. Drag/drop one file, then drag/drop another before upload.
-13. Reorder photos.
-14. Link a photo to another device.
-15. Remove the link.
-16. Create/test orphaned photo handling.
-17. Create/test broken link handling.
-18. Generate missing thumbnails.
-19. Confirm plugin menu entry works.
-20. Run PHP syntax checks.
+1. Open Device Photos Overview.
+2. Open Manage Device Photos for a device.
+3. Open the normal LibreNMS device page with the Device Photos widget.
+4. Click a photo from each view and confirm the shared viewer opens.
+5. Test zoom and pan.
+6. Confirm `File date` appears.
+7. Confirm `Photo taken` appears when EXIF exists.
+8. Upload JPG.
+9. Upload HEIC if supported.
+10. Confirm HEIC becomes JPG.
+11. Confirm thumbnail is generated.
+12. Upload multiple files.
+13. Drag/drop one file, then drag/drop another before upload.
+14. Reorder photos.
+15. Link a photo to another device.
+16. Remove the link.
+17. Create/test orphaned photo handling.
+18. Assign an orphaned photo to a device.
+19. Delete an orphaned photo.
+20. Create/test broken link handling.
+21. Generate missing thumbnails.
+22. Clean stale thumbnails.
+23. Confirm plugin menu entry works.
+24. Open plugin settings.
+25. Run PHP syntax checks.
 
 ---
 
@@ -1179,5 +1744,7 @@ MIT License
 ---
 
 ## Credits
+
+Created by Wizball
 
 

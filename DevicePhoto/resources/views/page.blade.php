@@ -1,10 +1,10 @@
 <div class="container-fluid">
-    <h2 style="margin-bottom: 6px;">
-        {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Device Photo Manager' }}
+    <h2 style="margin-bottom: 14px;">
+        {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Manage Device Photos' }}
     </h2>
 
     @if ($device)
-        <div style="margin-bottom: 18px;">
+        <div style="margin-top: 10px; margin-bottom: 18px;">
             <a href="{{ url('device/' . $device->device_id) }}" class="btn btn-default btn-sm">
                 <i class="fa fa-arrow-left"></i> Back to device
             </a>
@@ -61,12 +61,47 @@
                 </style>
 
                 <style>
-                    .device-photo-summary-bar {
+                    .device-photo-summary-panels {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+                        gap: 12px;
+                        margin: 16px 0 16px 0;
+                    }
+
+                    .device-photo-summary-panel {
+                        background: #fff;
+                        border: 1px solid #ddd;
+                        border-radius: 8px;
+                        padding: 12px;
+                        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+                    }
+
+                    .device-photo-summary-panel-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 7px;
+                        margin-bottom: 10px;
+                        color: #444;
+                        font-weight: bold;
+                        font-size: 14px;
+                    }
+
+                    .device-photo-summary-panel-header i {
+                        color: #555;
+                    }
+
+                    .device-photo-summary-panel-description {
+                        margin-top: -4px;
+                        margin-bottom: 10px;
+                        color: #777;
+                        font-size: 12px;
+                    }
+
+                    .device-photo-summary-panel-items {
                         display: flex;
                         flex-wrap: wrap;
                         gap: 7px;
                         align-items: center;
-                        margin: 14px 0 16px 0;
                     }
 
                     .device-photo-summary-item {
@@ -104,44 +139,106 @@
                     .device-photo-summary-item.is-problem .label {
                         color: #a94442;
                     }
+
+                    .device-photo-maintenance-ok {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        padding: 7px 10px;
+                        background: #dff0d8;
+                        border: 1px solid #d6e9c6;
+                        border-radius: 7px;
+                        color: #3c763d;
+                        font-size: 12px;
+                        font-weight: bold;
+                    }
                 </style>
 
-                <div class="device-photo-summary-bar">
-                    <span class="device-photo-summary-item" title="Number of devices that currently have owned photos or linked photos.">
-                        <span class="number">{{ count($overview['rows'] ?? []) }}</span><span class="label">devices</span>
-                    </span>
+                @php
+                    $maintenanceIssueCount =
+                        count($overview['orphaned_photos'] ?? []) +
+                        count($overview['broken_links'] ?? []) +
+                        (int) ($overview['missing_thumbnail_count'] ?? 0) +
+                        (int) ($overview['stale_thumbnail_count'] ?? 0);
+                @endphp
 
-                    <span class="device-photo-summary-item" title="Total number of active image files in the main photo folder.">
-                        <span class="number">{{ $overview['active_photo_count'] ?? 0 }}</span><span class="label">active files</span>
-                    </span>
+                <div class="device-photo-summary-panels">
+                    <div class="device-photo-summary-panel">
+                        <div class="device-photo-summary-panel-header">
+                            <i class="fa fa-camera"></i>
+                            Photo library
+                        </div>
 
-                    <span class="device-photo-summary-item" title="Total size of active image files in the main photo folder.">
-                        <span class="number">{{ $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">active size</span>
-                    </span>
+                        <div class="device-photo-summary-panel-description">
+                            Current photo inventory and storage usage. Sizes do not include thumbnails.
+                        </div>
 
-                    <span class="device-photo-summary-item {{ count($overview['orphaned_photos'] ?? []) > 0 ? 'is-problem' : '' }}" title="Photos whose original device ID no longer exists in LibreNMS.">
-                        <span class="number">{{ count($overview['orphaned_photos'] ?? []) }}</span><span class="label">orphans</span>
-                    </span>
+                        <div class="device-photo-summary-panel-items">
+                            <span class="device-photo-summary-item" title="Number of devices that currently have owned photos or linked photos.">
+                                <span class="number">{{ count($overview['rows'] ?? []) }}</span><span class="label">devices</span>
+                            </span>
 
-                    <span class="device-photo-summary-item" title="Number of image files currently stored in the deleted folder.">
-                        <span class="number">{{ $overview['deleted_photo_count'] ?? 0 }}</span><span class="label">deleted files</span>
-                    </span>
+                            <span class="device-photo-summary-item" title="Photos currently available in the main photo folder.">
+                                <span class="number">{{ $overview['active_photo_count'] ?? 0 }}</span><span class="label">active photos</span>
+                            </span>
 
-                    <span class="device-photo-summary-item" title="Total size of image files currently stored in the deleted folder.">
-                        <span class="number">{{ $overview['deleted_photo_mb'] ?? 0 }} MB</span><span class="label">deleted size</span>
-                    </span>
+                            <span class="device-photo-summary-item" title="Total size of active original photos. Thumbnails are not included.">
+                                <span class="number">{{ $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">active size</span>
+                            </span>
 
-                    <span class="device-photo-summary-item {{ count($overview['broken_links'] ?? []) > 0 ? 'is-problem' : '' }}" title="Number of link entries pointing to missing photo files.">
-                        <span class="number">{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
-                    </span>
+                            <span class="device-photo-summary-item" title="Photos moved to the deleted folder.">
+                                <span class="number">{{ $overview['deleted_photo_count'] ?? 0 }}</span><span class="label">deleted photos</span>
+                            </span>
 
-                    <span class="device-photo-summary-item" title="Generated thumbnails compared to total active photos. Thumbnails are used in overview lists, while the original image opens in the photo viewer.">
-                        <span class="number">{{ $overview['thumbnail_count'] ?? 0 }} / {{ $overview['active_photo_count'] ?? 0 }}</span><span class="label">thumbnails</span>
-                    </span>
+                            <span class="device-photo-summary-item" title="Total size of deleted original photos. Deleted thumbnails are not included.">
+                                <span class="number">{{ $overview['deleted_photo_mb'] ?? 0 }} MB</span><span class="label">deleted size</span>
+                            </span>
+                        </div>
+                    </div>
 
-                    <span class="device-photo-summary-item {{ ($overview['missing_thumbnail_count'] ?? 0) > 0 ? 'is-problem' : '' }}" title="Active photos that do not currently have a generated thumbnail.">
-                        <span class="number">{{ $overview['missing_thumbnail_count'] ?? 0 }}</span><span class="label">missing thumbnails</span>
-                    </span>
+                    <div class="device-photo-summary-panel">
+                        <div class="device-photo-summary-panel-header">
+                            <i class="fa fa-wrench"></i>
+                            Maintenance
+                        </div>
+
+                        <div class="device-photo-summary-panel-description">
+                            Cleanup checks for orphaned photos, broken links and thumbnail cache issues.
+                        </div>
+
+                        <div class="device-photo-summary-panel-items">
+                            @if ($maintenanceIssueCount === 0)
+                                <span class="device-photo-maintenance-ok" title="No orphaned photos, broken links, missing thumbnails or stale thumbnails were found.">
+                                    <i class="fa fa-check-circle"></i>
+                                    No maintenance issues found
+                                </span>
+                            @else
+                                @if (count($overview['orphaned_photos'] ?? []) > 0)
+                                    <span class="device-photo-summary-item is-problem" title="Photos where the original LibreNMS device ID no longer exists.">
+                                        <span class="number">{{ count($overview['orphaned_photos'] ?? []) }}</span><span class="label">orphans</span>
+                                    </span>
+                                @endif
+
+                                @if (count($overview['broken_links'] ?? []) > 0)
+                                    <span class="device-photo-summary-item is-problem" title="Photo links that point to a missing original file.">
+                                        <span class="number">{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
+                                    </span>
+                                @endif
+
+                                @if (($overview['missing_thumbnail_count'] ?? 0) > 0)
+                                    <span class="device-photo-summary-item is-problem" title="Active photos without a generated thumbnail.">
+                                        <span class="number">{{ $overview['missing_thumbnail_count'] ?? 0 }}</span><span class="label">missing thumbnails</span>
+                                    </span>
+                                @endif
+
+                                @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
+                                    <span class="device-photo-summary-item is-problem" title="Thumbnail files where the original active photo no longer exists.">
+                                        <span class="number">{{ $overview['stale_thumbnail_count'] ?? 0 }}</span><span class="label">stale thumbnails</span>
+                                    </span>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <style>
@@ -337,6 +434,24 @@
 
                             <button type="submit" class="btn btn-warning btn-xs" style="margin-left: 8px;">
                                 <i class="fa fa-magic"></i> Generate missing thumbnails
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
+                @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
+                    <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
+                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
+                            @csrf
+                            <input type="hidden" name="action" value="clean_stale_thumbnails">
+                            <input type="hidden" name="device_id" value="0">
+                            <input type="hidden" name="return_to" value="overview">
+
+                            <strong>{{ $overview['stale_thumbnail_count'] ?? 0 }}</strong>
+                            stale thumbnail{{ ($overview['stale_thumbnail_count'] ?? 0) === 1 ? '' : 's' }} without matching original photo.
+
+                            <button type="submit" class="btn btn-warning btn-xs" style="margin-left: 8px;">
+                                <i class="fa fa-trash"></i> Clean stale thumbnails
                             </button>
                         </form>
                     </div>

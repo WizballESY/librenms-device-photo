@@ -490,7 +490,7 @@
             @if ($can_manage_photos ?? false)
                 <a href="{{ url('plugin/DevicePhoto') }}?device_id={{ $device->device_id }}"
                    class="device-photo-options"
-                   title="Manage Device Photos">
+                   title="Manage device photos">
                     &hellip;
                 </a>
             @endif
@@ -533,7 +533,7 @@
             @if ($can_manage_photos ?? false)
                 <a href="{{ url('plugin/DevicePhoto') }}?device_id={{ $device->device_id }}"
                    class="device-photo-options"
-                   title="Manage Device Photos">
+                   title="Manage device photos">
                     &hellip;
                 </a>
             @endif
