@@ -159,6 +159,10 @@ class Page extends PageHook
                 'filename' => $filename,
                 'url' => $this->photoUrl($filename),
                 'thumb_url' => $this->thumbUrl($filename),
+                'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
+                'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
+                'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
+                'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
                 'size' => $size,
                 'has_thumbnail' => is_file($thumbPath),
             ];
@@ -287,6 +291,10 @@ class Page extends PageHook
                             'filename' => $photo['filename'],
                             'url' => $photo['url'],
                             'thumb_url' => $photo['thumb_url'] ?? $photo['url'],
+                            'photo_taken_display' => $photo['photo_taken_display'] ?? null,
+                            'photo_taken_iso' => $photo['photo_taken_iso'] ?? null,
+                            'file_date_display' => $photo['file_date_display'] ?? null,
+                            'file_date_iso' => $photo['file_date_iso'] ?? null,
                             'size' => $photo['size'],
                         ];
                     }
@@ -356,6 +364,127 @@ class Page extends PageHook
         return $this->photoUrl($filename);
     }
 
+    private function findBinary(string $binary): ?string
+    {
+        foreach (['/usr/bin/' . $binary, '/usr/local/bin/' . $binary, '/bin/' . $binary] as $path) {
+            if (is_executable($path)) {
+                return $path;
+            }
+        }
+
+        $found = trim((string) @shell_exec('command -v ' . escapeshellarg($binary) . ' 2>/dev/null'));
+
+        return $found !== '' && is_executable($found) ? $found : null;
+    }
+
+    private function heicConversionAvailable(): bool
+    {
+        $magick = $this->findBinary('magick');
+
+        if (! $magick) {
+            return false;
+        }
+
+        $output = (string) @shell_exec(escapeshellcmd($magick) . ' -list format 2>/dev/null');
+
+        foreach (preg_split('/\R/', $output) ?: [] as $line) {
+            if (preg_match('/^\s*(HEIC|HEIF)\s+HEIC\s+.*r/i', $line)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function parseExifDate(?string $value): ?int
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $formats = [
+            'Y:m:d H:i:s',
+            'Y-m-d H:i:s',
+            'Y:m:d H:i:sP',
+            'Y-m-d H:i:sP',
+        ];
+
+        foreach ($formats as $format) {
+            $date = \DateTime::createFromFormat($format, $value);
+
+            if ($date instanceof \DateTime) {
+                return $date->getTimestamp();
+            }
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? null : $timestamp;
+    }
+
+    private function photoTakenTimestamp(string $path): ?int
+    {
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        if (! in_array($ext, ['jpg', 'jpeg'], true)) {
+            return null;
+        }
+
+        if (! function_exists('exif_read_data')) {
+            return null;
+        }
+
+        $exif = @exif_read_data($path, 'EXIF', true);
+
+        if (! is_array($exif)) {
+            return null;
+        }
+
+        $value = $exif['EXIF']['DateTimeOriginal']
+            ?? $exif['EXIF']['DateTimeDigitized']
+            ?? $exif['IFD0']['DateTime']
+            ?? null;
+
+        return $this->parseExifDate(is_string($value) ? $value : null);
+    }
+
+    private function photoDateDisplay(?int $timestamp): ?string
+    {
+        if (! $timestamp) {
+            return null;
+        }
+
+        return date('Y-m-d H:i', $timestamp);
+    }
+
+    private function photoDateIso(?int $timestamp): ?string
+    {
+        if (! $timestamp) {
+            return null;
+        }
+
+        return date(DATE_ATOM, $timestamp);
+    }
+
+    private function photoDateData(string $path): array
+    {
+        $fileDate = is_file($path) ? @filemtime($path) : null;
+        $takenDate = $this->photoTakenTimestamp($path);
+
+        return [
+            'photo_taken_display' => $this->photoDateDisplay($takenDate),
+            'photo_taken_iso' => $this->photoDateIso($takenDate),
+            'file_date_display' => $this->photoDateDisplay($fileDate ?: null),
+            'file_date_iso' => $this->photoDateIso($fileDate ?: null),
+        ];
+    }
+
     public function data(array $settings = []): array
     {
         $request = request();
@@ -383,7 +512,9 @@ class Page extends PageHook
             'device_not_found' => 'Device not found.',
             'no_file' => 'No file selected.',
             'upload_failed' => 'Upload failed.',
-            'invalid_type' => 'Only jpg, jpeg, png and webp are allowed.',
+            'invalid_type' => 'Only jpg, jpeg, png, webp, heic and heif are allowed.',
+            'heic_unavailable' => 'HEIC/HEIF conversion is not available on this server. Install ImageMagick with HEIC support.',
+            'heic_convert_failed' => 'HEIC/HEIF conversion failed.',
             'too_large' => 'Maximum file size is 10 MB.',
             'invalid_image' => 'The uploaded file does not look like a valid image.',
             'invalid_filename' => 'Invalid filename.',
@@ -462,7 +593,11 @@ class Page extends PageHook
                         $photos[$filename] = [
                             'filename' => $filename,
                             'url' => $this->photoUrl($filename),
-                'thumb_url' => $this->thumbUrl($filename),
+                            'thumb_url' => $this->thumbUrl($filename),
+                            'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
+                            'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
+                            'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
+                            'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
                         ];
                     }
                 }
@@ -562,7 +697,11 @@ class Page extends PageHook
                 $linkedPhotos[$filename] = [
                     'filename' => $filename,
                     'url' => $this->photoUrl($filename),
-                'thumb_url' => $this->thumbUrl($filename),
+                    'thumb_url' => $this->thumbUrl($filename),
+                    'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
+                    'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
+                    'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
+                    'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
                     'owner_device_id' => $ownerDeviceId,
                     'owner_name' => $this->deviceLabel($ownerDevice, $ownerDeviceId),
                 ];
@@ -597,7 +736,11 @@ class Page extends PageHook
                             $incomingOwnerPhotos[$filename] = [
                                 'filename' => $filename,
                                 'url' => $this->photoUrl($filename),
-                'thumb_url' => $this->thumbUrl($filename),
+                                'thumb_url' => $this->thumbUrl($filename),
+                                'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
+                                'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
+                                'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
+                                'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
                             ];
                         }
                     }
@@ -627,6 +770,7 @@ class Page extends PageHook
             'global_overview' => ! $device,
             'global_photo_overview' => $globalOverview,
             'php_file_uploads' => ini_get('file_uploads'),
+            'heic_conversion_available' => $this->heicConversionAvailable(),
             'php_upload_max_filesize' => ini_get('upload_max_filesize'),
             'php_post_max_size' => ini_get('post_max_size'),
         ];

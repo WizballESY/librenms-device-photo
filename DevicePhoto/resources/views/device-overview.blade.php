@@ -12,6 +12,73 @@
         return $photoUrlBase . '/' . rawurlencode($filename);
     };
 
+    $devicePhotoParseExifDate = function (?string $value): ?int {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y:m:d H:i:s', 'Y-m-d H:i:s', 'Y:m:d H:i:sP', 'Y-m-d H:i:sP'] as $format) {
+            $date = \DateTime::createFromFormat($format, $value);
+
+            if ($date instanceof \DateTime) {
+                return $date->getTimestamp();
+            }
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? null : $timestamp;
+    };
+
+    $devicePhotoTakenTimestamp = function (string $path) use ($devicePhotoParseExifDate): ?int {
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        if (! in_array($ext, ['jpg', 'jpeg'], true)) {
+            return null;
+        }
+
+        if (! function_exists('exif_read_data')) {
+            return null;
+        }
+
+        $exif = @exif_read_data($path, 'EXIF', true);
+
+        if (! is_array($exif)) {
+            return null;
+        }
+
+        $value = $exif['EXIF']['DateTimeOriginal']
+            ?? $exif['EXIF']['DateTimeDigitized']
+            ?? $exif['IFD0']['DateTime']
+            ?? null;
+
+        return $devicePhotoParseExifDate(is_string($value) ? $value : null);
+    };
+
+    $devicePhotoDateIso = function (?int $timestamp): ?string {
+        if (! $timestamp) {
+            return null;
+        }
+
+        return date(DATE_ATOM, $timestamp);
+    };
+
+    $devicePhotoDateData = function (string $path) use ($devicePhotoTakenTimestamp, $devicePhotoDateIso): array {
+        $fileDate = is_file($path) ? @filemtime($path) : null;
+        $takenDate = $devicePhotoTakenTimestamp($path);
+
+        return [
+            'photo_taken_iso' => $devicePhotoDateIso($takenDate),
+            'file_date_iso' => $devicePhotoDateIso($fileDate ?: null),
+        ];
+    };
+
     $extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
     $nameSource = null;
@@ -51,6 +118,8 @@
                     'filename' => $filename,
                     'url' => $photoUrlBase . '/' . rawurlencode($filename),
                     'thumb_url' => $devicePhotoThumbUrl($filename),
+                    'photo_taken_iso' => $devicePhotoDateData($path)['photo_taken_iso'],
+                    'file_date_iso' => $devicePhotoDateData($path)['file_date_iso'],
                 ];
             }
         }
@@ -64,6 +133,8 @@
                         'filename' => $filename,
                         'url' => $photoUrlBase . '/' . rawurlencode($filename),
                         'thumb_url' => $devicePhotoThumbUrl($filename),
+                        'photo_taken_iso' => $devicePhotoDateData($path)['photo_taken_iso'],
+                        'file_date_iso' => $devicePhotoDateData($path)['file_date_iso'],
                     ];
                 }
             }
@@ -167,6 +238,8 @@
             'filename' => $filename,
             'url' => $photoUrlBase . '/' . rawurlencode($filename),
             'thumb_url' => $devicePhotoThumbUrl($filename),
+            'photo_taken_iso' => $devicePhotoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
+            'file_date_iso' => $devicePhotoDateData($photoDir . '/' . $filename)['file_date_iso'],
             'linked' => true,
             'owner_device_id' => $ownerDeviceId,
             'owner_name' => $ownerDeviceNames[$ownerDeviceId] ?? ('device-' . $ownerDeviceId),
@@ -318,6 +391,9 @@
     }
 
     .device-photo-modal-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         position: relative;
         width: 96vw;
         height: 92vh;
@@ -397,6 +473,25 @@
         color: #777;
         font-size: 12px;
     }
+
+    .device-photo-overview-modal-meta {
+        display: none;
+        margin: 10px auto 0 auto;
+        width: fit-content;
+        max-width: 92vw;
+        padding: 7px 10px;
+        background: rgba(0,0,0,0.68);
+        color: #eee;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.35;
+        text-align: center;
+    }
+
+    .device-photo-overview-modal-meta span + span {
+        margin-left: 14px;
+    }
+
 </style>
 
 @if ($photoCount > 0)
@@ -418,7 +513,10 @@
 
         <div class="device-photo-grid">
             @foreach ($photos as $photo)
-                <div class="device-photo-card" onclick="openDevicePhotoModal{{ $device->device_id }}('{{ $photo['url'] }}')">
+                <div class="device-photo-card"
+                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
+                     onclick="openDevicePhotoModal{{ $device->device_id }}('{{ $photo['url'] }}', this)">
                     <img src="{{ $photo['thumb_url'] ?? $photo['url'] }}" alt="Device photo">
 
                     @if (!empty($photo['linked']))
@@ -451,6 +549,7 @@
 
         <div class="device-photo-modal-inner" onclick="event.stopPropagation();">
             <img id="{{ $modalId }}-img" src="" alt="Device photo" draggable="false">
+            <div id="{{ $modalId }}-meta" class="device-photo-overview-modal-meta"></div>
         </div>
     </div>
 
@@ -474,9 +573,30 @@
             zoomLabel.textContent = Math.round(s.scale * 100) + '%';
         }
 
-        function openDevicePhotoModal{{ $device->device_id }}(src) {
+        function formatDevicePhotoOverviewDate{{ $device->device_id }}(value) {
+            if (!value) {
+                return '';
+            }
+
+            var date = new Date(value);
+
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function openDevicePhotoModal{{ $device->device_id }}(src, sourceEl) {
             var modal = document.getElementById('{{ $modalId }}');
             var img = document.getElementById('{{ $modalId }}-img');
+            var meta = document.getElementById('{{ $modalId }}-meta');
             var s = devicePhotoState{{ $device->device_id }};
 
             s.scale = 1;
@@ -485,6 +605,26 @@
             s.dragging = false;
 
             img.src = src;
+
+            if (meta) {
+                var parts = [];
+                var takenIso = sourceEl ? sourceEl.getAttribute('data-device-photo-taken') : '';
+                var fileIso = sourceEl ? sourceEl.getAttribute('data-device-photo-file-date') : '';
+                var takenText = formatDevicePhotoOverviewDate{{ $device->device_id }}(takenIso);
+                var fileText = formatDevicePhotoOverviewDate{{ $device->device_id }}(fileIso);
+
+                if (takenText) {
+                    parts.push('<span><strong>Photo taken:</strong> ' + takenText + '</span>');
+                }
+
+                if (fileText) {
+                    parts.push('<span><strong>File date:</strong> ' + fileText + '</span>');
+                }
+
+                meta.innerHTML = parts.join('');
+                meta.style.display = parts.length > 0 ? 'block' : 'none';
+            }
+
             modal.classList.add('is-open');
             updateDevicePhotoTransform{{ $device->device_id }}();
         }
@@ -492,9 +632,15 @@
         function closeDevicePhotoModal{{ $device->device_id }}() {
             var modal = document.getElementById('{{ $modalId }}');
             var img = document.getElementById('{{ $modalId }}-img');
+            var meta = document.getElementById('{{ $modalId }}-meta');
 
             modal.classList.remove('is-open');
             img.src = '';
+
+            if (meta) {
+                meta.innerHTML = '';
+                meta.style.display = 'none';
+            }
         }
 
         function zoomDevicePhoto{{ $device->device_id }}(delta) {

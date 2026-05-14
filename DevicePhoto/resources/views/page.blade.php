@@ -65,6 +65,22 @@
             transition: transform 0.04s linear;
         }
 
+        .device-photo-preview-meta {
+            display: none;
+            margin-top: 10px;
+            padding: 7px 10px;
+            background: rgba(0,0,0,0.68);
+            color: #eee;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .device-photo-preview-meta span + span {
+            margin-left: 14px;
+        }
+
         .device-photo-preview-close {
             position: absolute;
             top: 14px;
@@ -128,6 +144,7 @@
 
         <div id="device-photo-preview-inner" class="device-photo-preview-modal-inner">
             <img id="device-photo-preview-img" src="" alt="Device photo" draggable="false">
+            <div id="device-photo-preview-meta" class="device-photo-preview-meta"></div>
         </div>
     </div>
 
@@ -141,6 +158,7 @@
             var zoomOut = document.getElementById('device-photo-preview-zoom-out');
             var resetBtn = document.getElementById('device-photo-preview-reset');
             var zoomLabel = document.getElementById('device-photo-preview-zoom-label');
+            var meta = document.getElementById('device-photo-preview-meta');
 
             if (!modal || !inner || !img) {
                 return;
@@ -168,8 +186,46 @@
                 updateTransform();
             }
 
-            function openPreview(src) {
+            function formatPreviewDate(value) {
+                if (!value) {
+                    return '';
+                }
+
+                var date = new Date(value);
+
+                if (isNaN(date.getTime())) {
+                    return '';
+                }
+
+                return date.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function openPreview(src, takenIso, fileIso) {
                 img.src = src;
+
+                if (meta) {
+                    var parts = [];
+                    var takenText = formatPreviewDate(takenIso);
+                    var fileText = formatPreviewDate(fileIso);
+
+                    if (takenText) {
+                        parts.push('<span><strong>Photo taken:</strong> ' + takenText + '</span>');
+                    }
+
+                    if (fileText) {
+                        parts.push('<span><strong>File date:</strong> ' + fileText + '</span>');
+                    }
+
+                    meta.innerHTML = parts.join('');
+                    meta.style.display = parts.length > 0 ? 'block' : 'none';
+                }
+
                 resetImage();
                 modal.classList.add('is-open');
             }
@@ -177,6 +233,12 @@
             function closePreview() {
                 modal.classList.remove('is-open');
                 img.src = '';
+
+                if (meta) {
+                    meta.innerHTML = '';
+                    meta.style.display = 'none';
+                }
+
                 resetImage();
             }
 
@@ -191,9 +253,11 @@
                 e.stopPropagation();
 
                 var src = el.getAttribute('data-device-photo-preview-src');
+                var takenIso = el.getAttribute('data-device-photo-taken') || '';
+                var fileIso = el.getAttribute('data-device-photo-file-date') || '';
 
                 if (src) {
-                    openPreview(src);
+                    openPreview(src, takenIso, fileIso);
                 }
             }, true);
 
@@ -622,7 +686,9 @@
                                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                                     @foreach ($row['owned_photos'] as $photo)
                                                         <a href="{{ $photo['url'] }}" data-device-photo-preview-src="{{ $photo['url'] }}" title="{{ $photo['filename'] }}">
-                                                            <img data-device-photo-preview-src="{{ $photo['url'] }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 54px; height: 42px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff;">
+                                                            <img data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 54px; height: 42px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff;">
                                                         </a>
                                                     @endforeach
                                                 </div>
@@ -913,7 +979,9 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
                         @foreach ($overview['orphaned_photos'] as $photo)
                             <div style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
-                                <img data-device-photo-preview-src="{{ $photo['url'] }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
+                                <img data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
                                 <div style="font-size: 12px;">
                                     <strong>{{ $photo['filename'] }}</strong><br>
                                     <span class="text-muted">Missing Device ID: {{ $photo['device_id'] }}</span>
@@ -1512,24 +1580,34 @@
                     </div>
 
                     <div class="text-muted" style="margin-top: 8px; font-size: 12px;">
-                        Allowed file types: jpg, jpeg, png, webp. Max file size: 10 MB per file.
+                        Allowed file types: jpg, jpeg, png, webp, heic, heif. Max file size: 10 MB per file.
                     </div>
 
                     <div class="alert alert-info" style="margin-top: 12px; margin-bottom: 0; font-size: 12px; padding: 8px 10px;">
-                        <strong>PHP upload limits:</strong>
-                        <span style="margin-left: 8px;">
-                            upload_max_filesize: <code>{{ $php_upload_max_filesize ?? 'unknown' }}</code>
-                        </span>
-                        <span style="margin-left: 8px;">
-                            post_max_size: <code>{{ $php_post_max_size ?? 'unknown' }}</code>
-                        </span>
-                        <span style="margin-left: 8px;">
-                            file_uploads: <code>{{ !empty($php_file_uploads) ? 'Enabled' : 'Disabled' }}</code>
-                        </span>
-                        <span style="margin-left: 8px;" class="text-muted">
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;">
+                            <strong style="margin-right: 4px;">Upload status:</strong>
+
+                            <span class="label label-info" title="PHP upload_max_filesize">
+                                upload_max_filesize: {{ $php_upload_max_filesize ?? 'unknown' }}
+                            </span>
+
+                            <span class="label label-info" title="PHP post_max_size">
+                                post_max_size: {{ $php_post_max_size ?? 'unknown' }}
+                            </span>
+
+                            <span class="label {{ !empty($php_file_uploads) ? 'label-success' : 'label-danger' }}" title="PHP file_uploads">
+                                file_uploads: {{ !empty($php_file_uploads) ? 'Enabled' : 'Disabled' }}
+                            </span>
+
+                            <span class="label {{ !empty($heic_conversion_available) ? 'label-success' : 'label-warning' }}" title="HEIC/HEIF files are converted to JPG during upload when available.">
+                                HEIC/HEIF: {{ !empty($heic_conversion_available) ? 'Available' : 'Not available' }}
+                            </span>
+                        </div>
+
+                        <div style="margin-top: 8px; color: #31708f;">
                             Webserver upload limit must also be high enough.
                             Examples: Nginx <code>client_max_body_size</code>, Apache <code>LimitRequestBody</code>.
-                        </span>
+                        </div>
                     </div>
                 </form>
                 @else
@@ -1597,6 +1675,14 @@
                             }
 
                             var dt = new DataTransfer();
+
+                            /*
+                             * Keep files already selected, then append newly dropped files.
+                             * This makes multiple drag/drop rounds work as expected.
+                             */
+                            Array.prototype.forEach.call(fileInput.files || [], function (file) {
+                                dt.items.add(file);
+                            });
 
                             Array.prototype.forEach.call(e.dataTransfer.files, function (file) {
                                 dt.items.add(file);
@@ -1815,7 +1901,31 @@
                     <div class="device-photo-manager-grid" id="device-photo-manager-grid">
                         @foreach ($photos as $photo)
                             <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}">
-                                <img data-device-photo-preview-src="{{ $photo['url'] }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" draggable="false">
+                                <img
+                                    data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
+                                    src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
+                                    draggable="false"
+                                >
+
+                                @if (!empty($photo['photo_taken_display']) || !empty($photo['file_date_display']))
+                                    <div class="text-muted" style="font-size: 12px; margin: -2px 0 8px 0; line-height: 1.35;">
+                                        @if (!empty($photo['photo_taken_display']))
+                                            <div>
+                                                <strong>Photo taken:</strong>
+                                                <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
+                                            </div>
+                                        @endif
+
+                                        @if (!empty($photo['file_date_display']))
+                                            <div title="File timestamp on the LibreNMS server. This may change if files are copied, restored or modified.">
+                                                <strong>File date:</strong>
+                                                <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['file_date_iso'] ?? '' }}">{{ $photo['file_date_display'] }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
 
                                 @if (!empty($photo['linked_to']))
                                     <div class="alert alert-warning" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
@@ -1918,6 +2028,50 @@
                             </div>
                         @endforeach
                     </div>
+
+                    <script>
+                        (function () {
+                            function formatDevicePhotoDates() {
+                                document.querySelectorAll('.device-photo-local-date[data-device-photo-date]').forEach(function (el) {
+                                    var value = el.getAttribute('data-device-photo-date');
+
+                                    if (!value) {
+                                        return;
+                                    }
+
+                                    var date = new Date(value);
+
+                                    if (isNaN(date.getTime())) {
+                                        return;
+                                    }
+
+                                    var format = el.getAttribute('data-device-photo-format') || 'datetime';
+
+                                    if (format === 'date') {
+                                        el.textContent = date.toLocaleDateString(undefined, {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit'
+                                        });
+                                    } else {
+                                        el.textContent = date.toLocaleString(undefined, {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    }
+                                });
+                            }
+
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', formatDevicePhotoDates);
+                            } else {
+                                formatDevicePhotoDates();
+                            }
+                        })();
+                    </script>
 
                     @if ($can_reorder)
                     <script>
@@ -2095,6 +2249,8 @@
                                     <div style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                         <img
                                             data-device-photo-preview-src="{{ $ownerPhoto['url'] }}"
+                                    data-device-photo-taken="{{ $ownerPhoto['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $ownerPhoto['file_date_iso'] ?? '' }}"
                                             src="{{ $ownerPhoto['thumb_url'] ?? $ownerPhoto['url'] }}"
                                             style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                         >
@@ -2132,6 +2288,8 @@
                             <div style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img
                                     data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
                                     src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
                                     style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                 >
