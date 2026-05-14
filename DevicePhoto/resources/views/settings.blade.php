@@ -64,8 +64,5 @@
     </form>
     <hr>
 
-    <div class="text-muted" style="font-size: 12px; margin: 18px 0 8px 0;">
-        <i class="fa fa-camera"></i>
-        Device Photo plugin for LibreNMS · Created by Tom Stian Bjerk · GitHub: coming soon
-    </div>
+    @include('DevicePhoto::resources.views.partials.footer')
 </div>

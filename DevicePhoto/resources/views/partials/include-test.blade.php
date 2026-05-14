@@ -1,0 +1,1 @@
+{{-- DevicePhoto include test OK --}}

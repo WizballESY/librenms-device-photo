@@ -250,6 +250,8 @@
     $modalId = 'device-photo-modal-' . $device->device_id;
 @endphp
 
+@include('DevicePhoto::resources.views.partials.photo-modal')
+
 <style>
     .device-photo-wrapper {
         background: #f3f3f3;
@@ -474,23 +476,6 @@
         font-size: 12px;
     }
 
-    .device-photo-overview-modal-meta {
-        display: none;
-        margin: 10px auto 0 auto;
-        width: fit-content;
-        max-width: 92vw;
-        padding: 7px 10px;
-        background: rgba(0,0,0,0.68);
-        color: #eee;
-        border-radius: 6px;
-        font-size: 12px;
-        line-height: 1.35;
-        text-align: center;
-    }
-
-    .device-photo-overview-modal-meta span + span {
-        margin-left: 14px;
-    }
 
 </style>
 
@@ -514,9 +499,9 @@
         <div class="device-photo-grid">
             @foreach ($photos as $photo)
                 <div class="device-photo-card"
+                     data-device-photo-preview-src="{{ $photo['url'] }}"
                      data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
-                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
-                     onclick="openDevicePhotoModal{{ $device->device_id }}('{{ $photo['url'] }}', this)">
+                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}">
                     <img src="{{ $photo['thumb_url'] ?? $photo['url'] }}" alt="Device photo">
 
                     @if (!empty($photo['linked']))
@@ -537,220 +522,7 @@
         </div>
     </div>
 
-    <div id="{{ $modalId }}" class="device-photo-modal" onclick="closeDevicePhotoModal{{ $device->device_id }}()">
-        <button class="device-photo-modal-close" onclick="closeDevicePhotoModal{{ $device->device_id }}()" type="button">&times;</button>
 
-        <div class="device-photo-toolbar" onclick="event.stopPropagation();">
-            <button type="button" onclick="zoomDevicePhoto{{ $device->device_id }}(-0.25)">−</button>
-            <span id="{{ $modalId }}-zoom">100%</span>
-            <button type="button" onclick="zoomDevicePhoto{{ $device->device_id }}(0.25)">+</button>
-            <button type="button" onclick="resetDevicePhotoZoom{{ $device->device_id }}()">Reset</button>
-        </div>
-
-        <div class="device-photo-modal-inner" onclick="event.stopPropagation();">
-            <img id="{{ $modalId }}-img" src="" alt="Device photo" draggable="false">
-            <div id="{{ $modalId }}-meta" class="device-photo-overview-modal-meta"></div>
-        </div>
-    </div>
-
-    <script>
-        var devicePhotoState{{ $device->device_id }} = {
-            scale: 1,
-            x: 0,
-            y: 0,
-            dragging: false,
-            startX: 0,
-            startY: 0
-        };
-
-        function updateDevicePhotoTransform{{ $device->device_id }}() {
-            var modalId = '{{ $modalId }}';
-            var img = document.getElementById(modalId + '-img');
-            var zoomLabel = document.getElementById(modalId + '-zoom');
-            var s = devicePhotoState{{ $device->device_id }};
-
-            img.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.scale + ')';
-            zoomLabel.textContent = Math.round(s.scale * 100) + '%';
-        }
-
-        function formatDevicePhotoOverviewDate{{ $device->device_id }}(value) {
-            if (!value) {
-                return '';
-            }
-
-            var date = new Date(value);
-
-            if (isNaN(date.getTime())) {
-                return '';
-            }
-
-            return date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        function openDevicePhotoModal{{ $device->device_id }}(src, sourceEl) {
-            var modal = document.getElementById('{{ $modalId }}');
-            var img = document.getElementById('{{ $modalId }}-img');
-            var meta = document.getElementById('{{ $modalId }}-meta');
-            var s = devicePhotoState{{ $device->device_id }};
-
-            s.scale = 1;
-            s.x = 0;
-            s.y = 0;
-            s.dragging = false;
-
-            img.src = src;
-
-            if (meta) {
-                var parts = [];
-                var takenIso = sourceEl ? sourceEl.getAttribute('data-device-photo-taken') : '';
-                var fileIso = sourceEl ? sourceEl.getAttribute('data-device-photo-file-date') : '';
-                var takenText = formatDevicePhotoOverviewDate{{ $device->device_id }}(takenIso);
-                var fileText = formatDevicePhotoOverviewDate{{ $device->device_id }}(fileIso);
-
-                if (takenText) {
-                    parts.push('<span><strong>Photo taken:</strong> ' + takenText + '</span>');
-                }
-
-                if (fileText) {
-                    parts.push('<span><strong>File date:</strong> ' + fileText + '</span>');
-                }
-
-                meta.innerHTML = parts.join('');
-                meta.style.display = parts.length > 0 ? 'block' : 'none';
-            }
-
-            modal.classList.add('is-open');
-            updateDevicePhotoTransform{{ $device->device_id }}();
-        }
-
-        function closeDevicePhotoModal{{ $device->device_id }}() {
-            var modal = document.getElementById('{{ $modalId }}');
-            var img = document.getElementById('{{ $modalId }}-img');
-            var meta = document.getElementById('{{ $modalId }}-meta');
-
-            modal.classList.remove('is-open');
-            img.src = '';
-
-            if (meta) {
-                meta.innerHTML = '';
-                meta.style.display = 'none';
-            }
-        }
-
-        function zoomDevicePhoto{{ $device->device_id }}(delta) {
-            var s = devicePhotoState{{ $device->device_id }};
-            s.scale = Math.max(0.5, Math.min(5, s.scale + delta));
-
-            if (s.scale <= 1) {
-                s.x = 0;
-                s.y = 0;
-            }
-
-            updateDevicePhotoTransform{{ $device->device_id }}();
-        }
-
-        function resetDevicePhotoZoom{{ $device->device_id }}() {
-            var s = devicePhotoState{{ $device->device_id }};
-            s.scale = 1;
-            s.x = 0;
-            s.y = 0;
-            updateDevicePhotoTransform{{ $device->device_id }}();
-        }
-
-        (function () {
-            var modalId = '{{ $modalId }}';
-            var modal = document.getElementById(modalId);
-            var img = document.getElementById(modalId + '-img');
-            var s = devicePhotoState{{ $device->device_id }};
-
-            modal.addEventListener('wheel', function (e) {
-                if (!modal.classList.contains('is-open')) {
-                    return;
-                }
-
-                e.preventDefault();
-
-                var delta = e.deltaY < 0 ? 0.15 : -0.15;
-                s.scale = Math.max(0.5, Math.min(5, s.scale + delta));
-
-                if (s.scale <= 1) {
-                    s.x = 0;
-                    s.y = 0;
-                }
-
-                updateDevicePhotoTransform{{ $device->device_id }}();
-            }, { passive: false });
-
-            img.addEventListener('mousedown', function (e) {
-                if (s.scale <= 1) {
-                    return;
-                }
-
-                s.dragging = true;
-                s.startX = e.clientX - s.x;
-                s.startY = e.clientY - s.y;
-                img.classList.add('is-dragging');
-                e.preventDefault();
-            });
-
-            window.addEventListener('mousemove', function (e) {
-                if (!s.dragging) {
-                    return;
-                }
-
-                s.x = e.clientX - s.startX;
-                s.y = e.clientY - s.startY;
-                updateDevicePhotoTransform{{ $device->device_id }}();
-            });
-
-            window.addEventListener('mouseup', function () {
-                s.dragging = false;
-                img.classList.remove('is-dragging');
-            });
-
-            img.addEventListener('dblclick', function () {
-                resetDevicePhotoZoom{{ $device->device_id }}();
-            });
-
-            /*
-             * Close modal with ESC.
-             */
-            document.addEventListener('keydown', function (e) {
-                var modal = document.getElementById('{{ $modalId }}');
-
-                if (e.key === 'Escape' && modal.classList.contains('is-open')) {
-                    closeDevicePhotoModal{{ $device->device_id }}();
-                }
-            });
-
-            /*
-             * Close modal when clicking outside the image.
-             * The dark area is usually covered by .device-photo-modal-inner,
-             * so we check both the modal and the inner container.
-             */
-            var inner = modal.querySelector('.device-photo-modal-inner');
-
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) {
-                    closeDevicePhotoModal{{ $device->device_id }}();
-                }
-            });
-
-            if (inner) {
-                inner.addEventListener('click', function (e) {
-                    if (e.target === inner) {
-                        closeDevicePhotoModal{{ $device->device_id }}();
-                    }
-                });
-            }
-        })();
-    </script>
 @else
     <div class="device-photo-wrapper">
         <div class="device-photo-header">
