@@ -109,12 +109,15 @@ rsync -av --delete html/plugins/DevicePhoto/ /opt/librenms/html/plugins/DevicePh
 
 ### 1. Create storage directories
 
-The plugin stores uploaded photos and metadata under `storage/app`.
+The plugin stores uploaded photos, thumbnails, deleted photos and local metadata under `storage/app`.
 
 ```bash
 cd /opt/librenms
 
-mkdir -p storage/app/device-photos/{thumbs,deleted/thumbs}
+mkdir -p storage/app/device-photos
+mkdir -p storage/app/device-photos/thumbs
+mkdir -p storage/app/device-photos/deleted
+mkdir -p storage/app/device-photos/deleted/thumbs
 mkdir -p storage/app/device-photos-order
 mkdir -p storage/app/device-photos-links
 ```
