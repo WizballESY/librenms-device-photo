@@ -65,12 +65,18 @@ Adjust paths if your LibreNMS installation is not located in `/opt/librenms`.
 
 ### Option A: Install from release archive
 
-Download the latest release archive from GitHub Releases.
+Download the latest release archive from GitHub Releases:
 
-Example using a tar archive:
+```text
+https://github.com/WizballESY/librenms-device-photo/releases
+```
+
+Example using the `v0.1.0-alpha.1` tar archive:
 
 ```bash
 cd /tmp
+
+wget https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.1/librenms-device-photo-v0.1.0-alpha.1.tar.gz
 
 tar xzf librenms-device-photo-v0.1.0-alpha.1.tar.gz
 
@@ -82,6 +88,12 @@ cp -a /tmp/librenms-device-photo-v0.1.0-alpha.1/html/plugins/DevicePhoto html/pl
 ```
 
 Then continue with storage directory creation, permissions and cache clearing below.
+
+The same release is also available as a ZIP archive:
+
+```text
+https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.1/librenms-device-photo-v0.1.0-alpha.1.zip
+```
 
 ### Option B: Install from Git clone
 
