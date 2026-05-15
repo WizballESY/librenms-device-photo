@@ -16,7 +16,7 @@ The plugin adds:
 
 This plugin is currently in **alpha**.
 
-It is under active development and may contain bugs or breaking changes. It is not recommended for production use unless you have tested it thoroughly in your own environment.
+It is under active development and may contain bugs, incomplete documentation, incorrect instructions or breaking changes. It is not recommended for production use unless you have tested it thoroughly in your own environment.
 
 > **Alpha notice**
 >
