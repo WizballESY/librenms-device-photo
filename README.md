@@ -886,6 +886,14 @@ A user who is not logged in should be redirected to the LibreNMS login page.
 
 ---
 
+### Photo access permissions
+
+Device Photo currently uses LibreNMS `global-read` permission for photo viewing.
+
+It does not currently enforce per-device access restrictions on photo files. This means that a LibreNMS user with `global-read` access may be able to view plugin photos if they know the photo URL.
+
+Deleted photo access requires the configured delete role.
+
 ## Security notes
 
 - Uploaded photos may contain sensitive infrastructure information.
