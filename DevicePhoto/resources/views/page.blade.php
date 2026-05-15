@@ -1775,6 +1775,10 @@
                             <span class="label {{ !empty($heic_conversion_available) ? 'label-success' : 'label-warning' }}" title="HEIC/HEIF files are converted to JPG during upload when available.">
                                 HEIC/HEIF: {{ !empty($heic_conversion_available) ? 'Available' : 'Not available' }}
                             </span>
+
+                            <span class="label {{ !empty($exiftool_available) ? 'label-success' : 'label-warning' }}" title="ExifTool is used to write Photo taken metadata back to JPG/JPEG files.">
+                                ExifTool: {{ !empty($exiftool_available) ? 'Available' : 'Not available' }}
+                            </span>
                         </div>
 
                         <div style="margin-top: 8px; color: #31708f;">
@@ -2082,23 +2086,26 @@
                                     draggable="false"
                                 >
 
-                                @if (!empty($photo['photo_taken_display']) || !empty($photo['file_date_display']))
-                                    <div class="text-muted" style="font-size: 12px; margin: -2px 0 8px 0; line-height: 1.35;">
-                                        @if (!empty($photo['photo_taken_display']))
-                                            <div>
-                                                <strong>Photo taken:</strong>
-                                                <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
-                                            </div>
-                                        @endif
+                                <div class="text-muted" style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
+                                    @if (!empty($photo['photo_taken_display']))
+                                        <div>
+                                            <strong>Photo taken:</strong>
+                                            <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
+                                        </div>
+                                    @endif
 
-                                        @if (!empty($photo['file_date_display']))
-                                            <div title="File timestamp on the LibreNMS server. This may change if files are copied, restored or modified.">
-                                                <strong>File date:</strong>
-                                                <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['file_date_iso'] ?? '' }}">{{ $photo['file_date_display'] }}</span>
-                                            </div>
-                                        @endif
+                                    @if (!empty($photo['file_date_display']))
+                                        <div title="File timestamp on the LibreNMS server. This may change if files are copied, restored or modified.">
+                                            <strong>File date:</strong>
+                                            <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['file_date_iso'] ?? '' }}">{{ $photo['file_date_display'] }}</span>
+                                        </div>
+                                    @endif
+
+                                    <div title="Stored filename on the LibreNMS server.">
+                                        <strong>Filename:</strong>
+                                        <span>{{ $photo['filename'] }}</span>
                                     </div>
-                                @endif
+                                </div>
 
                                 @if (!empty($photo['linked_to']))
                                     <div class="alert alert-warning" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
@@ -2146,6 +2153,28 @@
                                 <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
                                     <i class="fa fa-download"></i> Download
                                 </a>
+
+                                @php
+                                    $devicePhotoCanWriteExif = !empty($exiftool_available) && preg_match('/\\.(jpe?g)$/i', $photo['filename']);
+                                @endphp
+
+                                @if ($can_upload && $devicePhotoCanWriteExif)
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-sm btn-block device-photo-set-taken-button"
+                                        style="margin-bottom: 8px;"
+                                        data-filename="{{ $photo['filename'] }}"
+                                        data-photo-taken="{{ !empty($photo['photo_taken_iso']) ? substr($photo['photo_taken_iso'], 0, 16) : '' }}"
+                                        data-device-id="{{ $device->device_id }}"
+                                        title="Write Photo taken to EXIF metadata"
+                                    >
+                                        <i class="fa fa-clock-o"></i> Set photo taken
+                                    </button>
+                                @elseif ($can_upload && empty($exiftool_available) && preg_match('/\\.(jpe?g)$/i', $photo['filename']))
+                                    <div class="text-muted" style="font-size: 12px; margin-bottom: 8px;">
+                                        <i class="fa fa-clock-o"></i> Photo taken editing requires ExifTool.
+                                    </div>
+                                @endif
 
                                 @if ($can_upload)
                                 <div class="text-muted" style="font-size: 12px; margin-bottom: 4px;">
@@ -2516,6 +2545,106 @@
         @endif
     @endif
     @endif
+
+    <div id="device-photo-set-taken-modal" class="device-photo-confirm-backdrop">
+        <div class="device-photo-confirm-box" style="max-width: 460px; padding-bottom: 18px;">
+            <h4 style="margin-top: 0;">
+                <i class="fa fa-clock-o"></i> Set photo taken
+            </h4>
+
+            <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px; margin-bottom: 12px;">
+                <strong>Warning:</strong>
+                This writes the selected date/time back to the JPG/JPEG EXIF metadata in the original photo file.
+            </div>
+
+            <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" id="device-photo-set-taken-form">
+                @csrf
+                <input type="hidden" name="action" value="set_photo_taken">
+                <input type="hidden" name="device_id" id="device-photo-set-taken-device-id" value="{{ $device ? $device->device_id : 0 }}">
+                <input type="hidden" name="filename" id="device-photo-set-taken-filename" value="">
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px;">
+                    <button type="button" class="btn btn-default btn-sm" id="device-photo-set-taken-cancel">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa fa-save"></i> Save photo date
+                    </button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="device-photo-set-taken-input" style="font-size: 12px;">Photo taken</label>
+                    <input
+                        type="datetime-local"
+                        name="photo_taken"
+                        id="device-photo-set-taken-input"
+                        class="form-control input-sm"
+                        required
+                    >
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('device-photo-set-taken-modal');
+            var form = document.getElementById('device-photo-set-taken-form');
+            var filenameInput = document.getElementById('device-photo-set-taken-filename');
+            var deviceInput = document.getElementById('device-photo-set-taken-device-id');
+            var dateInput = document.getElementById('device-photo-set-taken-input');
+            var cancelButton = document.getElementById('device-photo-set-taken-cancel');
+
+            if (!modal || !form || !filenameInput || !dateInput) {
+                return;
+            }
+
+            function closeModal() {
+                modal.style.display = 'none';
+                filenameInput.value = '';
+                dateInput.value = '';
+            }
+
+            document.querySelectorAll('.device-photo-set-taken-button').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    filenameInput.value = button.getAttribute('data-filename') || '';
+                    dateInput.value = button.getAttribute('data-photo-taken') || '';
+
+                    if (deviceInput) {
+                        deviceInput.value = button.getAttribute('data-device-id') || deviceInput.value;
+                    }
+
+                    modal.style.display = 'flex';
+
+                    setTimeout(function () {
+                        dateInput.focus();
+                    }, 50);
+                });
+            });
+            if (dateInput && typeof dateInput.showPicker === 'function') {
+                dateInput.addEventListener('click', function () {
+                    dateInput.showPicker();
+                });
+            }
+
+            if (cancelButton) {
+                cancelButton.addEventListener('click', closeModal);
+            }
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+
     <hr>
 
     @include('DevicePhoto::resources.views.partials.footer')

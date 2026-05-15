@@ -417,6 +417,11 @@ class Page extends PageHook
         return false;
     }
 
+    private function exifToolAvailable(): bool
+    {
+        return (bool) $this->findBinary('exiftool');
+    }
+
     private function parseExifDate(?string $value): ?int
     {
         $value = trim((string) $value);
@@ -528,6 +533,7 @@ class Page extends PageHook
             'thumbnails_generated' => 'Missing thumbnails were generated.',
             'thumbnails_cleaned' => 'Stale thumbnails were removed.',
             'thumbnails_none_missing' => 'No missing thumbnails found.',
+            'photo_taken_updated' => 'Photo taken date was written to EXIF metadata.',
         ];
 
         $errors = [
@@ -545,6 +551,10 @@ class Page extends PageHook
             'not_found' => 'Photo not found.',
             'delete_failed' => 'Could not delete photo.',
             'permission_denied' => 'You do not have permission to perform that action.',
+            'exiftool_unavailable' => 'ExifTool is not available on this server.',
+            'photo_taken_unsupported_type' => 'Photo taken can only be written to JPG/JPEG files.',
+            'invalid_photo_taken' => 'Invalid Photo taken date/time.',
+            'photo_taken_failed' => 'Could not write Photo taken metadata.',
             'unknown_action' => 'Unknown action.',
         ];
 
@@ -793,6 +803,7 @@ class Page extends PageHook
             'global_photo_overview' => $globalOverview,
             'php_file_uploads' => ini_get('file_uploads'),
             'heic_conversion_available' => $this->heicConversionAvailable(),
+            'exiftool_available' => $this->exifToolAvailable(),
             'php_upload_max_filesize' => ini_get('upload_max_filesize'),
             'php_post_max_size' => ini_get('post_max_size'),
         ];
