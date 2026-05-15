@@ -2,13 +2,20 @@
     $photoDir = storage_path('app/device-photos');
     $thumbDir = storage_path('app/device-photos/thumbs');
 
-    $devicePhotoPhotoUrl = function (string $filename): string {
-        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename);
+    $devicePhotoPhotoUrl = function (string $filename) use ($photoDir): string {
+        $path = $photoDir . '/' . $filename;
+        $version = is_file($path) ? (string) @filemtime($path) : '0';
+
+        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
     };
 
     $devicePhotoThumbUrl = function (string $filename) use ($thumbDir, $devicePhotoPhotoUrl): string {
-        if (is_file($thumbDir . '/' . $filename)) {
-            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename);
+        $thumbPath = $thumbDir . '/' . $filename;
+
+        if (is_file($thumbPath)) {
+            $version = (string) @filemtime($thumbPath);
+
+            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
         }
 
         return $devicePhotoPhotoUrl($filename);
@@ -81,7 +88,7 @@
         ];
     };
 
-    $extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    $extensions = ['jpg', 'jpeg', 'png', 'webp'];
 
     $nameSource = null;
 
@@ -111,21 +118,6 @@
     $photos = [];
 
     if (!empty($safeShortName) && is_dir($photoDir)) {
-        foreach ($extensions as $ext) {
-            $filename = $safeShortName . '.' . $ext;
-            $path = $photoDir . '/' . $filename;
-
-            if (is_file($path)) {
-                $photos[$filename] = [
-                    'filename' => $filename,
-                    'url' => $devicePhotoPhotoUrl($filename),
-                    'thumb_url' => $devicePhotoThumbUrl($filename),
-                    'photo_taken_iso' => $devicePhotoDateData($path)['photo_taken_iso'],
-                    'file_date_iso' => $devicePhotoDateData($path)['file_date_iso'],
-                ];
-            }
-        }
-
         foreach ($extensions as $ext) {
             foreach (glob($photoDir . '/' . $safeShortName . '-*.' . $ext) ?: [] as $path) {
                 $filename = basename($path);

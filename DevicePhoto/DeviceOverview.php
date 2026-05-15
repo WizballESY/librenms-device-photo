@@ -8,7 +8,7 @@ class DeviceOverview extends DeviceOverviewHook
 {
     public function authorize(\Illuminate\Contracts\Auth\Authenticatable $user, \App\Models\Device $device): bool
     {
-        return true;
+        return $user->can('global-read');
     }
 
     private function allowedRoles(array $settings, string $key): array

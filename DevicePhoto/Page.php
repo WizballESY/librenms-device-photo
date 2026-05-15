@@ -9,7 +9,7 @@ class Page extends PageHook
 {
     public function authorize(\Illuminate\Contracts\Auth\Authenticatable $user): bool
     {
-        return true;
+        return $user->can('global-read');
     }
 
     private function allowedRoles(array $settings, string $key): array
@@ -371,7 +371,10 @@ class Page extends PageHook
 
     private function photoUrl(string $filename): string
     {
-        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename);
+        $path = storage_path('app/device-photos/' . $filename);
+        $version = is_file($path) ? (string) @filemtime($path) : '0';
+
+        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
     }
 
     private function thumbUrl(string $filename): string
@@ -379,7 +382,9 @@ class Page extends PageHook
         $thumbPath = storage_path('app/device-photos/thumbs/' . $filename);
 
         if (is_file($thumbPath)) {
-            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename);
+            $version = (string) @filemtime($thumbPath);
+
+            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
         }
 
         return $this->photoUrl($filename);
@@ -545,6 +550,7 @@ class Page extends PageHook
             'heic_convert_failed' => 'HEIC/HEIF conversion failed.',
             'too_large' => 'Maximum file size is 10 MB.',
             'invalid_image' => 'The uploaded file does not look like a valid image.',
+            'image_too_large_pixels' => 'The uploaded image dimensions are too large. Maximum is 40 megapixels.',
             'invalid_filename' => 'Invalid filename.',
             'invalid_order' => 'Invalid photo order.',
             'invalid_target_device' => 'Invalid target device.',

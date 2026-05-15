@@ -83,6 +83,16 @@ if (strtoupper((string) $request->method()) === 'GET') {
     if ($imageAction === 'deleted_thumb') {
         devicephoto_send_image_file(devicephoto_deleted_thumbs_dir(), $filename);
     }
+
+    http_response_code(405);
+    echo 'Method not allowed';
+    exit;
+}
+
+if (strtoupper((string) $request->method()) !== 'POST') {
+    http_response_code(405);
+    echo 'Method not allowed';
+    exit;
 }
 
 function devicephoto_settings(): array
@@ -205,7 +215,7 @@ function devicephoto_save_links(int $targetDeviceId, array $links): void
         return;
     }
 
-    file_put_contents($file, json_encode(array_values($clean), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    file_put_contents($file, json_encode(array_values($clean), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     @chmod($file, 0664);
 }
 
@@ -342,7 +352,10 @@ function devicephoto_convert_heic_to_jpeg(string $sourcePath, string $targetPath
         return false;
     }
 
-    $cmd = escapeshellcmd($magick)
+    $cmd = escapeshellarg($magick)
+        . ' -limit memory 256MiB'
+        . ' -limit map 512MiB'
+        . ' -limit time 30'
         . ' '
         . escapeshellarg($sourcePath . '[0]')
         . ' '
@@ -621,7 +634,7 @@ function devicephoto_save_order(string $safeShortName, array $order): void
 
     $order = array_values(array_unique(array_filter($order, 'is_string')));
 
-    file_put_contents($file, json_encode($order, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    file_put_contents($file, json_encode($order, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     @chmod($file, 0664);
 }
 
@@ -751,6 +764,14 @@ if ($action === 'delete' && ! devicephoto_user_can_action($user, $settings, 'del
     devicephoto_redirect($deviceId, 'permission_denied');
 }
 
+if ($action === 'add_link' && ! devicephoto_user_can_action($user, $settings, 'upload_roles')) {
+    devicephoto_redirect($deviceId, 'permission_denied');
+}
+
+if ($action === 'remove_link' && ! devicephoto_user_can_action($user, $settings, 'delete_roles')) {
+    devicephoto_redirect($deviceId, 'permission_denied');
+}
+
 if ($action === 'save_order' && ! devicephoto_user_can_action($user, $settings, 'reorder_roles')) {
     devicephoto_redirect($deviceId, 'permission_denied');
 }
@@ -787,8 +808,10 @@ if ($action === 'set_photo_taken') {
     $filename = basename((string) $request->input('filename', ''));
     $photoTakenInput = (string) $request->input('photo_taken', '');
 
-    if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg)$/i', $filename)) {
-        devicephoto_redirect($deviceId, 'photo_taken_unsupported_type');
+    $pattern = '/^' . preg_quote($safeShortName, '/') . '-\d+\.(jpg|jpeg)$/i';
+
+    if (! preg_match($pattern, $filename)) {
+        devicephoto_redirect($deviceId, 'invalid_filename');
     }
 
     if (! is_file($photoDir . '/' . $filename)) {
@@ -1166,8 +1189,20 @@ if ($action === 'upload') {
 
         $isHeicUpload = in_array($ext, ['heic', 'heif'], true);
 
-        if (! $isHeicUpload && @getimagesize($file->getRealPath()) === false) {
-            devicephoto_redirect($deviceId, 'invalid_image');
+        if (! $isHeicUpload) {
+            $imageInfo = @getimagesize($file->getRealPath());
+
+            if ($imageInfo === false || empty($imageInfo[0]) || empty($imageInfo[1])) {
+                devicephoto_redirect($deviceId, 'invalid_image');
+            }
+
+            $imageWidth = (int) $imageInfo[0];
+            $imageHeight = (int) $imageInfo[1];
+            $imagePixels = $imageWidth * $imageHeight;
+
+            if ($imageWidth < 1 || $imageHeight < 1 || $imagePixels > 40000000) {
+                devicephoto_redirect($deviceId, 'image_too_large_pixels');
+            }
         }
 
         if ($isHeicUpload && ! devicephoto_heic_conversion_available()) {
