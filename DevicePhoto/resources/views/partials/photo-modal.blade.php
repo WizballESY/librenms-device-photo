@@ -15,13 +15,14 @@
     }
 
     .device-photo-shared-modal-inner {
-        max-width: 96vw;
-        max-height: 92vh;
+        width: 96vw;
+        height: 92vh;
         overflow: hidden;
         cursor: grab;
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
     }
 
     .device-photo-shared-modal-inner.dragging {
