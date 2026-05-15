@@ -29,25 +29,25 @@ It is under active development and may contain bugs, incomplete documentation, i
 ### Device Photos widget
 
 <p>
-  <img src="docs/screenshots/device-photos.png" alt="Device Photos widget" width="750">
+  <img src="docs/screenshots/device-photos.png" alt="Device Photos widget" width="550">
 </p>
 
 ### Fullscreen photo viewer
 
 <p>
-  <img src="docs/screenshots/photo-fullscreen.png" alt="Fullscreen photo viewer" width="850">
+  <img src="docs/screenshots/photo-fullscreen.png" alt="Fullscreen photo viewer" width="650">
 </p>
 
 ### Manage Device Photos
 
 <p>
-  <img src="docs/screenshots/manage-device-photos.png" alt="Manage Device Photos" width="850">
+  <img src="docs/screenshots/manage-device-photos.png" alt="Manage Device Photos" width="650">
 </p>
 
 ### Device Photos Overview
 
 <p>
-  <img src="docs/screenshots/device-photos-overview.png" alt="Device Photos Overview" width="850">
+  <img src="docs/screenshots/device-photos-overview.png" alt="Device Photos Overview" width="650">
 </p>
 
 ## Features
