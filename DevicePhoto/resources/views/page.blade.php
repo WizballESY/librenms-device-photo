@@ -1,6 +1,9 @@
 <div class="container-fluid">
     <h2 style="margin-bottom: 14px;">
         {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Manage Device Photos' }}
+        <span class="label label-warning" title="This plugin is currently in alpha. Features may change and bugs may exist." style="font-size: 11px; vertical-align: middle; margin-left: 8px;">
+            ALPHA
+        </span>
     </h2>
 
     @if ($device)
