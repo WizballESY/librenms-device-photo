@@ -419,7 +419,7 @@
                 @elseif (empty($overview['thumb_dir_writable']))
                     <div class="alert alert-danger" style="font-size: 12px; padding: 8px 10px;">
                         <strong>Thumbnail folder is not writable:</strong>
-                        Check permissions on <code>html/device-photos/thumbs</code>.
+                        Check permissions on <code>storage/app/device-photos/thumbs</code>.
                     </div>
                 @elseif (($overview['missing_thumbnail_count'] ?? 0) > 0)
                     <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
@@ -457,13 +457,27 @@
                     </div>
                 @endif
 
-                <input
-                    type="text"
-                    id="device-photo-overview-filter"
-                    class="form-control"
-                    placeholder="Filter by Device ID, device name or filename"
-                    style="max-width: 520px; margin-bottom: 14px;"
-                >
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px;">
+                    <input
+                        type="text"
+                        id="device-photo-overview-filter"
+                        class="form-control"
+                        placeholder="Filter by Device ID, device name or filename"
+                        style="max-width: 520px;"
+                    >
+
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span class="text-muted" style="font-size: 12px;">Show</span>
+                        <select id="device-photo-overview-page-size" class="form-control input-sm" style="width: auto;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="all">All</option>
+                        </select>
+                        <span class="text-muted" style="font-size: 12px;">per page</span>
+                    </div>
+                </div>
 
                 <h4>Devices with photos or links</h4>
 
@@ -611,6 +625,18 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    <div id="device-photo-overview-pagination" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin: 10px 0 0 0;">
+                        <span id="device-photo-overview-page-info" class="text-muted" style="font-size: 12px;"></span>
+
+                        <button type="button" class="btn btn-default btn-xs" id="device-photo-overview-prev">
+                            <i class="fa fa-chevron-left"></i> Previous
+                        </button>
+
+                        <button type="button" class="btn btn-default btn-xs" id="device-photo-overview-next">
+                            Next <i class="fa fa-chevron-right"></i>
+                        </button>
                     </div>
                 @endif
 
@@ -1060,6 +1086,167 @@
         <script>
             (function () {
                 var input = document.getElementById('device-photo-overview-filter');
+                var pageSizeSelect = document.getElementById('device-photo-overview-page-size');
+                var prevButton = document.getElementById('device-photo-overview-prev');
+                var nextButton = document.getElementById('device-photo-overview-next');
+                var pageInfo = document.getElementById('device-photo-overview-page-info');
+                var pagination = document.getElementById('device-photo-overview-pagination');
+
+                var currentPage = 1;
+                var openLinkRows = {};
+                var pageSizeStorageKey = 'devicePhotoOverviewPageSize';
+
+                function loadSavedPageSize() {
+                    if (!pageSizeSelect) {
+                        return;
+                    }
+
+                    try {
+                        var saved = window.localStorage.getItem(pageSizeStorageKey);
+
+                        if (!saved) {
+                            return;
+                        }
+
+                        var option = pageSizeSelect.querySelector('option[value="' + saved + '"]');
+
+                        if (option) {
+                            pageSizeSelect.value = saved;
+                        }
+                    } catch (e) {
+                        // Ignore localStorage errors.
+                    }
+                }
+
+                function savePageSize() {
+                    if (!pageSizeSelect) {
+                        return;
+                    }
+
+                    try {
+                        window.localStorage.setItem(pageSizeStorageKey, pageSizeSelect.value);
+                    } catch (e) {
+                        // Ignore localStorage errors.
+                    }
+                }
+
+                function mainRows() {
+                    return Array.prototype.slice.call(document.querySelectorAll('tr[data-device-photo-row]'));
+                }
+
+                function getPageSize() {
+                    if (!pageSizeSelect || pageSizeSelect.value === 'all') {
+                        return 'all';
+                    }
+
+                    var size = parseInt(pageSizeSelect.value, 10);
+
+                    return isNaN(size) || size < 1 ? 25 : size;
+                }
+
+                function closeLinkRow(id) {
+                    var linkRow = document.querySelector('[data-device-photo-links="' + id + '"]');
+                    var button = document.querySelector('[data-device-photo-target="' + id + '"]');
+
+                    if (linkRow) {
+                        linkRow.style.display = 'none';
+                    }
+
+                    if (button) {
+                        button.textContent = 'Show links';
+                    }
+
+                    delete openLinkRows[id];
+                }
+
+                function applyOverviewState() {
+                    if (!input) {
+                        return;
+                    }
+
+                    var q = input.value.toLowerCase();
+                    var rows = mainRows();
+                    var matchedRows = [];
+
+                    rows.forEach(function (row) {
+                        var haystack = row.getAttribute('data-filter') || '';
+                        var matches = haystack.indexOf(q) !== -1;
+
+                        if (matches) {
+                            matchedRows.push(row);
+                        }
+                    });
+
+                    var pageSize = getPageSize();
+                    var totalRows = matchedRows.length;
+                    var totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(totalRows / pageSize));
+
+                    if (currentPage > totalPages) {
+                        currentPage = totalPages;
+                    }
+
+                    if (currentPage < 1) {
+                        currentPage = 1;
+                    }
+
+                    rows.forEach(function (row) {
+                        var id = row.getAttribute('data-device-photo-row');
+                        row.style.display = 'none';
+                        closeLinkRow(id);
+                    });
+
+                    matchedRows.forEach(function (row, index) {
+                        var visible = true;
+
+                        if (pageSize !== 'all') {
+                            var start = (currentPage - 1) * pageSize;
+                            var end = start + pageSize;
+                            visible = index >= start && index < end;
+                        }
+
+                        if (!visible) {
+                            return;
+                        }
+
+                        row.style.display = '';
+
+                        var id = row.getAttribute('data-device-photo-row');
+                        var linkRow = document.querySelector('[data-device-photo-links="' + id + '"]');
+                        var button = document.querySelector('[data-device-photo-target="' + id + '"]');
+
+                        if (linkRow && openLinkRows[id]) {
+                            linkRow.style.display = 'table-row';
+                        }
+
+                        if (button) {
+                            button.textContent = openLinkRows[id] ? 'Hide links' : 'Show links';
+                        }
+                    });
+
+                    if (pageInfo) {
+                        if (totalRows === 0) {
+                            pageInfo.textContent = 'No matching devices';
+                        } else if (pageSize === 'all') {
+                            pageInfo.textContent = 'Showing all ' + totalRows + ' device' + (totalRows === 1 ? '' : 's');
+                        } else {
+                            var startNumber = ((currentPage - 1) * pageSize) + 1;
+                            var endNumber = Math.min(currentPage * pageSize, totalRows);
+                            pageInfo.textContent = 'Showing ' + startNumber + '-' + endNumber + ' of ' + totalRows + ' · Page ' + currentPage + ' of ' + totalPages;
+                        }
+                    }
+
+                    if (pagination) {
+                        pagination.style.display = totalRows === 0 ? 'none' : 'flex';
+                    }
+
+                    if (prevButton) {
+                        prevButton.disabled = pageSize === 'all' || currentPage <= 1;
+                    }
+
+                    if (nextButton) {
+                        nextButton.disabled = pageSize === 'all' || currentPage >= totalPages;
+                    }
+                }
 
                 document.querySelectorAll('.device-photo-toggle-links').forEach(function (button) {
                     button.addEventListener('click', function () {
@@ -1071,37 +1258,52 @@
                         }
 
                         var isOpen = row.style.display === 'table-row';
-                        row.style.display = isOpen ? 'none' : 'table-row';
-                        button.textContent = isOpen ? 'Show links' : 'Hide links';
+
+                        if (isOpen) {
+                            closeLinkRow(id);
+                        } else {
+                            openLinkRows[id] = true;
+                            row.style.display = 'table-row';
+                            button.textContent = 'Hide links';
+                        }
                     });
                 });
 
-                if (!input) {
-                    return;
+                if (input) {
+                    input.addEventListener('input', function () {
+                        currentPage = 1;
+                        openLinkRows = {};
+                        applyOverviewState();
+                    });
                 }
 
-                input.addEventListener('input', function () {
-                    var q = input.value.toLowerCase();
-
-                    document.querySelectorAll('tr[data-device-photo-row]').forEach(function (row) {
-                        var haystack = row.getAttribute('data-filter') || '';
-                        var visible = haystack.indexOf(q) !== -1;
-                        var id = row.getAttribute('data-device-photo-row');
-
-                        row.style.display = visible ? '' : 'none';
-
-                        var linkRow = document.querySelector('[data-device-photo-links="' + id + '"]');
-                        var button = document.querySelector('[data-device-photo-target="' + id + '"]');
-
-                        if (linkRow && !visible) {
-                            linkRow.style.display = 'none';
-                        }
-
-                        if (button && !visible) {
-                            button.textContent = 'Show links';
-                        }
+                if (pageSizeSelect) {
+                    pageSizeSelect.addEventListener('change', function () {
+                        savePageSize();
+                        currentPage = 1;
+                        openLinkRows = {};
+                        applyOverviewState();
                     });
-                });
+                }
+
+                if (prevButton) {
+                    prevButton.addEventListener('click', function () {
+                        currentPage--;
+                        openLinkRows = {};
+                        applyOverviewState();
+                    });
+                }
+
+                if (nextButton) {
+                    nextButton.addEventListener('click', function () {
+                        currentPage++;
+                        openLinkRows = {};
+                        applyOverviewState();
+                    });
+                }
+
+                loadSavedPageSize();
+                applyOverviewState();
             })();
         </script>
     @else

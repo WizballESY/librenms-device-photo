@@ -147,8 +147,8 @@ class Page extends PageHook
         $missingThumbnailCount = 0;
         $thumbnailBytes = 0;
         $gdAvailable = extension_loaded('gd');
-        $thumbDir = base_path('html/device-photos/thumbs');
-        $thumbDirWritable = is_dir($thumbDir) ? is_writable($thumbDir) : is_writable(base_path('html/device-photos'));
+        $thumbDir = storage_path('app/device-photos/thumbs');
+        $thumbDirWritable = is_dir($thumbDir) ? is_writable($thumbDir) : is_writable(storage_path('app/device-photos'));
 
         /*
          * Find all photo files on disk.
@@ -371,15 +371,15 @@ class Page extends PageHook
 
     private function photoUrl(string $filename): string
     {
-        return url('device-photos/' . rawurlencode($filename));
+        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename);
     }
 
     private function thumbUrl(string $filename): string
     {
-        $thumbPath = base_path('html/device-photos/thumbs/' . $filename);
+        $thumbPath = storage_path('app/device-photos/thumbs/' . $filename);
 
         if (is_file($thumbPath)) {
-            return url('device-photos/thumbs/' . rawurlencode($filename));
+            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename);
         }
 
         return $this->photoUrl($filename);
@@ -510,7 +510,7 @@ class Page extends PageHook
     {
         $request = request();
 
-        $photoDir = base_path('html/device-photos');
+        $photoDir = storage_path('app/device-photos');
         $orderDir = storage_path('app/device-photos-order');
 
         if (! is_dir($orderDir)) {

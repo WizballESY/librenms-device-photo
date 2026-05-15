@@ -1,15 +1,17 @@
 @php
-    $photoDir = base_path('html/device-photos');
-    $photoUrlBase = url('device-photos');
-    $thumbDir = base_path('html/device-photos/thumbs');
-    $thumbUrlBase = url('device-photos/thumbs');
+    $photoDir = storage_path('app/device-photos');
+    $thumbDir = storage_path('app/device-photos/thumbs');
 
-    $devicePhotoThumbUrl = function (string $filename) use ($photoUrlBase, $thumbDir, $thumbUrlBase): string {
+    $devicePhotoPhotoUrl = function (string $filename): string {
+        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename);
+    };
+
+    $devicePhotoThumbUrl = function (string $filename) use ($thumbDir, $devicePhotoPhotoUrl): string {
         if (is_file($thumbDir . '/' . $filename)) {
-            return $thumbUrlBase . '/' . rawurlencode($filename);
+            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename);
         }
 
-        return $photoUrlBase . '/' . rawurlencode($filename);
+        return $devicePhotoPhotoUrl($filename);
     };
 
     $devicePhotoParseExifDate = function (?string $value): ?int {
@@ -116,7 +118,7 @@
             if (is_file($path)) {
                 $photos[$filename] = [
                     'filename' => $filename,
-                    'url' => $photoUrlBase . '/' . rawurlencode($filename),
+                    'url' => $devicePhotoPhotoUrl($filename),
                     'thumb_url' => $devicePhotoThumbUrl($filename),
                     'photo_taken_iso' => $devicePhotoDateData($path)['photo_taken_iso'],
                     'file_date_iso' => $devicePhotoDateData($path)['file_date_iso'],
@@ -131,7 +133,7 @@
                 if (is_file($path)) {
                     $photos[$filename] = [
                         'filename' => $filename,
-                        'url' => $photoUrlBase . '/' . rawurlencode($filename),
+                        'url' => $devicePhotoPhotoUrl($filename),
                         'thumb_url' => $devicePhotoThumbUrl($filename),
                         'photo_taken_iso' => $devicePhotoDateData($path)['photo_taken_iso'],
                         'file_date_iso' => $devicePhotoDateData($path)['file_date_iso'],
@@ -236,7 +238,7 @@
 
         $photos['linked:' . $ownerDeviceId . ':' . $filename] = [
             'filename' => $filename,
-            'url' => $photoUrlBase . '/' . rawurlencode($filename),
+            'url' => $devicePhotoPhotoUrl($filename),
             'thumb_url' => $devicePhotoThumbUrl($filename),
             'photo_taken_iso' => $devicePhotoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
             'file_date_iso' => $devicePhotoDateData($photoDir . '/' . $filename)['file_date_iso'],
