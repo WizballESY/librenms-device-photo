@@ -408,10 +408,6 @@ function devicephoto_create_thumbnail(string $sourcePath, string $filename, int 
         return false;
     }
 
-    $scale = min($maxWidth / $srcWidth, $maxHeight / $srcHeight, 1);
-    $dstWidth = max(1, (int) floor($srcWidth * $scale));
-    $dstHeight = max(1, (int) floor($srcHeight * $scale));
-
     switch ($mime) {
         case 'image/jpeg':
             if (! function_exists('imagecreatefromjpeg')) {
@@ -441,6 +437,49 @@ function devicephoto_create_thumbnail(string $sourcePath, string $filename, int 
     if (! $srcImage) {
         return false;
     }
+
+    /*
+     * Respect EXIF orientation for JPEG thumbnails.
+     * Many phones store the pixels sideways and use EXIF Orientation
+     * to tell viewers how the image should be displayed.
+     */
+    if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
+        $exif = @exif_read_data($sourcePath);
+
+        if (is_array($exif)) {
+            $orientation = (int) ($exif['Orientation'] ?? 1);
+
+            if ($orientation === 3) {
+                $rotated = @imagerotate($srcImage, 180, 0);
+
+                if ($rotated) {
+                    imagedestroy($srcImage);
+                    $srcImage = $rotated;
+                }
+            } elseif ($orientation === 6) {
+                $rotated = @imagerotate($srcImage, -90, 0);
+
+                if ($rotated) {
+                    imagedestroy($srcImage);
+                    $srcImage = $rotated;
+                }
+            } elseif ($orientation === 8) {
+                $rotated = @imagerotate($srcImage, 90, 0);
+
+                if ($rotated) {
+                    imagedestroy($srcImage);
+                    $srcImage = $rotated;
+                }
+            }
+        }
+
+        $srcWidth = imagesx($srcImage);
+        $srcHeight = imagesy($srcImage);
+    }
+
+    $scale = min($maxWidth / $srcWidth, $maxHeight / $srcHeight, 1);
+    $dstWidth = max(1, (int) floor($srcWidth * $scale));
+    $dstHeight = max(1, (int) floor($srcHeight * $scale));
 
     $dstImage = imagecreatetruecolor($dstWidth, $dstHeight);
 
@@ -586,6 +625,50 @@ function devicephoto_save_order(string $safeShortName, array $order): void
     @chmod($file, 0664);
 }
 
+function devicephoto_exiftool_available(): bool
+{
+    return devicephoto_find_binary('exiftool') !== null;
+}
+
+function devicephoto_parse_photo_taken_input(string $value): ?int
+{
+    $value = trim($value);
+
+    if ($value === '') {
+        return null;
+    }
+
+    $timestamp = strtotime($value);
+
+    return $timestamp === false ? null : $timestamp;
+}
+
+function devicephoto_write_photo_taken_exif(string $path, int $timestamp): bool
+{
+    $exiftool = devicephoto_find_binary('exiftool');
+
+    if (! $exiftool || ! is_file($path) || ! is_writable($path)) {
+        return false;
+    }
+
+    $date = date('Y:m:d H:i:s', $timestamp);
+
+    $cmd = escapeshellarg($exiftool)
+        . ' -overwrite_original'
+        . ' ' . escapeshellarg('-DateTimeOriginal=' . $date)
+        . ' ' . escapeshellarg('-CreateDate=' . $date)
+        . ' ' . escapeshellarg('-ModifyDate=' . $date)
+        . ' ' . escapeshellarg($path)
+        . ' 2>&1';
+
+    $output = [];
+    $returnCode = 1;
+
+    @exec($cmd, $output, $returnCode);
+
+    return $returnCode === 0;
+}
+
 function devicephoto_list_photos(string $photoDir, string $safeShortName): array
 {
     $photos = [];
@@ -660,6 +743,10 @@ if ($action === 'upload' && ! devicephoto_user_can_action($user, $settings, 'upl
     devicephoto_redirect($deviceId, 'permission_denied');
 }
 
+if ($action === 'set_photo_taken' && ! devicephoto_user_can_action($user, $settings, 'upload_roles')) {
+    devicephoto_redirect($deviceId, 'permission_denied');
+}
+
 if ($action === 'delete' && ! devicephoto_user_can_action($user, $settings, 'delete_roles')) {
     devicephoto_redirect($deviceId, 'permission_denied');
 }
@@ -694,6 +781,41 @@ if ($action === 'generate_missing_thumbnails' && ! devicephoto_user_can_action($
 
 if ($action === 'clean_stale_thumbnails' && ! devicephoto_user_can_action($user, $settings, 'upload_roles')) {
     devicephoto_redirect(0, 'permission_denied');
+}
+
+if ($action === 'set_photo_taken') {
+    $filename = basename((string) $request->input('filename', ''));
+    $photoTakenInput = (string) $request->input('photo_taken', '');
+
+    if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg)$/i', $filename)) {
+        devicephoto_redirect($deviceId, 'photo_taken_unsupported_type');
+    }
+
+    if (! is_file($photoDir . '/' . $filename)) {
+        devicephoto_redirect($deviceId, 'not_found');
+    }
+
+    if (! devicephoto_exiftool_available()) {
+        devicephoto_redirect($deviceId, 'exiftool_unavailable');
+    }
+
+    $timestamp = devicephoto_parse_photo_taken_input($photoTakenInput);
+
+    if (! $timestamp) {
+        devicephoto_redirect($deviceId, 'invalid_photo_taken');
+    }
+
+    if (! devicephoto_write_photo_taken_exif($photoDir . '/' . $filename, $timestamp)) {
+        devicephoto_redirect($deviceId, 'photo_taken_failed');
+    }
+
+    /*
+     * EXIF orientation/date may affect generated thumbnails and displayed metadata.
+     * Refresh the thumbnail after writing metadata.
+     */
+    devicephoto_create_thumbnail($photoDir . '/' . $filename, $filename);
+
+    devicephoto_redirect($deviceId, 'photo_taken_updated');
 }
 
 if ($action === 'remove_broken_link') {
@@ -1148,6 +1270,12 @@ if ($action === 'delete') {
     if (@rename($photoDir . '/' . $filename, $deletedDir . '/' . $deletedName)) {
         @chmod($deletedDir . '/' . $deletedName, 0664);
         devicephoto_move_thumbnail_to_deleted($filename, $deletedName);
+
+        /*
+         * Remove all links from other devices that pointed to this original photo.
+         * Otherwise deleting an owned photo would leave broken linked-photo entries.
+         */
+        devicephoto_remove_all_links_for_filename($filename);
 
         $order = devicephoto_list_photos($photoDir, $safeShortName);
         $order = array_values(array_filter($order, fn ($item) => $item !== $filename));
