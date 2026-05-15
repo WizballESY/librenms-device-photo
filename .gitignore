@@ -19,3 +19,11 @@ html/device-photos/*
 !html/device-photos/.gitkeep
 device-photos/*
 !device-photos/.gitkeep
+
+# DevicePhoto runtime storage if working from a LibreNMS root checkout
+storage/app/device-photos/*
+storage/app/device-photos-order/*
+storage/app/device-photos-links/*
+!storage/app/device-photos/.gitkeep
+!storage/app/device-photos-order/.gitkeep
+!storage/app/device-photos-links/.gitkeep

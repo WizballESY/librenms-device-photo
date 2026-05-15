@@ -1,3 +1,63 @@
+
+
+
+
+
+<style>
+    /*
+     * LibreNMS dark mode fix for the Device Photos widget wrapper.
+     */
+    html.dark .device-photo-wrapper {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-title,
+    html.dark .device-photo-wrapper .device-photo-title strong,
+    html.dark .device-photo-wrapper h1,
+    html.dark .device-photo-wrapper h2,
+    html.dark .device-photo-wrapper h3,
+    html.dark .device-photo-wrapper h4,
+    html.dark .device-photo-wrapper h5 {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-card {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: none !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-card:hover {
+        background: #2f3842 !important;
+        border-color: #64748b !important;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.35) !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-card img {
+        background: #1f252c !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-options {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-options:hover {
+        background: #35414d !important;
+        border-color: #64748b !important;
+    }
+
+    html.dark .device-photo-wrapper .device-photo-empty {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+</style>
+
 @php
     $photoDir = storage_path('app/device-photos');
     $thumbDir = storage_path('app/device-photos/thumbs');
@@ -538,3 +598,6 @@
         </div>
     </div>
 @endif
+
+
+

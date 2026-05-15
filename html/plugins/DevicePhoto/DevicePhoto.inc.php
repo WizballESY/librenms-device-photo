@@ -3,7 +3,9 @@
 use App\Models\Device;
 use App\Models\Plugin;
 
-if (! auth()->user()) {
+$user = auth()->user();
+
+if (! $user || ! $user->can('global-read')) {
     http_response_code(403);
     echo 'Forbidden';
     exit;
@@ -76,11 +78,19 @@ if (strtoupper((string) $request->method()) === 'GET') {
         devicephoto_send_image_file(devicephoto_thumbs_dir(), $filename);
     }
 
-    if ($imageAction === 'deleted_photo') {
-        devicephoto_send_image_file(devicephoto_deleted_dir(), $filename);
-    }
+    if ($imageAction === 'deleted_photo' || $imageAction === 'deleted_thumb') {
+        $settings = devicephoto_settings();
 
-    if ($imageAction === 'deleted_thumb') {
+        if (! devicephoto_user_can_action($user, $settings, 'delete_roles')) {
+            http_response_code(403);
+            echo 'Forbidden';
+            exit;
+        }
+
+        if ($imageAction === 'deleted_photo') {
+            devicephoto_send_image_file(devicephoto_deleted_dir(), $filename);
+        }
+
         devicephoto_send_image_file(devicephoto_deleted_thumbs_dir(), $filename);
     }
 
@@ -189,7 +199,10 @@ function devicephoto_save_links(int $targetDeviceId, array $links): void
         $ownerDeviceId = (int) ($link['owner_device_id'] ?? 0);
         $filename = basename((string) ($link['filename'] ?? ''));
 
-        if ($ownerDeviceId < 1 || $filename === '') {
+        $ownerKey = 'device-' . $ownerDeviceId;
+        $pattern = '/^' . preg_quote($ownerKey, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i';
+
+        if ($ownerDeviceId < 1 || ! preg_match($pattern, $filename)) {
             continue;
         }
 
@@ -417,7 +430,7 @@ function devicephoto_create_thumbnail(string $sourcePath, string $filename, int 
     $srcHeight = (int) $info[1];
     $mime = (string) ($info['mime'] ?? '');
 
-    if ($srcWidth < 1 || $srcHeight < 1) {
+    if ($srcWidth < 1 || $srcHeight < 1 || ($srcWidth * $srcHeight) > 40000000) {
         return false;
     }
 
@@ -1196,6 +1209,19 @@ if ($action === 'upload') {
                 devicephoto_redirect($deviceId, 'invalid_image');
             }
 
+            $allowedMimeByExt = [
+                'jpg' => ['image/jpeg'],
+                'jpeg' => ['image/jpeg'],
+                'png' => ['image/png'],
+                'webp' => ['image/webp'],
+            ];
+
+            $imageMime = strtolower((string) ($imageInfo['mime'] ?? ''));
+
+            if (! in_array($imageMime, $allowedMimeByExt[$ext] ?? [], true)) {
+                devicephoto_redirect($deviceId, 'invalid_image');
+            }
+
             $imageWidth = (int) $imageInfo[0];
             $imageHeight = (int) $imageInfo[1];
             $imagePixels = $imageWidth * $imageHeight;
@@ -1257,6 +1283,18 @@ if ($action === 'upload') {
             if (! devicephoto_convert_heic_to_jpeg($file->getRealPath(), $photoDir . '/' . $targetName)) {
                 devicephoto_redirect($deviceId, 'heic_convert_failed');
             }
+
+            $convertedInfo = @getimagesize($photoDir . '/' . $targetName);
+
+            if (
+                $convertedInfo === false ||
+                empty($convertedInfo[0]) ||
+                empty($convertedInfo[1]) ||
+                ((int) $convertedInfo[0] * (int) $convertedInfo[1]) > 40000000
+            ) {
+                @unlink($photoDir . '/' . $targetName);
+                devicephoto_redirect($deviceId, 'image_too_large_pixels');
+            }
         } else {
             $file->move($photoDir, $targetName);
         }
@@ -1289,7 +1327,7 @@ if ($action === 'upload') {
 if ($action === 'delete') {
     $filename = basename((string) $request->input('filename', ''));
 
-    $pattern = '/^' . preg_quote($safeShortName, '/') . '(-[A-Za-z0-9._-]+)?\.(jpg|jpeg|png|webp)$/i';
+    $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i';
 
     if (! preg_match($pattern, $filename)) {
         devicephoto_redirect($deviceId, 'invalid_filename');
@@ -1397,6 +1435,12 @@ if ($action === 'add_link') {
 if ($action === 'remove_link') {
     $filename = basename((string) $request->input('filename', ''));
     $ownerDeviceId = (int) $request->input('owner_device_id', 0);
+
+    $removeLinkPattern = '/^device-' . preg_quote((string) $ownerDeviceId, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i';
+
+    if ($ownerDeviceId < 1 || ! preg_match($removeLinkPattern, $filename)) {
+        devicephoto_redirect($deviceId, 'invalid_filename');
+    }
 
     $links = devicephoto_load_links($deviceId);
 

@@ -227,14 +227,11 @@ class Page extends PageHook
                     continue;
                 }
 
-                $targetDevice = $devices[$targetDeviceId] ?? Device::find($targetDeviceId);
-                $ownerDevice = $devices[$ownerDeviceId] ?? Device::find($ownerDeviceId);
-
                 $entry = [
                     'target_device_id' => $targetDeviceId,
-                    'target_name' => $targetDevice ? $this->deviceLabel($targetDevice, $targetDeviceId) : null,
+                    'target_name' => null,
                     'owner_device_id' => $ownerDeviceId,
-                    'owner_name' => $ownerDevice ? $this->deviceLabel($ownerDevice, $ownerDeviceId) : null,
+                    'owner_name' => null,
                     'filename' => $filename,
                     'file_exists' => is_file($photoDir . '/' . $filename),
                 ];
@@ -578,7 +575,8 @@ class Page extends PageHook
         $device = $deviceId > 0 ? Device::find($deviceId) : null;
 
         /*
-         * Device list used by the link-to-device search field.
+         * Device list used by link-to-device and orphan assignment search fields.
+         * This intentionally includes all devices.
          */
         $linkTargetDevices = Device::query()
             ->select(['device_id', 'hostname', 'sysName', 'display'])
@@ -592,6 +590,40 @@ class Page extends PageHook
             })
             ->values()
             ->all();
+
+        /*
+         * Device list used by "Add linked photo from another device".
+         * This should only contain devices that actually own active photos.
+         */
+        $photoOwnerDeviceIds = [];
+
+        foreach (glob(storage_path('app/device-photos/device-*.*')) ?: [] as $photoPath) {
+            $photoFilename = basename($photoPath);
+
+            if (preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $photoFilename, $matches)) {
+                $photoOwnerDeviceIds[(int) $matches[1]] = true;
+            }
+        }
+
+        unset($photoOwnerDeviceIds[$deviceId]);
+
+        $linkOwnerDevices = [];
+
+        if (! empty($photoOwnerDeviceIds)) {
+            $linkOwnerDevices = Device::query()
+                ->select(['device_id', 'hostname', 'sysName', 'display'])
+                ->whereIn('device_id', array_keys($photoOwnerDeviceIds))
+                ->orderBy('hostname')
+                ->get()
+                ->map(function ($ownerDevice) {
+                    return [
+                        'device_id' => (int) $ownerDevice->device_id,
+                        'label' => $this->deviceLabel($ownerDevice, (int) $ownerDevice->device_id),
+                    ];
+                })
+                ->values()
+                ->all();
+        }
 
         $shortName = null;
         $safeShortName = null;
@@ -798,6 +830,7 @@ class Page extends PageHook
             'photos' => $photos,
             'linked_photos' => $linkedPhotos,
             'link_target_devices' => $linkTargetDevices,
+            'link_owner_devices' => $linkOwnerDevices,
             'incoming_owner_query' => $incomingOwnerQuery,
             'incoming_owner_device' => $incomingOwnerDevice,
             'incoming_owner_photos' => $incomingOwnerPhotos,
