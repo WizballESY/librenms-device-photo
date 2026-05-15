@@ -72,20 +72,20 @@ Download the latest release archive from GitHub Releases:
 https://github.com/WizballESY/librenms-device-photo/releases
 ```
 
-Example using the `v0.1.0-alpha.2` tar archive:
+Example using the `v0.1.0-alpha.3` tar archive:
 
 ```bash
 cd /tmp
 
-wget https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.2/librenms-device-photo-v0.1.0-alpha.2.tar.gz
+wget https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.3/librenms-device-photo-v0.1.0-alpha.3.tar.gz
 
-tar xzf librenms-device-photo-v0.1.0-alpha.2.tar.gz
+tar xzf librenms-device-photo-v0.1.0-alpha.3.tar.gz
 
 cd /opt/librenms
 
-cp -a /tmp/librenms-device-photo-v0.1.0-alpha.2/DevicePhoto app/Plugins/DevicePhoto
+cp -a /tmp/librenms-device-photo-v0.1.0-alpha.3/DevicePhoto app/Plugins/DevicePhoto
 mkdir -p html/plugins
-cp -a /tmp/librenms-device-photo-v0.1.0-alpha.2/html/plugins/DevicePhoto html/plugins/DevicePhoto
+cp -a /tmp/librenms-device-photo-v0.1.0-alpha.3/html/plugins/DevicePhoto html/plugins/DevicePhoto
 ```
 
 Then continue with storage directory creation, permissions and cache clearing below.
@@ -93,7 +93,7 @@ Then continue with storage directory creation, permissions and cache clearing be
 The same release is also available as a ZIP archive:
 
 ```text
-https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.2/librenms-device-photo-v0.1.0-alpha.2.zip
+https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.3/librenms-device-photo-v0.1.0-alpha.3.zip
 ```
 
 ### Option B: Install from Git clone
