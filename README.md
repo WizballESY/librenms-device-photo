@@ -56,6 +56,7 @@ It is under active development and may contain bugs or breaking changes. It is n
 - Soft-delete photos by moving them to a deleted folder.
 - Search, pagination and sortable overview table.
 - Browser-saved page size preference for the overview table.
+- Cache-busting image URLs to avoid stale browser-cached photos after delete/re-upload.
 
 ---
 
@@ -71,20 +72,20 @@ Download the latest release archive from GitHub Releases:
 https://github.com/WizballESY/librenms-device-photo/releases
 ```
 
-Example using the `v0.1.0-alpha.1` tar archive:
+Example using the `v0.1.0-alpha.2` tar archive:
 
 ```bash
 cd /tmp
 
-wget https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.1/librenms-device-photo-v0.1.0-alpha.1.tar.gz
+wget https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.2/librenms-device-photo-v0.1.0-alpha.2.tar.gz
 
-tar xzf librenms-device-photo-v0.1.0-alpha.1.tar.gz
+tar xzf librenms-device-photo-v0.1.0-alpha.2.tar.gz
 
 cd /opt/librenms
 
-cp -a /tmp/librenms-device-photo-v0.1.0-alpha.1/DevicePhoto app/Plugins/DevicePhoto
+cp -a /tmp/librenms-device-photo-v0.1.0-alpha.2/DevicePhoto app/Plugins/DevicePhoto
 mkdir -p html/plugins
-cp -a /tmp/librenms-device-photo-v0.1.0-alpha.1/html/plugins/DevicePhoto html/plugins/DevicePhoto
+cp -a /tmp/librenms-device-photo-v0.1.0-alpha.2/html/plugins/DevicePhoto html/plugins/DevicePhoto
 ```
 
 Then continue with storage directory creation, permissions and cache clearing below.
@@ -92,7 +93,7 @@ Then continue with storage directory creation, permissions and cache clearing be
 The same release is also available as a ZIP archive:
 
 ```text
-https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.1/librenms-device-photo-v0.1.0-alpha.1.zip
+https://github.com/WizballESY/librenms-device-photo/releases/download/v0.1.0-alpha.2/librenms-device-photo-v0.1.0-alpha.2.zip
 ```
 
 ### Option B: Install from Git clone
@@ -859,6 +860,16 @@ apt install libimage-exiftool-perl
 
 Only JPG/JPEG files support writing `Photo taken` through the plugin.
 
+### Old image still appears after delete/re-upload
+
+The plugin adds a cache-busting `v=` parameter to image URLs based on the file timestamp.
+
+If stale images still appear, clear the browser cache and make sure the page source contains image URLs like:
+
+```text
+/plugin/v1/DevicePhoto?action=thumb&filename=device-42-1.jpg&v=...
+```
+
 ### Direct image URL redirects to login
 
 This is expected for unauthenticated users.
@@ -886,6 +897,12 @@ A user who is not logged in should be redirected to the LibreNMS login page.
 - Writing `Photo taken` modifies EXIF metadata in the original JPG/JPEG file.
 - Deleted files are moved to a deleted folder and are not permanently removed immediately.
 - Configure permissions so only trusted users can upload, modify or delete photos.
+- State-changing actions require POST requests.
+- Photo link actions require explicit upload/delete permissions.
+- Plugin pages require LibreNMS `global-read` access.
+- Uploads are limited by file size and image dimensions.
+- ImageMagick HEIC/HEIF conversion uses resource limits.
+- JSON metadata writes use file locking.
 - Do not expose runtime photo directories or local metadata files publicly.
 
 ---
