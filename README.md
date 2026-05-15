@@ -977,7 +977,7 @@ After installation or upgrade, test:
 
 ## License
 
-MIT License.
+GNU General Public License v3.0.
 
 See [LICENSE](LICENSE).
 
