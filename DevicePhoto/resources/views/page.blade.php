@@ -457,16 +457,58 @@
                     </div>
                 @endif
 
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px;">
-                    <input
-                        type="text"
-                        id="device-photo-overview-filter"
-                        class="form-control"
-                        placeholder="Filter by Device ID, device name or filename"
-                        style="max-width: 520px;"
-                    >
+                <style>
+                    .device-photo-sort-header {
+                        cursor: pointer;
+                        user-select: none;
+                        white-space: nowrap;
+                    }
 
-                    <div style="display: flex; gap: 6px; align-items: center;">
+                    .device-photo-sort-header:hover {
+                        background: #f5f5f5;
+                    }
+
+                    .device-photo-sort-header .device-photo-sort-label {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                    .device-photo-sort-header .device-photo-sort-indicator {
+                        display: inline-block;
+                        min-width: 10px;
+                        color: #999;
+                        font-size: 10px;
+                    }
+
+                    .device-photo-sort-header.is-active .device-photo-sort-indicator {
+                        color: #333;
+                    }
+
+                    .device-photo-sort-header:not(.is-active) .device-photo-sort-indicator::before {
+                        content: "\f0dc";
+                        font-family: FontAwesome;
+                        color: #bbb;
+                    }
+                </style>
+
+                <div class="device-photo-overview-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 16px 0; padding: 10px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px;">
+                    <div style="display: flex; flex: 1 1 420px; gap: 8px; align-items: center; min-width: 260px;">
+                        <span class="text-muted" style="font-size: 13px; white-space: nowrap;">
+                            <i class="fa fa-search"></i>
+                            Search
+                        </span>
+
+                        <input
+                            type="text"
+                            id="device-photo-overview-filter"
+                            class="form-control"
+                            placeholder="Search by device ID or device name"
+                            style="max-width: 640px;"
+                        >
+                    </div>
+
+                    <div style="display: flex; gap: 6px; align-items: center; flex: 0 0 auto;">
                         <span class="text-muted" style="font-size: 12px;">Show</span>
                         <select id="device-photo-overview-page-size" class="form-control input-sm" style="width: auto;">
                             <option value="10">10</option>
@@ -479,7 +521,7 @@
                     </div>
                 </div>
 
-                <h4>Devices with photos or links</h4>
+                <h4 style="margin-top: 0;">Devices with photos or links</h4>
 
                 @if (empty($overview['rows']))
                     <div class="alert alert-info">No device photos or linked photos found.</div>
@@ -488,10 +530,18 @@
                         <table class="table table-hover table-condensed" id="device-photo-overview-table">
                             <thead>
                                 <tr>
-                                    <th title="LibreNMS device that owns photos or has linked photos.">Device</th>
-                                    <th title="Photos physically owned by this device.">Owned photos</th>
-                                    <th title="Photos owned by other devices, but shown on this device.">Linked in</th>
-                                    <th title="Photos owned by this device, but shown on other devices.">Linked out</th>
+                                    <th class="device-photo-sort-header" data-sort-key="device" title="Sort by device name.">
+                                        <span class="device-photo-sort-label">Device <span class="device-photo-sort-indicator"></span></span>
+                                    </th>
+                                    <th class="device-photo-sort-header" data-sort-key="owned" title="Sort by number of photos physically owned by this device.">
+                                        <span class="device-photo-sort-label">Owned photos <span class="device-photo-sort-indicator"></span></span>
+                                    </th>
+                                    <th class="device-photo-sort-header" data-sort-key="linked_in" title="Sort by number of photos owned by other devices, but shown on this device.">
+                                        <span class="device-photo-sort-label">Linked in <span class="device-photo-sort-indicator"></span></span>
+                                    </th>
+                                    <th class="device-photo-sort-header" data-sort-key="linked_out" title="Sort by number of photos owned by this device, but shown on other devices.">
+                                        <span class="device-photo-sort-label">Linked out <span class="device-photo-sort-indicator"></span></span>
+                                    </th>
                                     <th title="Thumbnail preview of photos owned by this device.">Preview</th>
                                     <th title="Open the device or manage photos for this device.">Actions</th>
                                 </tr>
@@ -500,6 +550,10 @@
                                 @foreach ($overview['rows'] as $row)
                                     <tr class="device-photo-overview-row"
                                         data-device-photo-row="{{ $row['device_id'] }}"
+                                        data-sort-device="{{ strtolower($row['name'] . ' ' . $row['device_id']) }}"
+                                        data-sort-owned="{{ $row['owned_count'] }}"
+                                        data-sort-linked-in="{{ $row['linked_in_count'] }}"
+                                        data-sort-linked-out="{{ $row['linked_out_count'] }}"
                                         data-filter="{{ strtolower($row['device_id'] . ' ' . $row['name'] . ' ' . collect($row['owned_photos'])->pluck('filename')->implode(' ') . ' ' . collect($row['linked_in'])->pluck('filename')->implode(' ') . ' ' . collect($row['linked_out'])->pluck('filename')->implode(' ')) }}">
                                         <td>
                                             <a href="{{ url('device/' . $row['device_id']) }}">
@@ -1095,6 +1149,10 @@
                 var currentPage = 1;
                 var openLinkRows = {};
                 var pageSizeStorageKey = 'devicePhotoOverviewPageSize';
+                var sortState = {
+                    key: 'device',
+                    direction: 'asc'
+                };
 
                 function loadSavedPageSize() {
                     if (!pageSizeSelect) {
@@ -1159,7 +1217,81 @@
                     delete openLinkRows[id];
                 }
 
+                function sortValue(row, key) {
+                    if (key === 'owned') {
+                        return parseInt(row.getAttribute('data-sort-owned') || '0', 10) || 0;
+                    }
+
+                    if (key === 'linked_in') {
+                        return parseInt(row.getAttribute('data-sort-linked-in') || '0', 10) || 0;
+                    }
+
+                    if (key === 'linked_out') {
+                        return parseInt(row.getAttribute('data-sort-linked-out') || '0', 10) || 0;
+                    }
+
+                    return (row.getAttribute('data-sort-device') || '').toLowerCase();
+                }
+
+                function sortOverviewRows() {
+                    var rows = mainRows();
+                    var tbody = document.querySelector('#device-photo-overview-table tbody');
+
+                    if (!tbody) {
+                        return;
+                    }
+
+                    rows.sort(function (a, b) {
+                        var av = sortValue(a, sortState.key);
+                        var bv = sortValue(b, sortState.key);
+                        var result = 0;
+
+                        if (typeof av === 'number' && typeof bv === 'number') {
+                            result = av - bv;
+                        } else {
+                            result = String(av).localeCompare(String(bv), undefined, {
+                                numeric: true,
+                                sensitivity: 'base'
+                            });
+                        }
+
+                        return sortState.direction === 'asc' ? result : -result;
+                    });
+
+                    rows.forEach(function (row) {
+                        var id = row.getAttribute('data-device-photo-row');
+                        var linkRow = document.querySelector('[data-device-photo-links="' + id + '"]');
+
+                        tbody.appendChild(row);
+
+                        if (linkRow) {
+                            tbody.appendChild(linkRow);
+                        }
+                    });
+                }
+
+                function updateSortHeaders() {
+                    document.querySelectorAll('.device-photo-sort-header').forEach(function (header) {
+                        var key = header.getAttribute('data-sort-key');
+                        var indicator = header.querySelector('.device-photo-sort-indicator');
+
+                        header.classList.toggle('is-active', key === sortState.key);
+
+                        if (!indicator) {
+                            return;
+                        }
+
+                        if (key === sortState.key) {
+                            indicator.textContent = sortState.direction === 'asc' ? '▲' : '▼';
+                        } else {
+                            indicator.textContent = '';
+                        }
+                    });
+                }
+
                 function applyOverviewState() {
+                    sortOverviewRows();
+                    updateSortHeaders();
                     if (!input) {
                         return;
                     }
@@ -1276,6 +1408,27 @@
                         applyOverviewState();
                     });
                 }
+
+                document.querySelectorAll('.device-photo-sort-header').forEach(function (header) {
+                    header.addEventListener('click', function () {
+                        var key = header.getAttribute('data-sort-key');
+
+                        if (!key) {
+                            return;
+                        }
+
+                        if (sortState.key === key) {
+                            sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            sortState.key = key;
+                            sortState.direction = key === 'device' ? 'asc' : 'desc';
+                        }
+
+                        currentPage = 1;
+                        openLinkRows = {};
+                        applyOverviewState();
+                    });
+                });
 
                 if (pageSizeSelect) {
                     pageSizeSelect.addEventListener('change', function () {
