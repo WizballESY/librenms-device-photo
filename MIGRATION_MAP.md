@@ -383,6 +383,46 @@ Important:
 - keep the legacy local `DevicePhoto` plugin enabled
 - continue migrating one POST action group at a time
 
+## Package thumbnail maintenance action test status
+
+The thumbnail maintenance package POST actions have been migrated and tested.
+
+Migrated actions:
+
+- `clean_stale_thumbnails`
+- `generate_missing_thumbnails`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- stale thumbnails can be removed from `/plugin/device-photo`
+- missing thumbnails can be generated from `/plugin/device-photo`
+- stale thumbnail cleanup removed a manually created stale thumbnail
+- thumbnail generation successfully regenerated missing thumbnails
+- thumbnail generation was tested by deleting 31 real thumbnails and regenerating them
+- actions redirect back to `/plugin/device-photo`
+
+Still legacy:
+
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `remove_broken_link`
+- `upload`
+- `delete`
+- `set_photo_taken`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
