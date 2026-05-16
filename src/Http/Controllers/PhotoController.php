@@ -21,7 +21,7 @@ class PhotoController extends Controller
 
     public function show(Request $request)
     {
-        $user = $request->user();
+        $user = auth()->user();
 
         if (! $user || ! $user->can('global-read')) {
             abort(403, 'Forbidden');
