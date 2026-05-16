@@ -267,6 +267,38 @@ Important:
 - Migrate and test one action group at a time.
 - Keep the legacy local `DevicePhoto` plugin enabled until all package POST actions have feature parity.
 
+## Package save_order action test status
+
+The first package POST action has been migrated and tested.
+
+Migrated action:
+
+- `save_order`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- photo order can be changed from `/plugin/device-photo?device_id=<id>`
+- save order redirects back to `/plugin/device-photo`
+- order persists after refresh
+- only the `save_order` form has been moved to the package action route
+
+Still legacy:
+
+- all other POST actions still use `/plugin/v1/DevicePhoto`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
