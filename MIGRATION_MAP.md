@@ -502,6 +502,44 @@ Important:
 - continue migrating one POST action group at a time
 - upload should remain last
 
+## Package photo delete test status
+
+The photo delete package POST action has been migrated and tested.
+
+Migrated action:
+
+- `delete`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- photos can be deleted from `/plugin/device-photo`
+- original photo is moved to the deleted photos directory
+- matching thumbnail is moved to the deleted thumbnails directory
+- linked-photo references pointing to the deleted original are removed
+- photo order JSON is updated after deletion
+- action redirects back to `/plugin/device-photo`
+- tested successfully in LibreNMS UI
+
+Still legacy:
+
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `upload`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+- upload should remain last
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
