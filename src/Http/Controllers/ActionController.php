@@ -108,7 +108,7 @@ class ActionController extends Controller
 
         $this->links->remove($deviceId, $ownerDeviceId, $filename);
 
-        return $this->redirect($deviceId, 'link_removed');
+        return $this->redirectAfterAction($request, $deviceId, 'link_removed');
     }
 
     private function removeOutgoingLink(Request $request, int $deviceId)
@@ -139,7 +139,24 @@ class ActionController extends Controller
 
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
-        return $this->redirect($deviceId, 'link_removed');
+        return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function redirectAfterAction(Request $request, int $deviceId, ?string $status = null)
+    {
+        $returnTo = (string) $request->input('return_to', '');
+
+        if ($returnTo === 'overview') {
+            $query = [];
+
+            if ($status !== null) {
+                $query['status'] = $status;
+            }
+
+            return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : ''));
+        }
+
+        return $this->redirect($deviceId, $status);
     }
 
     private function redirect(int $deviceId, ?string $status = null)
