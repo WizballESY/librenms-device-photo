@@ -133,6 +133,37 @@ Future package structure should probably split the legacy endpoint into:
 - `src/Services/PhotoMetadataService.php`
   - photo taken / EXIF handling
 
+## Package services created
+
+The following package services have been created as migration building blocks:
+
+- `src/Services/PhotoPathService.php`
+  - storage paths for photos, thumbnails, deleted photos, order JSON and links JSON
+
+- `src/Services/PhotoFilenameService.php`
+  - strict filename validation, content type detection and next filename generation
+
+- `src/Services/PhotoPermissionService.php`
+  - role handling, admin override and action permission checks
+
+- `src/Services/PhotoSettingsService.php`
+  - package and legacy plugin settings lookup
+
+- `src/Services/JsonFileService.php`
+  - JSON read/write helpers with `LOCK_EX`
+
+- `src/Services/PhotoOrderService.php`
+  - photo ordering JSON handling
+
+- `src/Services/PhotoLinkService.php`
+  - linked photo JSON handling
+
+- `src/Services/PhotoImageService.php`
+  - ImageMagick HEIC/HEIF checks, HEIC conversion, thumbnail generation and stale thumbnail cleanup
+
+- `src/Services/PhotoMetadataService.php`
+  - exiftool availability, photo taken parsing and EXIF date writing
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
