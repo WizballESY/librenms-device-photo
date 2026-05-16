@@ -50,6 +50,8 @@ class ActionController extends Controller
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
             'delete' => $this->deletePhoto($request, $deviceId),
+            'assign_orphan_photo' => $this->assignOrphanPhoto($request),
+            'delete_orphan_photo' => $this->deleteOrphanPhoto($request),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -153,6 +155,187 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function assignOrphanPhoto(Request $request)
+    {
+        /*
+         * Assign an orphaned photo to an existing device.
+         * The file is renamed to the target device ID and next available number.
+         * Existing links pointing to the old filename are updated to the new owner/file.
+         */
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $filename = basename((string) $request->input('filename', ''));
+        $targetInput = trim((string) $request->input('target_device_query', $request->input('target_device_id', '')));
+
+        $targetDevice = $this->findDeviceFromInput($targetInput);
+        $targetDeviceId = $targetDevice ? (int) $targetDevice->device_id : 0;
+
+        if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            return $this->redirect(0, 'invalid_filename');
+        }
+
+        if (! is_file($this->paths->photoPath($filename))) {
+            return $this->redirect(0, 'not_found');
+        }
+
+        if (! preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $filename, $matches)) {
+            return $this->redirect(0, 'invalid_filename');
+        }
+
+        $oldDeviceId = (int) $matches[1];
+
+        /*
+         * Only allow assigning photos whose original owner device no longer exists.
+         */
+        if ($oldDeviceId > 0 && Device::find($oldDeviceId)) {
+            return $this->redirect(0, 'not_orphaned');
+        }
+
+        if (! $targetDevice) {
+            return $this->redirect(0, 'invalid_target_device');
+        }
+
+        $pathInfo = pathinfo($filename);
+        $ext = strtolower((string) ($pathInfo['extension'] ?? ''));
+
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return $this->redirect(0, 'invalid_type');
+        }
+
+        $targetPrefix = 'device-' . $targetDeviceId;
+        $nextNumber = 1;
+
+        foreach (glob($this->paths->photosDir() . '/' . $targetPrefix . '-*.*') ?: [] as $existingPath) {
+            $existingName = basename($existingPath);
+
+            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d+)\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
+                $nextNumber = max($nextNumber, ((int) $numberMatches[1]) + 1);
+            }
+        }
+
+        $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+
+        while (is_file($this->paths->photoPath($targetName))) {
+            $nextNumber++;
+            $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+        }
+
+        if (! @rename($this->paths->photoPath($filename), $this->paths->photoPath($targetName))) {
+            return $this->redirect(0, 'assign_failed');
+        }
+
+        @chmod($this->paths->photoPath($targetName), 0664);
+
+        /*
+         * Keep the orphaned thumbnail with the photo when assigning it to a device.
+         * If no orphaned thumbnail exists, thumbnail generation below will create one.
+         */
+        $oldThumbPath = $this->paths->thumbPath($filename);
+        $newThumbPath = $this->paths->thumbPath($targetName);
+
+        if (is_file($oldThumbPath)) {
+            @rename($oldThumbPath, $newThumbPath);
+            @chmod($newThumbPath, 0664);
+        }
+
+        /*
+         * Create or refresh thumbnail for assigned orphaned photo if possible.
+         */
+        $this->images->createThumbnail($this->paths->photoPath($targetName), $targetName);
+
+        /*
+         * Update existing linked-photo JSON entries that pointed to the old orphaned filename.
+         */
+        foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
+            $jsonTargetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
+
+            if ($jsonTargetDeviceId < 1) {
+                continue;
+            }
+
+            $links = $this->links->load($jsonTargetDeviceId);
+            $changed = false;
+
+            foreach ($links as $index => $link) {
+                if (! is_array($link)) {
+                    continue;
+                }
+
+                if (basename((string) ($link['filename'] ?? '')) === $filename) {
+                    $links[$index]['owner_device_id'] = $targetDeviceId;
+                    $links[$index]['filename'] = $targetName;
+                    $changed = true;
+                }
+            }
+
+            if ($changed) {
+                $this->links->save($jsonTargetDeviceId, $links);
+            }
+        }
+
+        $targetSafeShortName = $this->photos->safeDevicePrefix($targetDeviceId);
+        $order = $this->photos->listFilenamesForDevice($targetDeviceId);
+        $this->order->save($targetSafeShortName, $order);
+
+        return $this->redirect(0, 'assigned');
+    }
+
+    private function deleteOrphanPhoto(Request $request)
+    {
+        /*
+         * Move an orphaned photo to deleted folder.
+         * This does not permanently delete the file.
+         */
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $filename = basename((string) $request->input('filename', ''));
+
+        if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            return $this->redirect(0, 'invalid_filename');
+        }
+
+        if (! is_file($this->paths->photoPath($filename))) {
+            return $this->redirect(0, 'not_found');
+        }
+
+        if (! preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $filename, $matches)) {
+            return $this->redirect(0, 'invalid_filename');
+        }
+
+        $oldDeviceId = (int) $matches[1];
+
+        /*
+         * Only allow delete_orphan_photo if the owner device no longer exists.
+         */
+        if ($oldDeviceId > 0 && Device::find($oldDeviceId)) {
+            return $this->redirect(0, 'not_orphaned');
+        }
+
+        if (! is_dir($this->paths->deletedDir())) {
+            @mkdir($this->paths->deletedDir(), 02775, true);
+        }
+
+        $pathInfo = pathinfo($filename);
+        $deletedName = $pathInfo['filename'] . '.deleted-' . date('Ymd-His') . '.' . strtolower((string) $pathInfo['extension']);
+
+        if (@rename($this->paths->photoPath($filename), $this->paths->deletedPath($deletedName))) {
+            @chmod($this->paths->deletedPath($deletedName), 0664);
+            $this->moveThumbnailToDeleted($filename, $deletedName);
+
+            return $this->redirect(0, 'deleted');
+        }
+
+        return $this->redirect(0, 'delete_failed');
     }
 
     private function deletePhoto(Request $request, int $deviceId)
