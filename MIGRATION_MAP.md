@@ -299,6 +299,49 @@ Important:
 - keep the legacy local `DevicePhoto` plugin enabled
 - continue migrating one POST action group at a time
 
+## Package link removal action test status
+
+The next package POST action group has been migrated and tested.
+
+Migrated actions:
+
+- `remove_link`
+- `remove_outgoing_link`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- linked photos can be removed from `/plugin/device-photo`
+- outgoing linked photo references can be removed
+- original photo files are not deleted
+- actions redirect back to `/plugin/device-photo`
+- `return_to=overview` is honored for overview actions
+
+Still legacy:
+
+- `generate_missing_thumbnails`
+- `clean_stale_thumbnails`
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `remove_broken_link`
+- `upload`
+- `add_link`
+- `delete`
+- `add_incoming_link`
+- `set_photo_taken`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
