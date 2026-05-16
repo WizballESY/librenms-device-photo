@@ -2988,7 +2988,7 @@
                 This writes the selected date/time back to the JPG/JPEG EXIF metadata in the original photo file.
             </div>
 
-            <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" id="device-photo-set-taken-form">
+            <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-set-taken-form">
                 @csrf
                 <input type="hidden" name="action" value="set_photo_taken">
                 <input type="hidden" name="device_id" id="device-photo-set-taken-device-id" value="{{ $device ? $device->device_id : 0 }}">
