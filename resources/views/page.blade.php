@@ -718,7 +718,8 @@
 
                     document.addEventListener('DOMContentLoaded', function () {
                         var maxResults = 20;
-                        var devices = window.DevicePhotoTargetDevices || [];
+                        var targetDevices = window.DevicePhotoTargetDevices || [];
+                        var ownerDevices = window.DevicePhotoOwnerDevices || [];
 
                         function normalize(value) {
                             return String(value || '').toLowerCase();
@@ -2353,6 +2354,12 @@
                             ->values()
                     );
 
+                    window.DevicePhotoOwnerDevices = @json(
+                        collect($link_owner_devices ?? [])
+                            ->filter(fn ($ownerDevice) => $device && (int) $ownerDevice['device_id'] !== (int) $device->device_id)
+                            ->values()
+                    );
+
                     document.addEventListener('DOMContentLoaded', function () {
                         var maxResults = 20;
                         var devices = window.DevicePhotoTargetDevices || [];
@@ -2361,7 +2368,7 @@
                             return String(value || '').toLowerCase();
                         }
 
-                        function findMatches(query) {
+                        function findMatches(query, devices) {
                             query = String(query || '').trim();
 
                             if (query === '') {
@@ -2418,7 +2425,8 @@
 
                         function renderSuggestions(input) {
                             var box = ensureSuggestionBox(input);
-                            var matches = findMatches(input.value);
+                            var devices = input.classList.contains('device-photo-owner-input') ? ownerDevices : targetDevices;
+                            var matches = findMatches(input.value, devices);
 
                             box.innerHTML = '';
 
@@ -2455,7 +2463,7 @@
                             box.style.display = 'block';
                         }
 
-                        document.querySelectorAll('.device-photo-target-input').forEach(function (input) {
+                        document.querySelectorAll('.device-photo-target-input, .device-photo-owner-input').forEach(function (input) {
                             input.addEventListener('input', function () {
                                 renderSuggestions(input);
                             });
@@ -2472,7 +2480,7 @@
                         });
 
                         document.addEventListener('click', function (e) {
-                            if (!e.target.closest('.device-photo-target-suggestions') && !e.target.closest('.device-photo-target-input')) {
+                            if (!e.target.closest('.device-photo-target-suggestions') && !e.target.closest('.device-photo-target-input') && !e.target.closest('.device-photo-owner-input')) {
                                 closeAllSuggestions();
                             }
                         });
@@ -2843,7 +2851,7 @@
                             <input
                                 type="text"
                                 name="owner_device_query"
-                                class="form-control device-photo-target-input"
+                                class="form-control device-photo-owner-input"
                                 placeholder="Owner device ID or name"
                                 value="{{ $incoming_owner_query ?? '' }}"
                                 autocomplete="off"
