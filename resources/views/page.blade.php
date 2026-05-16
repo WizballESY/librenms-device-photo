@@ -2489,7 +2489,7 @@
                         Drag and drop photos to change the order. The order is saved automatically.
                     </div>
 
-                    <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
+                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
                         @csrf
                         <input type="hidden" name="action" value="save_order">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
