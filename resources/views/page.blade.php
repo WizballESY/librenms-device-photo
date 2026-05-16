@@ -1053,7 +1053,7 @@
                                                                     @endif
 
                                                                     @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="display: inline;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
+                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
                                                                             @csrf
                                                                             <input type="hidden" name="action" value="remove_link">
                                                                             <input type="hidden" name="return_to" value="overview">
@@ -1087,7 +1087,7 @@
                                                                     @endif
 
                                                                     @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="display: inline;" data-device-photo-confirm="Remove this outgoing link? The original photo will not be deleted.">
+                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this outgoing link? The original photo will not be deleted.">
                                                                             @csrf
                                                                             <input type="hidden" name="action" value="remove_outgoing_link">
                                                                             <input type="hidden" name="return_to" value="overview">
@@ -2563,7 +2563,7 @@
                                                     @endif
 
                                                     @if ($can_delete)
-                                                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="margin-top: 6px;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
+                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
                                                             @csrf
                                                             <input type="hidden" name="action" value="remove_outgoing_link">
                                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -2955,7 +2955,7 @@
                                 </a>
 
                                 @if ($can_delete)
-                                <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
                                     @csrf
                                     <input type="hidden" name="action" value="remove_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
