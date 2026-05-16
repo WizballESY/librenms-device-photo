@@ -59,8 +59,8 @@
 </style>
 
 @php
-    $photoDir = storage_path('app/device-photos');
-    $thumbDir = storage_path('app/device-photos/thumbs');
+    $photoDir = storage_path(config('device-photo.photos_path', 'app/device-photos'));
+    $thumbDir = $photoDir . '/thumbs';
 
     $devicePhotoPhotoUrl = function (string $filename) use ($photoDir): string {
         $path = $photoDir . '/' . $filename;
@@ -201,7 +201,7 @@
      * Apply custom photo order from management page.
      * If no JSON order file exists, fall back to natural filename sorting.
      */
-    $orderFile = storage_path('app/device-photos-order/' . $safeShortName . '.json');
+    $orderFile = storage_path(config('device-photo.order_path', 'app/device-photos-order')) . '/' . $safeShortName . '.json';
     $order = [];
 
     if (is_file($orderFile)) {
@@ -229,7 +229,7 @@
      * Append linked photos from other devices.
      * Own photos are shown first, linked photos after.
      */
-    $linksFile = storage_path('app/device-photos-links/device-' . $device->device_id . '.json');
+    $linksFile = storage_path(config('device-photo.links_path', 'app/device-photos-links')) . '/device-' . $device->device_id . '.json';
     $links = [];
 
     if (is_file($linksFile)) {
