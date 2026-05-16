@@ -64,5 +64,5 @@
     </form>
     <hr>
 
-    @include('DevicePhoto::resources.views.partials.footer')
+    @include('device-photo::partials.footer')
 </div>

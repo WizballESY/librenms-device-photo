@@ -460,7 +460,7 @@
         <div class="alert alert-danger">{{ $error }}</div>
     @endif
 
-    @include('DevicePhoto::resources.views.partials.photo-modal')
+    @include('device-photo::partials.photo-modal')
 
 
 
@@ -3078,5 +3078,5 @@
 
     <hr>
 
-    @include('DevicePhoto::resources.views.partials.footer')
+    @include('device-photo::partials.footer')
 </div>

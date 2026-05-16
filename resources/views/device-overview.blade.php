@@ -304,7 +304,7 @@
     $modalId = 'device-photo-modal-' . $device->device_id;
 @endphp
 
-@include('DevicePhoto::resources.views.partials.photo-modal')
+@include('device-photo::partials.photo-modal')
 
 <style>
     .device-photo-wrapper {
