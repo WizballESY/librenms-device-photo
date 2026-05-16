@@ -85,6 +85,25 @@ The legacy endpoint is still in use by existing views:
 
 - `plugin/v1/DevicePhoto`
 
+## Package page and hook test status
+
+Tested manually in LibreNMS with both the legacy local plugin and the Composer/path package enabled.
+
+Working:
+
+- `/plugin/device-photo` loads the package plugin page
+- package hooks are published using LibreNMS plugin interfaces
+- package page links use `/plugin/device-photo`
+- package image URLs use `/plugin/device-photo-package/image`
+- device overview images are served by the package image controller
+- legacy local plugin remains available as `/plugin/DevicePhoto`
+
+Important:
+
+- The legacy local plugin must remain enabled for now.
+- Existing package POST forms still use the legacy endpoint `/plugin/v1/DevicePhoto`.
+- Do not disable the legacy `DevicePhoto` plugin until package POST controllers have feature parity.
+
 ## POST-only state-changing actions
 
 All state-changing actions must remain POST-only.
