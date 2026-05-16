@@ -37,7 +37,6 @@ return [
         'jpg',
         'jpeg',
         'png',
-        'gif',
         'webp',
         'heic',
         'heif',
