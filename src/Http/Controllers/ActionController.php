@@ -5,6 +5,7 @@ namespace WizballEsy\LibreNmsDevicePhoto\Http\Controllers;
 use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoImageService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoLinkService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoListService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoOrderService;
@@ -15,6 +16,7 @@ use WizballEsy\LibreNmsDevicePhoto\Services\PhotoSettingsService;
 class ActionController extends Controller
 {
     public function __construct(
+        private readonly PhotoImageService $images,
         private readonly PhotoListService $photos,
         private readonly PhotoLinkService $links,
         private readonly PhotoOrderService $order,
@@ -41,6 +43,8 @@ class ActionController extends Controller
             'remove_outgoing_link' => $this->removeOutgoingLink($request, $deviceId),
             'add_link' => $this->addLink($request, $deviceId),
             'add_incoming_link' => $this->addIncomingLink($request, $deviceId),
+            'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
+            'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -144,6 +148,83 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function cleanStaleThumbnails()
+    {
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $this->images->cleanupStaleThumbnails($this->paths->photosDir());
+
+        return $this->redirect(0, 'thumbnails_cleaned');
+    }
+
+    private function generateMissingThumbnails()
+    {
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        /*
+         * Generate thumbnails for active photos that are missing thumbnails.
+         * Fail-safe: if GD is missing, redirect without breaking anything.
+         */
+        if (! extension_loaded('gd')) {
+            return $this->redirect(0, 'thumbnail_gd_missing');
+        }
+
+        if (! is_dir($this->paths->thumbsDir())) {
+            @mkdir($this->paths->thumbsDir(), 02775, true);
+        }
+
+        $generated = 0;
+        $failed = 0;
+
+        foreach (glob($this->paths->photosDir() . '/device-*.*') ?: [] as $sourcePath) {
+            if (! is_file($sourcePath)) {
+                continue;
+            }
+
+            $filename = basename($sourcePath);
+
+            if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            $thumbPath = $this->paths->thumbPath($filename);
+
+            if (is_file($thumbPath)) {
+                continue;
+            }
+
+            if ($this->images->createThumbnail($sourcePath, $filename)) {
+                $generated++;
+            } else {
+                $failed++;
+            }
+        }
+
+        if ($generated > 0 && $failed > 0) {
+            return $this->redirect(0, 'thumbnails_partial');
+        }
+
+        if ($generated > 0) {
+            $this->images->cleanupStaleThumbnails($this->paths->photosDir());
+
+            return $this->redirect(0, 'thumbnails_generated');
+        }
+
+        if ($failed > 0) {
+            return $this->redirect(0, 'thumbnails_failed');
+        }
+
+        return $this->redirect(0, 'thumbnails_none_missing');
     }
 
     private function addLink(Request $request, int $deviceId)
