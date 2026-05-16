@@ -1,5 +1,16 @@
 <div style="margin: 15px;">
-    <h4>{{ $plugin_name }} Settings</h4>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
+        <h2 style="margin: 0;">
+            Device Photos Settings
+            @include('device-photo::partials.version-badge')
+        </h2>
+
+        <a href="{{ url('plugin/device-photo') }}"
+           class="btn btn-primary btn-sm"
+           title="Device Photos overview">
+            <i class="fa fa-arrow-left"></i> Device Photos Overview
+        </a>
+    </div>
 
     <p class="text-muted">
         Select which LibreNMS roles are allowed to manage device photos.

@@ -427,20 +427,33 @@
 </style>
 
 <div class="container-fluid device-photo-plugin">
-    <h2 style="margin-bottom: 14px;">
-        {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Manage Device Photos' }}
-        @include('device-photo::partials.version-badge')
-    </h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
+        <h2 style="margin: 0;">
+            {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Manage Device Photos' }}
+            @include('device-photo::partials.version-badge')
+        </h2>
+
+        @if ($global_overview ?? false)
+            <a href="{{ url('plugin/settings/device-photo') }}"
+               class="btn btn-primary btn-sm"
+               title="Device Photos settings">
+                <i class="fa fa-cog"></i> Device Photos Settings
+            </a>
+        @else
+            <a href="{{ url('plugin/device-photo') }}"
+               class="btn btn-primary btn-sm"
+               title="Device Photos overview">
+                <i class="fa fa-arrow-left"></i> Device Photos Overview
+            </a>
+        @endif
+    </div>
 
     @if ($device)
         <div style="margin-top: 10px; margin-bottom: 18px;">
-            <a href="{{ url('device/' . $device->device_id) }}" class="btn btn-default btn-sm">
+            <a href="{{ url('device/' . $device->device_id) }}" class="btn btn-primary btn-sm">
                 <i class="fa fa-arrow-left"></i> Back to device
             </a>
 
-            <a href="{{ url('plugin/device-photo') }}" class="btn btn-primary btn-sm">
-                <i class="fa fa-camera"></i> Device Photos Overview
-            </a>
         </div>
     @endif
 
@@ -2189,16 +2202,16 @@
                         <div style="display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;">
                             <strong style="margin-right: 4px;">Upload status:</strong>
 
-                            <span class="label label-info" title="PHP upload_max_filesize">
-                                upload_max_filesize: {{ $php_upload_max_filesize ?? 'unknown' }}
+                            <span class="label label-primary" title="PHP upload_max_filesize">
+                                PHP upload_max_filesize: {{ $php_upload_max_filesize ?? 'unknown' }}
                             </span>
 
-                            <span class="label label-info" title="PHP post_max_size">
-                                post_max_size: {{ $php_post_max_size ?? 'unknown' }}
+                            <span class="label label-primary" title="PHP post_max_size">
+                                PHP post_max_size: {{ $php_post_max_size ?? 'unknown' }}
                             </span>
 
                             <span class="label {{ !empty($php_file_uploads) ? 'label-success' : 'label-danger' }}" title="PHP file_uploads">
-                                file_uploads: {{ !empty($php_file_uploads) ? 'Enabled' : 'Disabled' }}
+                                PHP file_uploads: {{ !empty($php_file_uploads) ? 'Enabled' : 'Disabled' }}
                             </span>
 
                             <span class="label {{ !empty($heic_conversion_available) ? 'label-success' : 'label-warning' }}" title="HEIC/HEIF files are converted to JPG during upload when available.">
@@ -2210,9 +2223,17 @@
                             </span>
                         </div>
 
-                        <div style="margin-top: 8px; color: #31708f;">
-                            Webserver upload limit must also be high enough.
-                            Examples: Nginx <code>client_max_body_size</code>, Apache <code>LimitRequestBody</code>.
+                        <div style="margin-top: 8px; color: #31708f; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;">
+                            <strong style="margin-right: 4px;">Web server:</strong>
+
+                            <span class="label label-primary" title="{{ $web_server_software ?: 'SERVER_SOFTWARE not available' }}">
+                                {{ $web_server_name ?? 'unknown' }}
+                            </span>
+
+                            <span>
+                                If uploads fail with <strong>HTTP 413 Request Entity Too Large</strong>,
+                                {{ $web_server_upload_hint ?? 'check your web server body size limit.' }}
+                            </span>
                         </div>
                     </div>
                 </form>

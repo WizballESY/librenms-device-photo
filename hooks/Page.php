@@ -460,6 +460,29 @@ class Page extends PageHook
         return (bool) $this->findBinary('exiftool');
     }
 
+    private function webServerUploadInfo(): array
+    {
+        $serverSoftware = (string) ($_SERVER['SERVER_SOFTWARE'] ?? '');
+        $serverSoftwareLower = strtolower($serverSoftware);
+
+        $name = 'unknown';
+        $hint = 'check your web server body size limit.';
+
+        if (str_contains($serverSoftwareLower, 'nginx')) {
+            $name = 'NGINX';
+            $hint = 'check client_max_body_size.';
+        } elseif (str_contains($serverSoftwareLower, 'apache')) {
+            $name = 'Apache';
+            $hint = 'check LimitRequestBody.';
+        }
+
+        return [
+            'name' => $name,
+            'software' => $serverSoftware,
+            'hint' => $hint,
+        ];
+    }
+
     private function parseExifDate(?string $value): ?int
     {
         $value = trim((string) $value);
@@ -858,6 +881,8 @@ class Page extends PageHook
             }
         }
 
+        $webServerUploadInfo = $this->webServerUploadInfo();
+
         return [
             'message' => $message,
             'error' => $error,
@@ -883,6 +908,9 @@ class Page extends PageHook
             'exiftool_available' => $this->exifToolAvailable(),
             'php_upload_max_filesize' => ini_get('upload_max_filesize'),
             'php_post_max_size' => ini_get('post_max_size'),
+            'web_server_name' => $webServerUploadInfo['name'],
+            'web_server_software' => $webServerUploadInfo['software'],
+            'web_server_upload_hint' => $webServerUploadInfo['hint'],
         ];
     }
 }
