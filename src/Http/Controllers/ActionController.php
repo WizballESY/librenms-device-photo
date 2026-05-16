@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoImageService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoLinkService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoListService;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoMetadataService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoOrderService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoPathService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoPermissionService;
@@ -19,6 +20,7 @@ class ActionController extends Controller
         private readonly PhotoImageService $images,
         private readonly PhotoListService $photos,
         private readonly PhotoLinkService $links,
+        private readonly PhotoMetadataService $metadata,
         private readonly PhotoOrderService $order,
         private readonly PhotoPathService $paths,
         private readonly PhotoPermissionService $permissions,
@@ -46,6 +48,7 @@ class ActionController extends Controller
             'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
             'remove_broken_link' => $this->removeBrokenLink($request),
+            'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -149,6 +152,51 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function setPhotoTaken(Request $request, int $deviceId)
+    {
+        $filename = basename((string) $request->input('filename', ''));
+        $photoTakenInput = (string) $request->input('photo_taken', '');
+
+        if ($deviceId < 1) {
+            return $this->redirect($deviceId, 'device_not_found');
+        }
+
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $pattern = '/^' . preg_quote($safeShortName, '/') . '-\\d+\\.(jpg|jpeg)$/i';
+
+        if (! preg_match($pattern, $filename)) {
+            return $this->redirect($deviceId, 'invalid_filename');
+        }
+
+        $photoPath = $this->paths->photoPath($filename);
+
+        if (! is_file($photoPath)) {
+            return $this->redirect($deviceId, 'not_found');
+        }
+
+        if (! $this->metadata->exiftoolAvailable()) {
+            return $this->redirect($deviceId, 'exiftool_unavailable');
+        }
+
+        $timestamp = $this->metadata->parsePhotoTakenInput($photoTakenInput);
+
+        if (! $timestamp) {
+            return $this->redirect($deviceId, 'invalid_photo_taken');
+        }
+
+        if (! $this->metadata->writePhotoTakenExif($photoPath, $timestamp)) {
+            return $this->redirect($deviceId, 'photo_taken_failed');
+        }
+
+        /*
+         * EXIF orientation/date may affect generated thumbnails and displayed metadata.
+         * Refresh the thumbnail after writing metadata.
+         */
+        $this->images->createThumbnail($photoPath, $filename);
+
+        return $this->redirect($deviceId, 'photo_taken_updated');
     }
 
     private function removeBrokenLink(Request $request)
