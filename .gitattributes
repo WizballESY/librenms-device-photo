@@ -1,0 +1,5 @@
+/.github export-ignore
+/docs/screenshots export-ignore
+/MIGRATION_MAP.md export-ignore
+/PACKAGING.md export-ignore
+/package-review export-ignore
