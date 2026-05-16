@@ -25,6 +25,7 @@ class DevicePhotoServiceProvider extends ServiceProvider
         $pluginName = 'device-photo';
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'device-photo');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
         $pluginManager = $this->app->make(PluginManagerInterface::class);
 
