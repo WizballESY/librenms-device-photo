@@ -130,6 +130,22 @@ class Page extends PageHook
         return storage_path(config('device-photo.links_path', 'app/device-photos-links'));
     }
 
+    private function ensureStorageDirectories(): void
+    {
+        foreach ([
+            $this->photosDir(),
+            $this->thumbsDir(),
+            $this->photosDir() . '/deleted',
+            $this->photosDir() . '/deleted/thumbs',
+            $this->orderDir(),
+            $this->linksDir(),
+        ] as $dir) {
+            if (! is_dir($dir)) {
+                @mkdir($dir, 02775, true);
+            }
+        }
+    }
+
     private function countStaleThumbnails(string $photoDir): int
     {
         $thumbDir = $photoDir . '/thumbs';
@@ -536,6 +552,8 @@ class Page extends PageHook
     public function data(array $settings = []): array
     {
         $request = request();
+
+        $this->ensureStorageDirectories();
 
         $photoDir = $this->photosDir();
         $orderDir = $this->orderDir();
