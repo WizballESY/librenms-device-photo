@@ -45,6 +45,7 @@ class ActionController extends Controller
             'add_incoming_link' => $this->addIncomingLink($request, $deviceId),
             'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
+            'remove_broken_link' => $this->removeBrokenLink($request),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -148,6 +149,59 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function removeBrokenLink(Request $request)
+    {
+        /*
+         * Remove a broken linked-photo entry from the target device JSON.
+         * This only removes the link entry, not any photo file.
+         */
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $targetDeviceId = (int) $request->input('target_device_id', 0);
+        $ownerDeviceId = (int) $request->input('owner_device_id', 0);
+        $filename = basename((string) $request->input('filename', ''));
+
+        if ($targetDeviceId < 1 || $ownerDeviceId < 1 || $filename === '') {
+            return $this->redirect(0, 'invalid_link');
+        }
+
+        if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            return $this->redirect(0, 'invalid_filename');
+        }
+
+        $links = $this->links->load($targetDeviceId);
+        $newLinks = [];
+        $removed = false;
+
+        foreach ($links as $link) {
+            if (! is_array($link)) {
+                continue;
+            }
+
+            $linkOwnerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+            $linkFilename = basename((string) ($link['filename'] ?? ''));
+
+            if ($linkOwnerDeviceId === $ownerDeviceId && $linkFilename === $filename) {
+                $removed = true;
+                continue;
+            }
+
+            $newLinks[] = $link;
+        }
+
+        if (! $removed) {
+            return $this->redirect(0, 'not_found');
+        }
+
+        $this->links->save($targetDeviceId, $newLinks);
+
+        return $this->redirectAfterAction($request, 0, 'link_removed');
     }
 
     private function cleanStaleThumbnails()
