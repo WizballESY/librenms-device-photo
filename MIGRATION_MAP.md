@@ -342,6 +342,47 @@ Important:
 - keep the legacy local `DevicePhoto` plugin enabled
 - continue migrating one POST action group at a time
 
+## Package link creation action test status
+
+The next package POST action group has been migrated and tested.
+
+Migrated actions:
+
+- `add_link`
+- `add_incoming_link`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- linked photos can be added from `/plugin/device-photo`
+- incoming linked photos can be added from another owner device
+- link creation redirects back to `/plugin/device-photo`
+- incoming-link workflow preserves the owner-device search query and anchor
+- original photo files are not modified
+
+Still legacy:
+
+- `generate_missing_thumbnails`
+- `clean_stale_thumbnails`
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `remove_broken_link`
+- `upload`
+- `delete`
+- `set_photo_taken`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
