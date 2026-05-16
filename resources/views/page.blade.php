@@ -854,7 +854,7 @@
                     </div>
                 @elseif (($overview['missing_thumbnail_count'] ?? 0) > 0)
                     <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten." style="display: inline;">
+                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten." style="display: inline;">
                             @csrf
                             <input type="hidden" name="action" value="generate_missing_thumbnails">
                             <input type="hidden" name="device_id" value="0">
@@ -872,7 +872,7 @@
 
                 @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
                     <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
+                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
                             @csrf
                             <input type="hidden" name="action" value="clean_stale_thumbnails">
                             <input type="hidden" name="device_id" value="0">
