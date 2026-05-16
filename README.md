@@ -146,23 +146,18 @@ storage/app/device-photos-order
 storage/app/device-photos-links
 ```
 
-Create the directories if needed:
+These directories are normally created automatically when the plugin page is opened or when photos are uploaded.
+
+If you get permission warnings, verify ownership and permissions. Many LibreNMS installs use `librenms:librenms`:
 
 ```bash
 cd /opt/librenms
 
-mkdir -p storage/app/device-photos
-mkdir -p storage/app/device-photos/thumbs
-mkdir -p storage/app/device-photos/deleted
-mkdir -p storage/app/device-photos/deleted/thumbs
-mkdir -p storage/app/device-photos-order
-mkdir -p storage/app/device-photos-links
-```
-
-Set ownership and permissions for your LibreNMS environment. Many installs use `librenms:librenms`:
-
-```bash
-cd /opt/librenms
+mkdir -p \
+  storage/app/device-photos/thumbs \
+  storage/app/device-photos/deleted/thumbs \
+  storage/app/device-photos-order \
+  storage/app/device-photos-links
 
 chown -R librenms:librenms \
   storage/app/device-photos \
@@ -287,12 +282,18 @@ storage/app/device-photos-links
 
 ## Updating
 
+To update to a specific release:
+
 ```bash
 cd /opt/librenms
 
-sudo -u librenms composer update wizballesy/librenms-device-photo
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.5
 sudo -u librenms php artisan optimize:clear
 ```
+
+Replace `v0.1.0-alpha.5` with the version you want to install.
+
+LibreNMS `validate` may warn that `composer.json` and `composer.lock` are modified after installing or updating third-party plugin packages. This is expected because the plugin is installed as a Composer dependency inside the LibreNMS application directory.
 
 ---
 
