@@ -40,6 +40,29 @@ Security requirements:
 - private cache header
 - `X-Content-Type-Options: nosniff`
 
+## Package image route
+
+A package test route has been added for image serving:
+
+- `GET plugin/device-photo-package/image`
+
+This route is handled by:
+
+- `src/Http/Controllers/PhotoController.php`
+
+Supported actions:
+
+- `action=photo`
+- `action=thumb`
+- `action=deleted_photo`
+- `action=deleted_thumb`
+
+Important:
+
+- This is currently a package test route only.
+- Existing views still use the legacy endpoint `plugin/v1/DevicePhoto`.
+- The legacy endpoint must not be removed until the package route has been tested.
+
 ## POST-only state-changing actions
 
 All state-changing actions must remain POST-only.
