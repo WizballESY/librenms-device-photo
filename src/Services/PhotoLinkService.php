@@ -46,11 +46,21 @@ class PhotoLinkService
 
     public function add(int $targetDeviceId, int $ownerDeviceId, string $filename): bool
     {
+        $filename = basename($filename);
         $links = $this->load($targetDeviceId);
+
+        foreach ($links as $link) {
+            if (
+                (int) ($link['owner_device_id'] ?? 0) === $ownerDeviceId
+                && basename((string) ($link['filename'] ?? '')) === $filename
+            ) {
+                return true;
+            }
+        }
 
         $links[] = [
             'owner_device_id' => $ownerDeviceId,
-            'filename' => basename($filename),
+            'filename' => $filename,
         ];
 
         return $this->save($targetDeviceId, $links);
