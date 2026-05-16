@@ -2647,7 +2647,7 @@
                                     }
                                 @endphp
 
-                                <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" class="device-photo-delete-form" data-device-photo-confirm="{{ $deleteConfirm }}">
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" class="device-photo-delete-form" data-device-photo-confirm="{{ $deleteConfirm }}">
                                     @csrf
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
