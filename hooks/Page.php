@@ -110,6 +110,26 @@ class Page extends PageHook
         return null;
     }
 
+    private function photosDir(): string
+    {
+        return storage_path(config('device-photo.photos_path', 'app/device-photos'));
+    }
+
+    private function thumbsDir(): string
+    {
+        return $this->photosDir() . '/thumbs';
+    }
+
+    private function orderDir(): string
+    {
+        return storage_path(config('device-photo.order_path', 'app/device-photos-order'));
+    }
+
+    private function linksDir(): string
+    {
+        return storage_path(config('device-photo.links_path', 'app/device-photos-links'));
+    }
+
     private function countStaleThumbnails(string $photoDir): int
     {
         $thumbDir = $photoDir . '/thumbs';
@@ -147,8 +167,8 @@ class Page extends PageHook
         $missingThumbnailCount = 0;
         $thumbnailBytes = 0;
         $gdAvailable = extension_loaded('gd');
-        $thumbDir = storage_path('app/device-photos/thumbs');
-        $thumbDirWritable = is_dir($thumbDir) ? is_writable($thumbDir) : is_writable(storage_path('app/device-photos'));
+        $thumbDir = $this->thumbsDir();
+        $thumbDirWritable = is_dir($thumbDir) ? is_writable($thumbDir) : is_writable($this->photosDir());
 
         /*
          * Find all photo files on disk.
@@ -203,7 +223,7 @@ class Page extends PageHook
         /*
          * Read linked-photo JSON files.
          */
-        $linkDir = storage_path('app/device-photos-links');
+        $linkDir = $this->linksDir();
 
         foreach (glob($linkDir . '/device-*.json') ?: [] as $linkFile) {
             $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
@@ -368,7 +388,7 @@ class Page extends PageHook
 
     private function photoUrl(string $filename): string
     {
-        $path = storage_path('app/device-photos/' . $filename);
+        $path = $this->photosDir() . '/' . $filename;
         $version = is_file($path) ? (string) @filemtime($path) : '0';
 
         return url('plugin/device-photo-package/image') . '?action=photo&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
@@ -376,7 +396,7 @@ class Page extends PageHook
 
     private function thumbUrl(string $filename): string
     {
-        $thumbPath = storage_path('app/device-photos/thumbs/' . $filename);
+        $thumbPath = $this->thumbsDir() . '/' . $filename;
 
         if (is_file($thumbPath)) {
             $version = (string) @filemtime($thumbPath);
@@ -517,8 +537,8 @@ class Page extends PageHook
     {
         $request = request();
 
-        $photoDir = storage_path('app/device-photos');
-        $orderDir = storage_path('app/device-photos-order');
+        $photoDir = $this->photosDir();
+        $orderDir = $this->orderDir();
 
         if (! is_dir($orderDir)) {
             mkdir($orderDir, 02775, true);
@@ -597,7 +617,7 @@ class Page extends PageHook
          */
         $photoOwnerDeviceIds = [];
 
-        foreach (glob(storage_path('app/device-photos/device-*.*')) ?: [] as $photoPath) {
+        foreach (glob($this->photosDir() . '/device-*.*') ?: [] as $photoPath) {
             $photoFilename = basename($photoPath);
 
             if (preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $photoFilename, $matches)) {
@@ -703,7 +723,7 @@ class Page extends PageHook
              * Find where this device's own photos are linked.
              * This is used to warn before deleting an owner photo that is used elsewhere.
              */
-            foreach (glob(storage_path('app/device-photos-links/device-*.json')) ?: [] as $linkFile) {
+            foreach (glob($this->linksDir() . '/device-*.json') ?: [] as $linkFile) {
                 $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
 
                 if ($targetDeviceId < 1) {
@@ -738,7 +758,7 @@ class Page extends PageHook
              * Linked photos shown on this device.
              * The file is owned by another device, but displayed here.
              */
-            $linksFile = storage_path('app/device-photos-links/device-' . $device->device_id . '.json');
+            $linksFile = $this->linksDir() . '/device-' . $device->device_id . '.json';
             $links = [];
 
             if (is_file($linksFile)) {
