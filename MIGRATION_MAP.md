@@ -63,6 +63,28 @@ Important:
 - Existing views still use the legacy endpoint `plugin/v1/DevicePhoto`.
 - The legacy endpoint must not be removed until the package route has been tested.
 
+## Package image route test status
+
+Tested manually in LibreNMS with the Composer/path package installed.
+
+Working:
+
+- `action=photo` returns the original image
+- `action=thumb` returns the thumbnail
+- invalid extension returns `400 Bad Request`
+- invalid filename returns `400 Bad Request`
+- unknown action returns `405 Method Not Allowed`
+
+The route required Laravel `web` middleware to access the LibreNMS authenticated session.
+
+Current test route:
+
+- `GET plugin/device-photo-package/image`
+
+The legacy endpoint is still in use by existing views:
+
+- `plugin/v1/DevicePhoto`
+
 ## POST-only state-changing actions
 
 All state-changing actions must remain POST-only.
