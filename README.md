@@ -343,6 +343,16 @@ Be careful: this deletes uploaded photos and metadata.
 
 ---
 
+## Support
+
+If this plugin saves you time or helps your LibreNMS setup, you can optionally support the project here:
+
+[Support the project](https://paypal.me/WizballESY)
+
+Donations are optional and are not required to use the plugin.
+
+---
+
 ## License
 
 GPL-3.0-or-later.
