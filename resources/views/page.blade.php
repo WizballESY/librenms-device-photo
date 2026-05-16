@@ -2090,7 +2090,7 @@
 
             <div class="panel-body">
 @if ($can_upload)
-                <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" enctype="multipart/form-data" style="margin-bottom: 28px;" id="device-photo-upload-form">
+                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" enctype="multipart/form-data" style="margin-bottom: 28px;" id="device-photo-upload-form">
                     @csrf
                     <input type="hidden" name="action" value="upload">
                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
