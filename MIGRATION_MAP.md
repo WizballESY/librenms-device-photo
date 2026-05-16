@@ -460,6 +460,48 @@ Important:
 - keep the legacy local `DevicePhoto` plugin enabled
 - continue migrating one POST action group at a time
 
+## Package photo taken metadata test status
+
+The photo taken metadata package POST action has been migrated and tested.
+
+Migrated action:
+
+- `set_photo_taken`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Services:
+
+- `src/Services/PhotoMetadataService.php`
+- `src/Services/PhotoImageService.php`
+
+Working:
+
+- photo taken metadata can be updated from `/plugin/device-photo`
+- EXIF date is written to the original JPEG/JPG file
+- thumbnail is regenerated after metadata update
+- action redirects back to `/plugin/device-photo`
+- tested successfully in LibreNMS UI
+
+Still legacy:
+
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `upload`
+- `delete`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+- upload should remain last
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
