@@ -2612,7 +2612,7 @@
                                     <i class="fa fa-link"></i> Link this photo to another device
                                 </div>
 
-                                <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="margin-bottom: 8px; position: relative;">
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-bottom: 8px; position: relative;">
                                     @csrf
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -2888,7 +2888,7 @@
                                             style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                         >
 
-                                        <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}">
+                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}">
                                             @csrf
                                             <input type="hidden" name="action" value="add_incoming_link">
                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
