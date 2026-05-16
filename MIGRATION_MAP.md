@@ -228,6 +228,45 @@ The following package services have been created as migration building blocks:
 - `src/Services/PhotoMetadataService.php`
   - exiftool availability, photo taken parsing and EXIF date writing
 
+## Remaining legacy POST forms in package views
+
+The package views still contain POST forms pointing to the legacy endpoint:
+
+- `/plugin/v1/DevicePhoto`
+
+Current actions found in `resources/views/page.blade.php`:
+
+- `generate_missing_thumbnails`
+- `clean_stale_thumbnails`
+- `remove_link`
+- `remove_outgoing_link`
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `remove_broken_link`
+- `upload`
+- `save_order`
+- `add_link`
+- `delete`
+- `add_incoming_link`
+- `set_photo_taken`
+
+Recommended migration order:
+
+1. `save_order`
+2. `remove_link` and `remove_outgoing_link`
+3. `add_link` and `add_incoming_link`
+4. `clean_stale_thumbnails` and `generate_missing_thumbnails`
+5. `set_photo_taken`
+6. `delete`
+7. `assign_orphan_photo`, `delete_orphan_photo` and `remove_broken_link`
+8. `upload`
+
+Important:
+
+- Do not switch all POST forms at once.
+- Migrate and test one action group at a time.
+- Keep the legacy local `DevicePhoto` plugin enabled until all package POST actions have feature parity.
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
