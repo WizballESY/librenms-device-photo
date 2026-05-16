@@ -52,6 +52,7 @@ class ActionController extends Controller
             'delete' => $this->deletePhoto($request, $deviceId),
             'assign_orphan_photo' => $this->assignOrphanPhoto($request),
             'delete_orphan_photo' => $this->deleteOrphanPhoto($request),
+            'upload' => $this->uploadPhotos($request, $deviceId),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -155,6 +156,180 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function uploadPhotos(Request $request, int $deviceId)
+    {
+        /*
+         * Supports both:
+         *   photo      = single upload, old field name
+         *   photos[]   = multi upload, new field name
+         */
+        if ($deviceId < 1) {
+            return $this->redirect($deviceId, 'device_not_found');
+        }
+
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            return $this->redirect($deviceId, 'permission_denied');
+        }
+
+        $uploadedFiles = $request->file('photos');
+
+        if (empty($uploadedFiles)) {
+            $uploadedFiles = $request->file('photo');
+        }
+
+        if (empty($uploadedFiles)) {
+            return $this->redirect($deviceId, 'no_file');
+        }
+
+        if (! is_array($uploadedFiles)) {
+            $uploadedFiles = [$uploadedFiles];
+        }
+
+        if (! is_dir($this->paths->photosDir())) {
+            @mkdir($this->paths->photosDir(), 02775, true);
+        }
+
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $uploadedCount = 0;
+
+        foreach ($uploadedFiles as $file) {
+            if (! $file || ! $file->isValid()) {
+                return $this->redirect($deviceId, 'upload_failed');
+            }
+
+            $ext = strtolower((string) $file->getClientOriginalExtension());
+
+            if (! in_array($ext, $allowedExt, true)) {
+                return $this->redirect($deviceId, 'invalid_type');
+            }
+
+            if ($file->getSize() > 10 * 1024 * 1024) {
+                return $this->redirect($deviceId, 'too_large');
+            }
+
+            $isHeicUpload = in_array($ext, ['heic', 'heif'], true);
+
+            if (! $isHeicUpload) {
+                $imageInfo = @getimagesize($file->getRealPath());
+
+                if ($imageInfo === false || empty($imageInfo[0]) || empty($imageInfo[1])) {
+                    return $this->redirect($deviceId, 'invalid_image');
+                }
+
+                $allowedMimeByExt = [
+                    'jpg' => ['image/jpeg'],
+                    'jpeg' => ['image/jpeg'],
+                    'png' => ['image/png'],
+                    'webp' => ['image/webp'],
+                ];
+
+                $imageMime = strtolower((string) ($imageInfo['mime'] ?? ''));
+
+                if (! in_array($imageMime, $allowedMimeByExt[$ext] ?? [], true)) {
+                    return $this->redirect($deviceId, 'invalid_image');
+                }
+
+                $imageWidth = (int) $imageInfo[0];
+                $imageHeight = (int) $imageInfo[1];
+                $imagePixels = $imageWidth * $imageHeight;
+
+                if ($imageWidth < 1 || $imageHeight < 1 || $imagePixels > 40000000) {
+                    return $this->redirect($deviceId, 'image_too_large_pixels');
+                }
+            }
+
+            if ($isHeicUpload && ! $this->images->heicConversionAvailable()) {
+                return $this->redirect($deviceId, 'heic_unavailable');
+            }
+
+            $targetName = null;
+
+            /*
+             * Always use numbered filenames:
+             *   device-23-1.jpg
+             *   device-23-2.jpg
+             *   device-23-3.jpg
+             *
+             * Numbering is global per device, regardless of file extension.
+             */
+            for ($i = 1; $i <= 999; $i++) {
+                $numberInUse = false;
+
+                foreach ($allowedExt as $checkExt) {
+                    if (file_exists($this->paths->photosDir() . '/' . $safeShortName . '-' . $i . '.' . $checkExt)) {
+                        $numberInUse = true;
+                        break;
+                    }
+                }
+
+                if (! $numberInUse) {
+                    $targetExt = $isHeicUpload ? 'jpg' : $ext;
+                    $targetName = $safeShortName . '-' . $i . '.' . $targetExt;
+                    break;
+                }
+            }
+
+            if (! $targetName) {
+                return $this->redirect($deviceId, 'no_filename');
+            }
+
+            /*
+             * If this filename has been used before, remove stale links before storing
+             * the new file. Otherwise a newly uploaded photo could inherit old links.
+             */
+            $this->links->removeAllForFilename($targetName);
+
+            $targetPath = $this->paths->photoPath($targetName);
+
+            if ($isHeicUpload) {
+                if (! $this->images->convertHeicToJpeg($file->getRealPath(), $targetPath)) {
+                    return $this->redirect($deviceId, 'heic_convert_failed');
+                }
+
+                $convertedInfo = @getimagesize($targetPath);
+
+                if (
+                    $convertedInfo === false ||
+                    empty($convertedInfo[0]) ||
+                    empty($convertedInfo[1]) ||
+                    ((int) $convertedInfo[0] * (int) $convertedInfo[1]) > 40000000
+                ) {
+                    @unlink($targetPath);
+
+                    return $this->redirect($deviceId, 'image_too_large_pixels');
+                }
+            } else {
+                $file->move($this->paths->photosDir(), $targetName);
+            }
+
+            @chmod($targetPath, 0664);
+
+            /*
+             * Thumbnail generation is optional and fail-safe.
+             * If GD is missing or thumbnail generation fails, the original image is used as fallback.
+             */
+            $this->images->createThumbnail($targetPath, $targetName);
+
+            $uploadedCount++;
+        }
+
+        if ($uploadedCount < 1) {
+            return $this->redirect($deviceId, 'no_file');
+        }
+
+        /*
+         * Refresh JSON order after upload.
+         * Existing custom order is preserved, new files are appended.
+         */
+        $order = $this->photos->listFilenamesForDevice($deviceId);
+        $this->order->save($safeShortName, $order);
+
+        return $this->redirect($deviceId, 'uploaded');
     }
 
     private function assignOrphanPhoto(Request $request)
