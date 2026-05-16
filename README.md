@@ -90,7 +90,7 @@ Recommended installation method:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.4
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.5
 sudo -u librenms php artisan optimize:clear
 ```
 
