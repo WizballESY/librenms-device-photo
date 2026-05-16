@@ -1543,7 +1543,7 @@
 
                                         <td>
                                             @if ($can_delete)
-                                                <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" data-device-photo-confirm="Remove this broken photo link? The original photo file is already missing.">
+                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this broken photo link? The original photo file is already missing.">
                                                     @csrf
                                                     <input type="hidden" name="action" value="remove_broken_link">
                                                     <input type="hidden" name="return_to" value="overview">
