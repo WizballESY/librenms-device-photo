@@ -2353,9 +2353,16 @@
                             ->values()
                     );
 
+                    window.DevicePhotoOwnerDevices = @json(
+                        collect($link_owner_devices ?? [])
+                            ->filter(fn ($ownerDevice) => $device && (int) $ownerDevice['device_id'] !== (int) $device->device_id)
+                            ->values()
+                    );
+
                     document.addEventListener('DOMContentLoaded', function () {
                         var maxResults = 20;
                         var devices = window.DevicePhotoTargetDevices || [];
+                        var ownerDevices = window.DevicePhotoOwnerDevices || [];
 
                         function normalize(value) {
                             return String(value || '').toLowerCase();
@@ -2418,7 +2425,14 @@
 
                         function renderSuggestions(input) {
                             var box = ensureSuggestionBox(input);
+                            var originalDevices = devices;
+
+                            if (input.getAttribute('name') === 'owner_device_query') {
+                                devices = ownerDevices;
+                            }
+
                             var matches = findMatches(input.value);
+                            devices = originalDevices;
 
                             box.innerHTML = '';
 
