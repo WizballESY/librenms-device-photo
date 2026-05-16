@@ -1320,7 +1320,7 @@
                                 </a>
 
                                 @if ($can_upload)
-                                    <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Assign this orphaned photo to the selected device? The file will be renamed.">
+                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Assign this orphaned photo to the selected device? The file will be renamed.">
                                         @csrf
                                         <input type="hidden" name="action" value="assign_orphan_photo">
                                         <input type="hidden" name="device_id" value="0">
@@ -1345,7 +1345,7 @@
                                 @endif
 
                                 @if ($can_delete)
-                                    <form method="post" action="{{ url('plugin/v1/DevicePhoto') }}" style="margin-top: 8px;" data-device-photo-confirm="Delete this orphaned photo? It will be moved to the deleted folder and can be restored manually.">
+                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px;" data-device-photo-confirm="Delete this orphaned photo? It will be moved to the deleted folder and can be restored manually.">
                                         @csrf
                                         <input type="hidden" name="action" value="delete_orphan_photo">
                                         <input type="hidden" name="device_id" value="0">
