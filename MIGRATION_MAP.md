@@ -641,3 +641,17 @@ Important:
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
 
 Feature parity must be checked action by action.
+## Autocomplete source fix
+
+Fixed autocomplete behavior after package migration.
+
+Working:
+
+- `Link this photo to another device` uses the full target device list
+- `Add linked photo from another device` uses only devices that own active photos
+- both autocomplete fields were tested successfully in LibreNMS UI
+
+Reason:
+
+- target-device linking must allow devices without existing photos
+- incoming linked-photo search should only suggest devices that actually own photos
