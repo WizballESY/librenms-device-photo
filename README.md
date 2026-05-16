@@ -85,28 +85,16 @@ Manual copy-based installation is no longer the recommended installation method.
 
 ### Install from Packagist
 
-When the package is available on Packagist:
+Recommended installation method:
 
 ```bash
 cd /opt/librenms
 
-sudo -u librenms composer require wizballesy/librenms-device-photo
-sudo -u librenms ./lnms plugin:enable device-photo
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.4
 sudo -u librenms php artisan optimize:clear
 ```
 
-### Install from GitHub before Packagist release
-
-Before the package is available on Packagist, add the GitHub repository as a Composer VCS repository in LibreNMS:
-
-```bash
-cd /opt/librenms
-
-sudo -u librenms composer config repositories.librenms-device-photo vcs https://github.com/WizballESY/librenms-device-photo
-sudo -u librenms composer require wizballesy/librenms-device-photo:dev-main
-sudo -u librenms ./lnms plugin:enable device-photo
-sudo -u librenms php artisan optimize:clear
-```
+This uses LibreNMS' plugin package installer and installs the package from Packagist.
 
 After installation, open:
 
@@ -114,16 +102,32 @@ After installation, open:
 /plugin/device-photo
 ```
 
+### Development install from GitHub
+
+For development testing before a tagged release, you can install directly from the GitHub repository:
+
+```bash
+cd /opt/librenms
+
+sudo -u librenms php /opt/librenms/composer.phar config repositories.librenms-device-photo vcs https://github.com/WizballESY/librenms-device-photo
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo dev-main
+sudo -u librenms php artisan optimize:clear
+```
+
+For normal users, prefer the tagged Packagist install above.
+
 ### LibreNMS validate note
 
-Installing third-party Composer packages directly into a LibreNMS installation modifies:
+Installing LibreNMS plugin packages modifies:
 
 ```text
 composer.json
 composer.lock
 ```
 
-LibreNMS `validate` may warn that these files are locally modified. This is expected when installing this plugin with Composer inside the LibreNMS application directory.
+LibreNMS `validate` may warn that these files are locally modified after installing third-party plugin packages. This is expected because the plugin is installed as a Composer dependency inside the LibreNMS application directory.
+
+Do not run `./scripts/github-remove` unless you intentionally want to remove local Composer changes.
 
 ---
 
