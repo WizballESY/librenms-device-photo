@@ -540,6 +540,46 @@ Important:
 - continue migrating one POST action group at a time
 - upload should remain last
 
+## Package orphan photo action test status
+
+The orphan photo package POST actions have been migrated and tested.
+
+Migrated actions:
+
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- orphan photos can be assigned to an existing device from `/plugin/device-photo`
+- assigned orphan photos are renamed to the target device filename format
+- assigned orphan thumbnails are renamed/regenerated
+- orphan photo links are updated from the old filename to the new filename
+- target device photo order JSON is refreshed after assignment
+- orphan photos can be moved to the deleted photos directory
+- matching orphan thumbnails are moved to the deleted thumbnails directory
+- `delete_orphan_photo` was tested with a fake orphan photo and thumbnail
+- actions redirect back to `/plugin/device-photo`
+- tested successfully in LibreNMS UI
+
+Still legacy:
+
+- `upload`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled until upload has been migrated and tested
+- upload is the final and most complex POST action
+- upload must be migrated carefully because it includes validation, MIME checks, pixel limits, HEIC/HEIF handling, thumbnail creation and order refresh
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
