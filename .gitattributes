@@ -2,5 +2,4 @@
 /docs/screenshots export-ignore
 /package-review export-ignore
 /.gitignore export-ignore
-/docs/development/MIGRATION_MAP.md export-ignore
-/docs/development/PACKAGING.md export-ignore
+/docs/development export-ignore
