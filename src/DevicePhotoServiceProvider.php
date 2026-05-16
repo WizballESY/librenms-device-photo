@@ -25,8 +25,20 @@ class DevicePhotoServiceProvider extends ServiceProvider
         $pluginName = 'device-photo';
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'device-photo');
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
+/*
+ * Compatibility view path.
+ *
+ * LibreNMS local plugins commonly reference views like:
+ * device-photo::resources.views.page
+ *
+ * Package views can also be referenced as:
+ * device-photo::page
+ */
+        $this->loadViewsFrom(__DIR__ . '/..', 'device-photo');
+
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        
         $pluginManager = $this->app->make(PluginManagerInterface::class);
 
         $pluginManager->publishHook($pluginName, DeviceOverviewHook::class, DeviceOverview::class);
