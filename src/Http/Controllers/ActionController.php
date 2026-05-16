@@ -193,7 +193,14 @@ class ActionController extends Controller
             @mkdir($this->paths->photosDir(), 02775, true);
         }
 
-        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+        $allowedExt = array_values(array_filter(
+            config('device-photo.allowed_extensions', ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']),
+            fn ($ext) => is_string($ext) && trim($ext) !== ''
+        ));
+        $allowedExt = array_map(fn ($ext) => strtolower(trim($ext)), $allowedExt);
+        $maxUploadBytes = (int) config('device-photo.max_upload_bytes', 10 * 1024 * 1024);
+        $maxPixels = (int) config('device-photo.max_pixels', 40000000);
+
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
         $uploadedCount = 0;
 
@@ -208,7 +215,7 @@ class ActionController extends Controller
                 return $this->redirect($deviceId, 'invalid_type');
             }
 
-            if ($file->getSize() > 10 * 1024 * 1024) {
+            if ($file->getSize() > $maxUploadBytes) {
                 return $this->redirect($deviceId, 'too_large');
             }
 
@@ -238,7 +245,7 @@ class ActionController extends Controller
                 $imageHeight = (int) $imageInfo[1];
                 $imagePixels = $imageWidth * $imageHeight;
 
-                if ($imageWidth < 1 || $imageHeight < 1 || $imagePixels > 40000000) {
+                if ($imageWidth < 1 || $imageHeight < 1 || $imagePixels > $maxPixels) {
                     return $this->redirect($deviceId, 'image_too_large_pixels');
                 }
             }
@@ -297,7 +304,7 @@ class ActionController extends Controller
                     $convertedInfo === false ||
                     empty($convertedInfo[0]) ||
                     empty($convertedInfo[1]) ||
-                    ((int) $convertedInfo[0] * (int) $convertedInfo[1]) > 40000000
+                    ((int) $convertedInfo[0] * (int) $convertedInfo[1]) > $maxPixels
                 ) {
                     @unlink($targetPath);
 
