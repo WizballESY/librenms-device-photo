@@ -440,7 +440,7 @@
                 <i class="fa fa-arrow-left"></i> Back to device
             </a>
 
-            <a href="{{ url('plugin/DevicePhoto') }}" class="btn btn-primary btn-sm">
+            <a href="{{ url('plugin/device-photo') }}" class="btn btn-primary btn-sm">
                 <i class="fa fa-camera"></i> Device Photos Overview
             </a>
         </div>
@@ -1017,7 +1017,7 @@
                                             <a class="btn btn-default btn-xs" href="{{ url('device/' . $row['device_id']) }}">
                                                 Open device
                                             </a>
-                                            <a class="btn btn-primary btn-xs" href="{{ url('plugin/DevicePhoto') }}?device_id={{ $row['device_id'] }}">
+                                            <a class="btn btn-primary btn-xs" href="{{ url('plugin/device-photo') }}?device_id={{ $row['device_id'] }}">
                                                 Manage photos
                                             </a>
 
@@ -2836,7 +2836,7 @@
                         Search for a device that owns the photo, then link one of its photos to this device.
                     </div>
 
-                    <form method="get" action="{{ url('plugin/DevicePhoto') }}" style="margin-bottom: 14px; position: relative;">
+                    <form method="get" action="{{ url('plugin/device-photo') }}" style="margin-bottom: 14px; position: relative;">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
 
                         <div class="input-group input-group-sm" style="max-width: 520px;">

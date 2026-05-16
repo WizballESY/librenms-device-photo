@@ -542,7 +542,7 @@
 
             {{-- Options button reserved for future admin upload/delete menu --}}
             @if ($can_manage_photos ?? false)
-                <a href="{{ url('plugin/DevicePhoto') }}?device_id={{ $device->device_id }}"
+                <a href="{{ url('plugin/device-photo') }}?device_id={{ $device->device_id }}"
                    class="device-photo-options"
                    title="Manage device photos">
                     &hellip;
@@ -585,7 +585,7 @@
             </div>
 
             @if ($can_manage_photos ?? false)
-                <a href="{{ url('plugin/DevicePhoto') }}?device_id={{ $device->device_id }}"
+                <a href="{{ url('plugin/device-photo') }}?device_id={{ $device->device_id }}"
                    class="device-photo-options"
                    title="Manage device photos">
                     &hellip;
