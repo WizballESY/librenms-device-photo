@@ -49,6 +49,7 @@ class ActionController extends Controller
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
+            'delete' => $this->deletePhoto($request, $deviceId),
             default => $this->redirect($deviceId, 'unknown_action'),
         };
     }
@@ -152,6 +153,87 @@ class ActionController extends Controller
         $this->links->remove($targetDeviceId, $deviceId, $filename);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
+    }
+
+    private function deletePhoto(Request $request, int $deviceId)
+    {
+        $filename = basename((string) $request->input('filename', ''));
+
+        if ($deviceId < 1) {
+            return $this->redirect($deviceId, 'device_not_found');
+        }
+
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirect($deviceId, 'permission_denied');
+        }
+
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\\.(jpg|jpeg|png|webp)$/i';
+
+        if (! preg_match($pattern, $filename)) {
+            return $this->redirect($deviceId, 'invalid_filename');
+        }
+
+        $photoPath = $this->paths->photoPath($filename);
+
+        if (! is_file($photoPath)) {
+            return $this->redirect($deviceId, 'not_found');
+        }
+
+        if (! is_dir($this->paths->deletedDir())) {
+            @mkdir($this->paths->deletedDir(), 02775, true);
+        }
+
+        $timestamp = date('Ymd-His');
+        $deletedName = preg_replace('/\\.(jpg|jpeg|png|webp)$/i', '.deleted-' . $timestamp . '.$1', $filename);
+
+        if (! is_string($deletedName) || $deletedName === '') {
+            return $this->redirect($deviceId, 'delete_failed');
+        }
+
+        $deletedPath = $this->paths->deletedPath($deletedName);
+
+        if (@rename($photoPath, $deletedPath)) {
+            @chmod($deletedPath, 0664);
+
+            $this->moveThumbnailToDeleted($filename, $deletedName);
+
+            /*
+             * Remove all links from other devices that pointed to this original photo.
+             * Otherwise deleting an owned photo would leave broken linked-photo entries.
+             */
+            $this->links->removeAllForFilename($filename);
+
+            $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+            $order = $this->photos->listFilenamesForDevice($deviceId);
+            $order = array_values(array_filter($order, fn ($item) => $item !== $filename));
+            $this->order->save($safeShortName, $order);
+
+            return $this->redirectAfterAction($request, $deviceId, 'deleted');
+        }
+
+        return $this->redirect($deviceId, 'delete_failed');
+    }
+
+    private function moveThumbnailToDeleted(string $filename, string $deletedName): void
+    {
+        $thumbPath = $this->paths->thumbPath($filename);
+
+        if (! is_file($thumbPath)) {
+            return;
+        }
+
+        if (! is_dir($this->paths->deletedThumbsDir())) {
+            @mkdir($this->paths->deletedThumbsDir(), 02775, true);
+        }
+
+        $deletedThumbPath = $this->paths->deletedThumbPath($deletedName);
+
+        if (@rename($thumbPath, $deletedThumbPath)) {
+            @chmod($deletedThumbPath, 0664);
+        }
     }
 
     private function setPhotoTaken(Request $request, int $deviceId)
