@@ -4,10 +4,10 @@ namespace WizballEsy\LibreNmsDevicePhoto;
 
 use Illuminate\Support\ServiceProvider;
 use LibreNMS\Interfaces\Plugins\PluginManagerInterface;
-use App\Plugins\Hooks\DeviceOverviewHook;
-use App\Plugins\Hooks\MenuEntryHook;
-use App\Plugins\Hooks\PageHook;
-use App\Plugins\Hooks\SettingsHook;
+use LibreNMS\Interfaces\Plugins\Hooks\DeviceOverviewHook as DeviceOverviewHookInterface;
+use LibreNMS\Interfaces\Plugins\Hooks\MenuEntryHook as MenuEntryHookInterface;
+use LibreNMS\Interfaces\Plugins\Hooks\SettingsHook as SettingsHookInterface;
+use LibreNMS\Interfaces\Plugins\Hooks\SinglePageHook;
 use WizballEsy\LibreNmsDevicePhoto\Hooks\DeviceOverview;
 use WizballEsy\LibreNmsDevicePhoto\Hooks\Menu;
 use WizballEsy\LibreNmsDevicePhoto\Hooks\Page;
@@ -26,24 +26,24 @@ class DevicePhotoServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'device-photo');
 
-/*
- * Compatibility view path.
- *
- * LibreNMS local plugins commonly reference views like:
- * device-photo::resources.views.page
- *
- * Package views can also be referenced as:
- * device-photo::page
- */
+        /*
+         * Compatibility view path.
+         *
+         * LibreNMS local plugins commonly reference views like:
+         * device-photo::resources.views.page
+         *
+         * Package views can also be referenced as:
+         * device-photo::page
+         */
         $this->loadViewsFrom(__DIR__ . '/..', 'device-photo');
 
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
-        
+
         $pluginManager = $this->app->make(PluginManagerInterface::class);
 
-        $pluginManager->publishHook($pluginName, DeviceOverviewHook::class, DeviceOverview::class);
-        $pluginManager->publishHook($pluginName, MenuEntryHook::class, Menu::class);
-        $pluginManager->publishHook($pluginName, PageHook::class, Page::class);
-        $pluginManager->publishHook($pluginName, SettingsHook::class, Settings::class);
+        $pluginManager->publishHook($pluginName, DeviceOverviewHookInterface::class, DeviceOverview::class);
+        $pluginManager->publishHook($pluginName, MenuEntryHookInterface::class, Menu::class);
+        $pluginManager->publishHook($pluginName, SinglePageHook::class, Page::class);
+        $pluginManager->publishHook($pluginName, SettingsHookInterface::class, Settings::class);
     }
 }
