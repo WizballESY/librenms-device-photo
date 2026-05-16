@@ -423,6 +423,43 @@ Important:
 - keep the legacy local `DevicePhoto` plugin enabled
 - continue migrating one POST action group at a time
 
+## Package broken link removal test status
+
+The broken linked-photo removal package POST action has been migrated and tested.
+
+Migrated action:
+
+- `remove_broken_link`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Working:
+
+- broken linked-photo entries can be removed from `/plugin/device-photo`
+- test was performed with a manually created fake broken link entry
+- the fake broken link entry was removed from the JSON file
+- original photo files are not modified
+- action redirects back to `/plugin/device-photo`
+
+Still legacy:
+
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `upload`
+- `delete`
+- `set_photo_taken`
+
+Important:
+
+- keep the legacy local `DevicePhoto` plugin enabled
+- continue migrating one POST action group at a time
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
