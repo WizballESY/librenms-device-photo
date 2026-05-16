@@ -603,6 +603,12 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'device_not_found');
         }
 
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            return $this->redirect($deviceId, 'permission_denied');
+        }
+
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
         $pattern = '/^' . preg_quote($safeShortName, '/') . '-\\d+\\.(jpg|jpeg)$/i';
 
