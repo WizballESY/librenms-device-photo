@@ -606,7 +606,7 @@ Services:
 Working:
 
 - photos can be uploaded from `/plugin/device-photo`
-- both JPG and PNG uploads were tested successfully
+- JPG, PNG and HEIC uploads were tested successfully
 - uploaded photos are stored with the expected numbered device filename format
 - thumbnails are generated for uploaded photos
 - photo order JSON is refreshed after upload
@@ -634,7 +634,7 @@ Important:
 
 - the legacy local `DevicePhoto` plugin should only be disabled after final side-by-side verification
 - keep the legacy code available until package install/uninstall and README instructions are updated
-- HEIC/HEIF upload support exists in the package controller but should be tested separately if HEIC support is required
+- HEIC/HEIF upload was tested successfully with ImageMagick HEIC support and converted to JPG
 
 ## Migration rule
 
