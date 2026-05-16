@@ -580,6 +580,62 @@ Important:
 - upload is the final and most complex POST action
 - upload must be migrated carefully because it includes validation, MIME checks, pixel limits, HEIC/HEIF handling, thumbnail creation and order refresh
 
+## Package photo upload test status
+
+The final legacy POST action has been migrated and tested.
+
+Migrated action:
+
+- `upload`
+
+Package route:
+
+- `POST plugin/device-photo-package/action`
+
+Controller:
+
+- `src/Http/Controllers/ActionController.php`
+
+Services:
+
+- `src/Services/PhotoImageService.php`
+- `src/Services/PhotoListService.php`
+- `src/Services/PhotoOrderService.php`
+- `src/Services/PhotoLinkService.php`
+
+Working:
+
+- photos can be uploaded from `/plugin/device-photo`
+- both JPG and PNG uploads were tested successfully
+- uploaded photos are stored with the expected numbered device filename format
+- thumbnails are generated for uploaded photos
+- photo order JSON is refreshed after upload
+- package view no longer contains POST forms pointing to `/plugin/v1/DevicePhoto`
+- action redirects back to `/plugin/device-photo`
+- tested successfully in LibreNMS UI
+
+All package POST actions migrated and tested:
+
+- `save_order`
+- `remove_link`
+- `remove_outgoing_link`
+- `add_link`
+- `add_incoming_link`
+- `clean_stale_thumbnails`
+- `generate_missing_thumbnails`
+- `remove_broken_link`
+- `set_photo_taken`
+- `delete`
+- `assign_orphan_photo`
+- `delete_orphan_photo`
+- `upload`
+
+Important:
+
+- the legacy local `DevicePhoto` plugin should only be disabled after final side-by-side verification
+- keep the legacy code available until package install/uninstall and README instructions are updated
+- HEIC/HEIF upload support exists in the package controller but should be tested separately if HEIC support is required
+
 ## Migration rule
 
 Do not remove or modify the legacy endpoint until the package route/controller version has been tested against the same actions.
