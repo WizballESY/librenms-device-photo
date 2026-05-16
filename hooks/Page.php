@@ -371,7 +371,7 @@ class Page extends PageHook
         $path = storage_path('app/device-photos/' . $filename);
         $version = is_file($path) ? (string) @filemtime($path) : '0';
 
-        return url('plugin/v1/DevicePhoto') . '?action=photo&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
+        return url('plugin/device-photo-package/image') . '?action=photo&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
     }
 
     private function thumbUrl(string $filename): string
@@ -381,7 +381,7 @@ class Page extends PageHook
         if (is_file($thumbPath)) {
             $version = (string) @filemtime($thumbPath);
 
-            return url('plugin/v1/DevicePhoto') . '?action=thumb&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
+            return url('plugin/device-photo-package/image') . '?action=thumb&filename=' . rawurlencode($filename) . '&v=' . rawurlencode($version);
         }
 
         return $this->photoUrl($filename);
