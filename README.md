@@ -114,6 +114,17 @@ After installation, open:
 /plugin/device-photo
 ```
 
+### LibreNMS validate note
+
+Installing third-party Composer packages directly into a LibreNMS installation modifies:
+
+```text
+composer.json
+composer.lock
+```
+
+LibreNMS `validate` may warn that these files are locally modified. This is expected when installing this plugin with Composer inside the LibreNMS application directory.
+
 ---
 
 ## Storage directories
