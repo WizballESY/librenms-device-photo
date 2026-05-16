@@ -103,7 +103,7 @@ Before the package is available on Packagist, add the GitHub repository as a Com
 cd /opt/librenms
 
 sudo -u librenms composer config repositories.librenms-device-photo vcs https://github.com/WizballESY/librenms-device-photo
-sudo -u librenms composer require wizballesy/librenms-device-photo:dev-composer-package
+sudo -u librenms composer require wizballesy/librenms-device-photo:dev-main
 sudo -u librenms ./lnms plugin:enable device-photo
 sudo -u librenms php artisan optimize:clear
 ```
@@ -247,9 +247,12 @@ If you previously installed an old manual version, back it up and remove the old
 ```bash
 cd /opt/librenms
 
-tar -czf /root/DevicePhoto-local-backup-$(date +%Y%m%d-%H%M%S).tgz \
-  app/Plugins/DevicePhoto \
-  html/plugins/DevicePhoto
+if [ -d app/Plugins/DevicePhoto ] || [ -d html/plugins/DevicePhoto ]; then
+  tar -czf /root/DevicePhoto-local-backup-$(date +%Y%m%d-%H%M%S).tgz \
+    app/Plugins/DevicePhoto \
+    html/plugins/DevicePhoto \
+    2>/dev/null || true
+fi
 
 rm -rf app/Plugins/DevicePhoto
 rm -rf html/plugins/DevicePhoto
