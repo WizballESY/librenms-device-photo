@@ -1,0 +1,28 @@
+{
+  "name": "wizballesy/librenms-device-photo",
+  "description": "LibreNMS plugin for adding, viewing and managing photos for devices.",
+  "type": "library",
+  "license": "GPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Tom Stian Bjerk"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "librenms/plugin-interfaces": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "WizballEsy\\LibreNmsDevicePhoto\\": "src/",
+      "WizballEsy\\LibreNmsDevicePhoto\\Hooks\\": "hooks/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "WizballEsy\\LibreNmsDevicePhoto\\DevicePhotoServiceProvider"
+      ]
+    }
+  }
+}
