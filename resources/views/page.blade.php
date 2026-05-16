@@ -2348,7 +2348,7 @@
 
                 <script>
                     window.DevicePhotoTargetDevices = @json(
-                        collect($link_owner_devices ?? [])
+                        collect($link_target_devices ?? [])
                             ->filter(fn ($targetDevice) => $device && (int) $targetDevice['device_id'] !== (int) $device->device_id)
                             ->values()
                     );
