@@ -3,3 +3,4 @@
 /MIGRATION_MAP.md export-ignore
 /PACKAGING.md export-ignore
 /package-review export-ignore
+/.gitignore export-ignore
