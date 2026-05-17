@@ -2271,6 +2271,38 @@
                         .device-photo-file-list li {
                             margin-bottom: 3px;
                         }
+
+                        .device-photo-file-list-row {
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-start;
+                            gap: 8px;
+                            padding: 3px 0;
+                        }
+
+                        .device-photo-file-list-name {
+                            overflow-wrap: anywhere;
+                        }
+
+                        .device-photo-file-remove {
+                            border: 0;
+                            background: #d9534f;
+                            color: #fff;
+                            cursor: pointer;
+                            font-weight: bold;
+                            line-height: 1;
+                            padding: 2px 7px;
+                            border-radius: 4px;
+                            min-width: 22px;
+                            height: 22px;
+                            text-align: center;
+                        }
+
+                        .device-photo-file-remove:hover {
+                            background: #c9302c;
+                            color: #fff;
+                            text-decoration: none;
+                        }
                     </style>
 
                     <div id="device-photo-dropzone" class="device-photo-dropzone">
@@ -2300,9 +2332,13 @@
                         <ul id="device-photo-file-list-items"></ul>
                     </div>
 
-                    <div style="margin-top: 12px;">
-                        <button type="submit" class="btn btn-primary">
+                    <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary" id="device-photo-upload-submit">
                             <i class="fa fa-upload"></i> Upload photos
+                        </button>
+
+                        <button type="button" class="btn btn-default" id="device-photo-clear-files" style="display: none;">
+                            <i class="fa fa-times"></i> Clear all
                         </button>
                     </div>
 
@@ -2361,6 +2397,31 @@
                         var dropzone = document.getElementById('device-photo-dropzone');
                         var fileInput = document.getElementById('device-photo-file');
                         var selected = document.getElementById('device-photo-selected');
+                        var clearButton = document.getElementById('device-photo-clear-files');
+                        var uploadSubmit = document.getElementById('device-photo-upload-submit');
+
+                        function setFiles(files) {
+                            var dt = new DataTransfer();
+
+                            Array.prototype.forEach.call(files || [], function (file) {
+                                dt.items.add(file);
+                            });
+
+                            fileInput.files = dt.files;
+                            updateSelectedText();
+                        }
+
+                        function removeFileAt(indexToRemove) {
+                            var files = Array.prototype.filter.call(fileInput.files || [], function (_file, index) {
+                                return index !== indexToRemove;
+                            });
+
+                            setFiles(files);
+                        }
+
+                        function clearFiles() {
+                            setFiles([]);
+                        }
 
                         function updateSelectedText() {
                             var fileListBox = document.getElementById('device-photo-file-list');
@@ -2371,6 +2432,15 @@
                             if (!fileInput.files || fileInput.files.length === 0) {
                                 selected.textContent = 'No photos selected';
                                 fileListBox.style.display = 'none';
+
+                                if (clearButton) {
+                                    clearButton.style.display = 'none';
+                                }
+
+                                if (uploadSubmit) {
+                                    uploadSubmit.disabled = true;
+                                }
+
                                 return;
                             }
 
@@ -2380,19 +2450,50 @@
                                 selected.textContent = fileInput.files.length + ' photos selected';
                             }
 
-                            Array.prototype.forEach.call(fileInput.files, function (file) {
+                            Array.prototype.forEach.call(fileInput.files, function (file, index) {
                                 var li = document.createElement('li');
+                                var row = document.createElement('div');
+                                var name = document.createElement('span');
+                                var removeButton = document.createElement('button');
                                 var sizeMb = file.size / 1024 / 1024;
-                                li.textContent = file.name + ' (' + sizeMb.toFixed(2) + ' MB)';
+
+                                row.className = 'device-photo-file-list-row';
+                                name.className = 'device-photo-file-list-name';
+                                name.textContent = file.name + ' (' + sizeMb.toFixed(2) + ' MB)';
+
+                                removeButton.type = 'button';
+                                removeButton.className = 'device-photo-file-remove';
+                                removeButton.setAttribute('aria-label', 'Remove ' + file.name);
+                                removeButton.setAttribute('title', 'Remove this file');
+                                removeButton.innerHTML = '&times;';
+                                removeButton.addEventListener('click', function () {
+                                    removeFileAt(index);
+                                });
+
+                                row.appendChild(removeButton);
+                                row.appendChild(name);
+                                li.appendChild(row);
                                 fileListItems.appendChild(li);
                             });
 
                             fileListBox.style.display = 'block';
+
+                            if (clearButton) {
+                                clearButton.style.display = 'inline-block';
+                            }
+
+                            if (uploadSubmit) {
+                                uploadSubmit.disabled = false;
+                            }
                         }
 
                         dropzone.addEventListener('click', function () {
                             fileInput.click();
                         });
+
+                        if (clearButton) {
+                            clearButton.addEventListener('click', clearFiles);
+                        }
 
                         fileInput.addEventListener('change', updateSelectedText);
 
@@ -2806,6 +2907,52 @@
                             </div>
                         @endforeach
                     </div>
+
+                    <script>
+                        (function () {
+                            function devicePhotoScrollKey() {
+                                var params = new URLSearchParams(window.location.search);
+                                var deviceId = params.get('device_id');
+
+                                if (!deviceId) {
+                                    var deviceInput = document.querySelector('input[name="device_id"]');
+
+                                    if (deviceInput) {
+                                        deviceId = deviceInput.value || '';
+                                    }
+                                }
+
+                                return 'device-photo-scroll-y:' + window.location.pathname + ':device_id=' + (deviceId || '0');
+                            }
+
+                            var scrollKey = devicePhotoScrollKey();
+                            var savedScroll = sessionStorage.getItem(scrollKey);
+
+                            if (savedScroll !== null) {
+                                sessionStorage.removeItem(scrollKey);
+
+                                window.setTimeout(function () {
+                                    window.scrollTo(0, parseInt(savedScroll, 10) || 0);
+                                }, 50);
+                            }
+
+                            function saveScrollPosition() {
+                                sessionStorage.setItem(scrollKey, String(window.scrollY || window.pageYOffset || 0));
+                            }
+
+                            document.addEventListener('click', function (event) {
+                                var button = event.target.closest('form.device-photo-delete-form button[type="submit"], form[data-device-photo-keep-scroll="1"] button[type="submit"]');
+
+                                if (button) {
+                                    saveScrollPosition();
+                                }
+                            }, true);
+
+                            document.querySelectorAll('form.device-photo-delete-form, form[data-device-photo-keep-scroll="1"]').forEach(function (form) {
+                                form.addEventListener('submit', saveScrollPosition, true);
+                            });
+                        })();
+                    </script>
 
                     <script>
                         (function () {
