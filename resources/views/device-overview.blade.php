@@ -553,7 +553,7 @@
         <div class="device-photo-grid">
             @foreach ($photos as $photo)
                 <div class="device-photo-card"
-                     data-device-photo-preview-src="{{ $photo['url'] }}"
+                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                      data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                      data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}">
                     <img src="{{ $photo['thumb_url'] ?? $photo['url'] }}" alt="Device photo">

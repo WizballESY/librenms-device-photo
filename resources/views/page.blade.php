@@ -1014,7 +1014,7 @@
                                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                                     @foreach ($row['owned_photos'] as $photo)
                                                         <a href="{{ $photo['url'] }}" data-device-photo-preview-src="{{ $photo['url'] }}" title="{{ $photo['filename'] }}">
-                                                            <img data-device-photo-preview-src="{{ $photo['url'] }}"
+                                                            <img data-device-photo-gallery="overview-device-{{ $row['device_id'] }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 54px; height: 42px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff;">
                                                         </a>
@@ -1319,7 +1319,7 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
                         @foreach ($overview['orphaned_photos'] as $photo)
                             <div class="device-photo-orphan-card" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
-                                <img data-device-photo-preview-src="{{ $photo['url'] }}"
+                                <img data-device-photo-gallery="overview-orphans" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}" src="{{ $photo['thumb_url'] ?? $photo['url'] }}" style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
                                 <div style="font-size: 12px;">
@@ -2543,7 +2543,7 @@
                         @foreach ($photos as $photo)
                             <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}">
                                 <img
-                                    data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
                                     src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
@@ -2914,7 +2914,7 @@
                                 @foreach ($incoming_owner_photos as $ownerPhoto)
                                     <div class="device-photo-incoming-owner-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                         <img
-                                            data-device-photo-preview-src="{{ $ownerPhoto['url'] }}"
+                                            data-device-photo-gallery="owner-device-{{ $incoming_owner_device->device_id }}" data-device-photo-preview-src="{{ $ownerPhoto['url'] }}"
                                     data-device-photo-taken="{{ $ownerPhoto['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $ownerPhoto['file_date_iso'] ?? '' }}"
                                             src="{{ $ownerPhoto['thumb_url'] ?? $ownerPhoto['url'] }}"
@@ -2953,7 +2953,7 @@
                         @foreach ($linked_photos as $photo)
                             <div class="device-photo-linked-photo-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img
-                                    data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
                                     src="{{ $photo['thumb_url'] ?? $photo['url'] }}"

@@ -101,6 +101,57 @@
         font-size: 12px;
     }
 
+    .device-photo-shared-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 25002;
+        border: 0;
+        background: rgba(255,255,255,0.88);
+        color: #333;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 30px;
+        line-height: 38px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+
+    .device-photo-shared-nav:hover {
+        background: rgba(255,255,255,1);
+    }
+
+    .device-photo-shared-nav.is-hidden {
+        display: none;
+    }
+
+    .device-photo-shared-prev {
+        left: 18px;
+    }
+
+    .device-photo-shared-next {
+        right: 18px;
+    }
+
+    .device-photo-shared-counter {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 25002;
+        background: rgba(0,0,0,0.68);
+        color: #eee;
+        border-radius: 999px;
+        padding: 5px 11px;
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
+    .device-photo-shared-counter.is-hidden {
+        display: none;
+    }
+
     [data-device-photo-preview-src] {
         cursor: zoom-in;
     }
@@ -108,6 +159,9 @@
 
 <div id="device-photo-shared-modal" class="device-photo-shared-modal">
     <button type="button" class="device-photo-shared-close" id="device-photo-shared-close">&times;</button>
+    <button type="button" class="device-photo-shared-nav device-photo-shared-prev is-hidden" id="device-photo-shared-prev" title="Previous photo">‹</button>
+    <button type="button" class="device-photo-shared-nav device-photo-shared-next is-hidden" id="device-photo-shared-next" title="Next photo">›</button>
+    <div class="device-photo-shared-counter is-hidden" id="device-photo-shared-counter"></div>
 
     <div class="device-photo-shared-toolbar" onclick="event.stopPropagation();">
         <button type="button" id="device-photo-shared-zoom-out">−</button>
@@ -162,6 +216,9 @@
             var zoomOut = document.getElementById('device-photo-shared-zoom-out');
             var resetBtn = document.getElementById('device-photo-shared-reset');
             var zoomLabel = document.getElementById('device-photo-shared-zoom-label');
+            var prevBtn = document.getElementById('device-photo-shared-prev');
+            var nextBtn = document.getElementById('device-photo-shared-next');
+            var counter = document.getElementById('device-photo-shared-counter');
 
             if (!modal || !inner || !img) {
                 return;
@@ -173,7 +230,9 @@
                 y: 0,
                 dragging: false,
                 startX: 0,
-                startY: 0
+                startY: 0,
+                gallery: [],
+                index: -1
             };
 
             function updateTransform() {
@@ -192,13 +251,72 @@
                 updateTransform();
             }
 
-            function openPreview(src, takenIso, fileIso) {
-                img.src = src;
+            function visiblePreviewElements(galleryName) {
+                return Array.prototype.slice.call(document.querySelectorAll('[data-device-photo-preview-src]')).filter(function (el) {
+                    var style = window.getComputedStyle(el);
+
+                    if (galleryName && el.getAttribute('data-device-photo-gallery') !== galleryName) {
+                        return false;
+                    }
+
+                    return style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && el.offsetParent !== null;
+                });
+            }
+
+            function photoDataFromElement(el) {
+                return {
+                    src: el.getAttribute('data-device-photo-preview-src') || '',
+                    takenIso: el.getAttribute('data-device-photo-taken') || '',
+                    fileIso: el.getAttribute('data-device-photo-file-date') || '',
+                    title: el.getAttribute('title') || el.getAttribute('alt') || ''
+                };
+            }
+
+            function updateGalleryControls() {
+                var count = state.gallery.length;
+                var hasMultiple = count > 1;
+
+                if (prevBtn) {
+                    prevBtn.classList.toggle('is-hidden', !hasMultiple);
+                }
+
+                if (nextBtn) {
+                    nextBtn.classList.toggle('is-hidden', !hasMultiple);
+                }
+
+                if (counter) {
+                    if (count > 0) {
+                        counter.textContent = 'Photo ' + (state.index + 1) + ' of ' + count;
+                        counter.classList.remove('is-hidden');
+                    } else {
+                        counter.textContent = '';
+                        counter.classList.add('is-hidden');
+                    }
+                }
+            }
+
+            function showGalleryIndex(index) {
+                if (!state.gallery.length) {
+                    return;
+                }
+
+                if (index < 0) {
+                    index = state.gallery.length - 1;
+                } else if (index >= state.gallery.length) {
+                    index = 0;
+                }
+
+                state.index = index;
+
+                var photo = state.gallery[state.index];
+                img.src = photo.src;
 
                 if (meta) {
                     var parts = [];
-                    var takenText = formatDate(takenIso);
-                    var fileText = formatDate(fileIso);
+                    var takenText = formatDate(photo.takenIso);
+                    var fileText = formatDate(photo.fileIso);
 
                     if (takenText) {
                         parts.push('<span><strong>Photo taken:</strong> ' + takenText + '</span>');
@@ -212,8 +330,32 @@
                     meta.style.display = parts.length > 0 ? 'block' : 'none';
                 }
 
+                updateGalleryControls();
                 resetImage();
+            }
+
+            function openPreview(el) {
+                var galleryName = el.getAttribute('data-device-photo-gallery') || '';
+                state.gallery = visiblePreviewElements(galleryName).map(photoDataFromElement);
+                state.index = state.gallery.findIndex(function (photo) {
+                    return photo.src === (el.getAttribute('data-device-photo-preview-src') || '');
+                });
+
+                if (state.index < 0) {
+                    state.gallery = [photoDataFromElement(el)];
+                    state.index = 0;
+                }
+
+                showGalleryIndex(state.index);
                 modal.classList.add('is-open');
+            }
+
+            function showPreviousPhoto() {
+                showGalleryIndex(state.index - 1);
+            }
+
+            function showNextPhoto() {
+                showGalleryIndex(state.index + 1);
             }
 
             function closePreview() {
@@ -224,6 +366,10 @@
                     meta.innerHTML = '';
                     meta.style.display = 'none';
                 }
+
+                state.gallery = [];
+                state.index = -1;
+                updateGalleryControls();
 
                 resetImage();
             }
@@ -238,12 +384,8 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                var src = el.getAttribute('data-device-photo-preview-src');
-                var takenIso = el.getAttribute('data-device-photo-taken') || '';
-                var fileIso = el.getAttribute('data-device-photo-file-date') || '';
-
-                if (src) {
-                    openPreview(src, takenIso, fileIso);
+                if (el.getAttribute('data-device-photo-preview-src')) {
+                    openPreview(el);
                 }
             }, true);
 
@@ -273,6 +415,22 @@
 
             if (resetBtn) {
                 resetBtn.addEventListener('click', resetImage);
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showPreviousPhoto();
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showNextPhoto();
+                });
             }
 
             inner.addEventListener('mousedown', function (e) {
@@ -317,6 +475,12 @@
 
                 if (e.key === 'Escape') {
                     closePreview();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    showPreviousPhoto();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    showNextPhoto();
                 }
             });
         }
