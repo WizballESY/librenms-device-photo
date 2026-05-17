@@ -225,8 +225,11 @@ class Page extends PageHook
         }
 
         /*
-         * Count deleted photos.
+         * Count deleted photos and deleted thumbnails.
          */
+        $deletedThumbnailCount = 0;
+        $deletedThumbnailBytes = 0;
+
         foreach (glob($photoDir . '/deleted/*') ?: [] as $deletedPath) {
             if (! is_file($deletedPath)) {
                 continue;
@@ -234,6 +237,15 @@ class Page extends PageHook
 
             $deletedPhotoCount++;
             $deletedPhotoBytes += filesize($deletedPath);
+        }
+
+        foreach (glob($photoDir . '/deleted/thumbs/*') ?: [] as $deletedThumbPath) {
+            if (! is_file($deletedThumbPath)) {
+                continue;
+            }
+
+            $deletedThumbnailCount++;
+            $deletedThumbnailBytes += filesize($deletedThumbPath);
         }
 
         /*
@@ -392,6 +404,11 @@ class Page extends PageHook
             'deleted_photo_count' => $deletedPhotoCount,
             'deleted_photo_bytes' => $deletedPhotoBytes,
             'deleted_photo_mb' => round($deletedPhotoBytes / 1024 / 1024, 2),
+            'deleted_thumbnail_count' => $deletedThumbnailCount,
+            'deleted_thumbnail_bytes' => $deletedThumbnailBytes,
+            'deleted_thumbnail_mb' => round($deletedThumbnailBytes / 1024 / 1024, 2),
+            'deleted_total_bytes' => $deletedPhotoBytes + $deletedThumbnailBytes,
+            'deleted_total_mb' => round(($deletedPhotoBytes + $deletedThumbnailBytes) / 1024 / 1024, 2),
             'gd_available' => $gdAvailable,
             'thumbnail_count' => $thumbnailCount,
             'missing_thumbnail_count' => $missingThumbnailCount,
@@ -597,6 +614,8 @@ class Page extends PageHook
             'thumbnails_cleaned' => 'Stale thumbnails were removed.',
             'thumbnails_none_missing' => 'No missing thumbnails found.',
             'photo_taken_updated' => 'Photo taken date was written to EXIF metadata.',
+            'deleted_photos_emptied' => 'Deleted photos were permanently removed.',
+            'deleted_photos_empty' => 'No deleted photos were found.',
         ];
 
         $errors = [
@@ -619,6 +638,7 @@ class Page extends PageHook
             'photo_taken_unsupported_type' => 'Photo taken can only be written to JPG/JPEG files.',
             'invalid_photo_taken' => 'Invalid Photo taken date/time.',
             'photo_taken_failed' => 'Could not write Photo taken metadata.',
+            'invalid_confirm_code' => 'The confirmation code did not match.',
             'unknown_action' => 'Unknown action.',
         ];
 

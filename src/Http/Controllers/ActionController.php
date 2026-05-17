@@ -47,6 +47,7 @@ class ActionController extends Controller
             'add_incoming_link' => $this->addIncomingLink($request, $deviceId),
             'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
+            'empty_deleted_photos' => $this->emptyDeletedPhotos($request),
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
             'delete' => $this->deletePhoto($request, $deviceId),
@@ -466,6 +467,43 @@ class ActionController extends Controller
         $this->order->save($targetSafeShortName, $order);
 
         return $this->redirect(0, 'assigned');
+    }
+
+    private function emptyDeletedPhotos(Request $request)
+    {
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $confirmCode = (string) $request->input('confirm_code', '');
+        $confirmInput = (string) $request->input('confirm_input', '');
+
+        if ($confirmCode === '' || ! preg_match('/^\d{4}$/', $confirmCode) || ! hash_equals($confirmCode, $confirmInput)) {
+            return $this->redirect(0, 'invalid_confirm_code');
+        }
+
+        $deletedDirs = [
+            $this->paths->deletedDir(),
+            $this->paths->deletedThumbsDir(),
+        ];
+
+        $deletedCount = 0;
+
+        foreach ($deletedDirs as $dir) {
+            foreach (glob($dir . '/*') ?: [] as $path) {
+                if (! is_file($path)) {
+                    continue;
+                }
+
+                if (@unlink($path)) {
+                    $deletedCount++;
+                }
+            }
+        }
+
+        return $this->redirect(0, $deletedCount > 0 ? 'deleted_photos_emptied' : 'deleted_photos_empty');
     }
 
     private function deleteOrphanPhoto(Request $request)
