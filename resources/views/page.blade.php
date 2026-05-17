@@ -977,7 +977,7 @@
                     </div>
                 @elseif (($overview['missing_thumbnail_count'] ?? 0) > 0)
                     <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten." style="display: inline;">
+                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten." style="display: inline;">
                             @csrf
                             <input type="hidden" name="action" value="generate_missing_thumbnails">
                             <input type="hidden" name="device_id" value="0">
@@ -995,7 +995,7 @@
 
                 @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
                     <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
+                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
                             @csrf
                             <input type="hidden" name="action" value="clean_stale_thumbnails">
                             <input type="hidden" name="device_id" value="0">
@@ -1176,7 +1176,7 @@
                                                                     @endif
 
                                                                     @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
+                                                                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
                                                                             @csrf
                                                                             <input type="hidden" name="action" value="remove_link">
                                                                             <input type="hidden" name="return_to" value="overview">
@@ -1210,7 +1210,7 @@
                                                                     @endif
 
                                                                     @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this outgoing link? The original photo will not be deleted.">
+                                                                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this outgoing link? The original photo will not be deleted.">
                                                                             @csrf
                                                                             <input type="hidden" name="action" value="remove_outgoing_link">
                                                                             <input type="hidden" name="return_to" value="overview">
@@ -1443,7 +1443,7 @@
                                 </a>
 
                                 @if ($can_upload)
-                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Assign this orphaned photo to the selected device? The file will be renamed.">
+                                    <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Assign this orphaned photo to the selected device? The file will be renamed.">
                                         @csrf
                                         <input type="hidden" name="action" value="assign_orphan_photo">
                                         <input type="hidden" name="device_id" value="0">
@@ -1468,7 +1468,7 @@
                                 @endif
 
                                 @if ($can_delete)
-                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px;" data-device-photo-confirm="Delete this orphaned photo? It will be moved to the deleted folder and can be restored manually.">
+                                    <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px;" data-device-photo-confirm="Delete this orphaned photo? It will be moved to the deleted folder and can be restored manually.">
                                         @csrf
                                         <input type="hidden" name="action" value="delete_orphan_photo">
                                         <input type="hidden" name="device_id" value="0">
@@ -1666,7 +1666,7 @@
 
                                         <td>
                                             @if ($can_delete)
-                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this broken photo link? The original photo file is already missing.">
+                                                <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this broken photo link? The original photo file is already missing.">
                                                     @csrf
                                                     <input type="hidden" name="action" value="remove_broken_link">
                                                     <input type="hidden" name="return_to" value="overview">
@@ -2735,7 +2735,7 @@
                         Drag and drop photos to change the order. The order is saved automatically.
                     </div>
 
-                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
+                    <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
                         @csrf
                         <input type="hidden" name="action" value="save_order">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -2809,7 +2809,7 @@
                                                     @endif
 
                                                     @if ($can_delete)
-                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
+                                                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
                                                             @csrf
                                                             <input type="hidden" name="action" value="remove_outgoing_link">
                                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -2858,7 +2858,7 @@
                                     <i class="fa fa-link"></i> Link this photo to another device
                                 </div>
 
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-bottom: 8px; position: relative;">
+                                <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-bottom: 8px; position: relative;">
                                     @csrf
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -3180,7 +3180,7 @@
                                             style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                         >
 
-                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}">
+                                        <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}">
                                             @csrf
                                             <input type="hidden" name="action" value="add_incoming_link">
                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -3247,7 +3247,7 @@
                                 </a>
 
                                 @if ($can_delete)
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
+                                <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
                                     @csrf
                                     <input type="hidden" name="action" value="remove_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -3280,7 +3280,7 @@
                 This writes the selected date/time back to the JPG/JPEG EXIF metadata in the original photo file.
             </div>
 
-            <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-set-taken-form">
+            <form data-device-photo-keep-scroll="1" method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-set-taken-form">
                 @csrf
                 <input type="hidden" name="action" value="set_photo_taken">
                 <input type="hidden" name="device_id" id="device-photo-set-taken-device-id" value="{{ $device ? $device->device_id : 0 }}">
