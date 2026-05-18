@@ -1011,6 +1011,22 @@ class ActionController extends Controller
             return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : ''));
         }
 
+        $query = [];
+
+        if ($deviceId > 0) {
+            $query['device_id'] = $deviceId;
+        }
+
+        if ($status !== null) {
+            $query['status'] = $status;
+        }
+
+        $anchor = trim((string) $request->input('return_anchor', ''));
+
+        if ($anchor !== '' && preg_match('/^[A-Za-z0-9_-]{1,120}$/', $anchor)) {
+            return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : '') . '#' . $anchor);
+        }
+
         return $this->redirect($deviceId, $status);
     }
 
