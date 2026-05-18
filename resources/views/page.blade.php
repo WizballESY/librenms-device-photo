@@ -85,6 +85,44 @@
         color: #ffb4c8;
         border-color: rgba(255,255,255,0.08);
     }
+
+    /*
+     * LibreNMS dark mode fix for confirmation modals.
+     */
+    html.dark .device-photo-plugin .device-photo-confirm-modal {
+        background: #2f3842 !important;
+        border: 1px solid #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal h4,
+    html.dark .device-photo-plugin .device-photo-confirm-modal strong,
+    html.dark .device-photo-plugin .device-photo-confirm-modal label {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .text-muted,
+    html.dark .device-photo-plugin .device-photo-confirm-modal p {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal code {
+        background: #1f252c !important;
+        border: 1px solid #4b5563 !important;
+        color: #ffb4c8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .form-control {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .form-control::placeholder {
+        color: #8793a0 !important;
+    }
+
+
 </style>
 
 

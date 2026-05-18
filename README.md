@@ -50,9 +50,9 @@ It is under active development and may contain bugs, incomplete documentation or
   - `Photo taken` from EXIF when available.
   - `File date` from the server file timestamp.
 - Write `Photo taken` back to JPG/JPEG EXIF metadata using ExifTool.
-- Reorder owned photos.
+- Reorder owned and linked photos together.
 - Link photos between devices.
-- Automatically remove photo links when the original owned photo is deleted.
+- Automatically clean stale links and mixed-order entries when photos or links change.
 - Detect broken photo links.
 - Detect orphaned photos from removed LibreNMS devices.
 - Assign orphaned photos to existing devices.
@@ -90,7 +90,7 @@ Recommended installation method:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.7
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.8
 sudo -u librenms php artisan optimize:clear
 ```
 
@@ -193,6 +193,47 @@ Default configuration:
 ],
 ```
 
+### Link and order metadata
+
+Linked photo metadata is stored under:
+
+    storage/app/device-photos-links/device-<target-device-id>.json
+
+Each link entry points from the target device to a photo owned by another device.
+
+Example link entry:
+
+    [
+        {
+            "owner_device_id": 109,
+            "filename": "device-109-2.png"
+        }
+    ]
+
+Custom photo ordering is stored under:
+
+    storage/app/device-photos-order/device-<device-id>.json
+
+The order file can contain both owned photos and linked photos.
+
+Owned photo key example:
+
+    device-108-1.jpg
+
+Linked photo key format:
+
+    linked:<owner-device-id>:<filename>
+
+Example mixed order file:
+
+    [
+        "device-108-1.jpg",
+        "linked:109:device-109-2.png",
+        "device-108-2.jpg"
+    ]
+
+The plugin keeps existing order where possible, removes stale order entries, and appends new valid uploaded or linked photos to the saved order.
+
 ---
 
 ## Optional dependencies
@@ -287,11 +328,11 @@ To update to a specific release:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.7
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.8
 sudo -u librenms php artisan optimize:clear
 ```
 
-Replace `v0.1.0-alpha.7` with the version you want to install.
+Replace `v0.1.0-alpha.8` with the version you want to install.
 
 LibreNMS `validate` may warn that `composer.json` and `composer.lock` are modified after installing or updating third-party plugin packages. This is expected because the plugin is installed as a Composer dependency inside the LibreNMS application directory.
 
