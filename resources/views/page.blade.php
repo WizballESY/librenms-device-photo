@@ -2855,7 +2855,8 @@
                                 >
 
                                 <div style="margin: 6px 0 4px 0;">
-                                    <span class="label label-primary">
+                                    <span class="label label-primary"
+                                          title="This photo is owned by this device. It can also be shared to other devices.">
                                         <i class="fa fa-home"></i> Owned
                                     </span>
                                 </div>
@@ -3007,33 +3008,48 @@
                                     style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                 >
 
-                                <div class="alert alert-info device-photo-linked-owner-box" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
-                                    <strong>
-                                        <i class="fa fa-link"></i>
-                                        Linked from
-                                    </strong>
-
-                                    <div style="margin-top: 8px;">
-                                        <div>
-                                            <a href="{{ url('device/' . $photo['owner_device_id']) }}">
-                                                <code>Device ID: {{ $photo['owner_device_id'] }}</code>
-                                            </a>
-                                        </div>
-
-                                        @if (!empty($photo['owner_name']))
-                                            <div style="margin-top: 2px; word-break: break-word;">
-                                                <a href="{{ url('device/' . $photo['owner_device_id']) }}">
-                                                    {{ $photo['owner_name'] }}
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
+                                <div style="margin: 6px 0 4px 0;">
+                                    <span class="label label-success"
+                                          title="This photo is linked from another device. The owner device listed below has the original photo.">
+                                        <i class="fa fa-link"></i> Linked
+                                    </span>
                                 </div>
 
                                 <div class="text-muted" style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
+                                    @if (!empty($photo['photo_taken_display']))
+                                        <div>
+                                            <strong>Photo taken:</strong>
+                                            <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
+                                        </div>
+                                    @endif
+
+                                    @if (!empty($photo['file_date_display']))
+                                        <div title="File timestamp on the LibreNMS server. This may change if files are copied, restored or modified.">
+                                            <strong>File date:</strong>
+                                            <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['file_date_iso'] ?? '' }}">{{ $photo['file_date_display'] }}</span>
+                                        </div>
+                                    @endif
+
                                     <div title="Stored filename on the owner device.">
                                         <strong>Filename:</strong>
                                         <span>{{ $photo['filename'] }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info device-photo-linked-owner-box" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
+                                    <strong>
+                                        <i class="fa fa-link"></i> Linked from
+                                    </strong>
+
+                                    <div style="margin-top: 8px;">
+                                        <a href="{{ url('plugin/device-photo') }}?device_id={{ $photo['owner_device_id'] }}">
+                                            @if (!empty($photo['owner_name']))
+                                                {{ $photo['owner_name'] }}
+                                            @else
+                                                device-{{ $photo['owner_device_id'] }}
+                                            @endif
+                                            <span class="text-muted">(Device ID {{ $photo['owner_device_id'] }})</span>
+                                        </a>
                                     </div>
                                 </div>
 
@@ -3041,8 +3057,8 @@
                                     <i class="fa fa-download"></i> Download
                                 </a>
 
-                                <a href="{{ url('device/' . $photo['owner_device_id']) }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
-                                    <i class="fa fa-external-link"></i> Open owner device
+                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $photo['owner_device_id'] }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
+                                    <i class="fa fa-camera"></i> Manage owner photos
                                 </a>
 
                                 @if ($can_delete)
