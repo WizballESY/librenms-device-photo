@@ -464,7 +464,48 @@
     </div>
 
     @if ($message)
-        <div class="alert alert-success">{{ $message }}</div>
+        <div id="device-photo-toast"
+             style="
+                position: fixed;
+                top: 72px;
+                right: 18px;
+                z-index: 26000;
+                min-width: 240px;
+                max-width: 420px;
+                padding: 12px 16px;
+                border-radius: 7px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+                font-size: 13px;
+                line-height: 1.35;
+                background: #dff0d8;
+                border: 1px solid #c8e5bc;
+                color: #3c763d;
+                opacity: 1;
+                transition: opacity 0.35s ease, transform 0.35s ease;
+             ">
+            {{ $message }}
+        </div>
+
+        <script>
+            (function () {
+                var toast = document.getElementById('device-photo-toast');
+
+                if (!toast) {
+                    return;
+                }
+
+                window.setTimeout(function () {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-8px)';
+
+                    window.setTimeout(function () {
+                        if (toast && toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 400);
+                }, 5000);
+            })();
+        </script>
     @endif
 
     @if ($error)
@@ -2733,7 +2774,7 @@
                     @if ((count($photos) + count($linked_photos)) > 0)
                     @if ($can_reorder)
                     <div class="device-photo-drag-hint">
-                        Drag and drop photos to change the order. The order is saved automatically.
+                        Drag and drop photos to change the order.
                     </div>
 
                     <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
@@ -2741,6 +2782,7 @@
                         <input type="hidden" name="action" value="save_order">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                         <input type="hidden" name="order_json" id="device-photo-order-json" value="[]">
+                        <input type="hidden" name="return_anchor" value="device-photo-manager-grid">
 
                         <button type="submit" class="btn btn-success btn-sm" style="display: none;">
                             <i class="fa fa-save"></i> Save order
@@ -2756,7 +2798,11 @@
 
                     <div class="device-photo-manager-grid" id="device-photo-manager-grid">
                         @foreach ($photos as $photo)
-                            <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
+                            @php
+                                $devicePhotoCardAnchor = 'device-photo-card-' . preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($photo['order_key'] ?? $photo['filename']));
+                            @endphp
+
+                            <div id="{{ $devicePhotoCardAnchor }}" class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
                                 <img
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -2823,6 +2869,7 @@
                                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                                                             <input type="hidden" name="target_device_id" value="{{ $linkedDevice['device_id'] }}">
                                                             <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                                                            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
 
                                                             <button type="submit" class="btn btn-warning btn-xs">
                                                                 <i class="fa fa-unlink"></i> Remove link
@@ -2851,6 +2898,7 @@
                                         data-filename="{{ $photo['filename'] }}"
                                         data-photo-taken="{{ !empty($photo['photo_taken_iso']) ? substr($photo['photo_taken_iso'], 0, 16) : '' }}"
                                         data-device-id="{{ $device->device_id }}"
+                                        data-return-anchor="{{ $devicePhotoCardAnchor }}"
                                         title="Write Photo taken to EXIF metadata"
                                     >
                                         <i class="fa fa-clock-o"></i> Set photo taken
@@ -2871,6 +2919,7 @@
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                                     <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                                    <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
 
                                     <div class="input-group input-group-sm">
                                         <input
@@ -2906,6 +2955,7 @@
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                                     <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                                    <input type="hidden" name="return_anchor" value="device-photo-manager-grid">
 
                                     <button type="submit" class="btn btn-danger btn-sm btn-block">
                                         <i class="fa fa-trash"></i> Delete
@@ -2916,7 +2966,11 @@
                         @endforeach
 
                         @foreach ($linked_photos as $photo)
-                            <div class="device-photo-manager-card device-photo-linked-photo-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? ('linked:' . ($photo['owner_device_id'] ?? 0) . ':' . $photo['filename']) }}" style="order: {{ $photo['display_order_index'] ?? 9999 }}; background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                            @php
+                                $devicePhotoLinkedCardAnchor = 'device-photo-card-' . preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($photo['order_key'] ?? ('linked:' . ($photo['owner_device_id'] ?? 0) . ':' . $photo['filename'])));
+                            @endphp
+
+                            <div id="{{ $devicePhotoLinkedCardAnchor }}" class="device-photo-manager-card device-photo-linked-photo-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? ('linked:' . ($photo['owner_device_id'] ?? 0) . ':' . $photo['filename']) }}" style="order: {{ $photo['display_order_index'] ?? 9999 }}; background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -2970,6 +3024,7 @@
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                                     <input type="hidden" name="owner_device_id" value="{{ $photo['owner_device_id'] }}">
                                     <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                                    <input type="hidden" name="return_anchor" value="device-photo-manager-grid">
 
                                     <button type="submit" class="btn btn-warning btn-sm btn-block">
                                         <i class="fa fa-unlink"></i> Remove link
@@ -3185,7 +3240,7 @@
                         Search for a device that owns the photo, then link one of its photos to this device.
                     </div>
 
-                    <form method="get" action="{{ url('plugin/device-photo') }}" style="margin-bottom: 14px; position: relative;">
+                    <form method="get" action="{{ url('plugin/device-photo') }}#device-photo-incoming-link" style="margin-bottom: 14px; position: relative;">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
 
                         <div class="input-group input-group-sm" style="max-width: 520px;">
@@ -3277,6 +3332,7 @@
                 <input type="hidden" name="action" value="set_photo_taken">
                 <input type="hidden" name="device_id" id="device-photo-set-taken-device-id" value="{{ $device ? $device->device_id : 0 }}">
                 <input type="hidden" name="filename" id="device-photo-set-taken-filename" value="">
+                <input type="hidden" name="return_anchor" id="device-photo-set-taken-return-anchor" value="">
 
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px;">
                     <button type="button" class="btn btn-default btn-sm" id="device-photo-set-taken-cancel">
@@ -3307,6 +3363,7 @@
             var form = document.getElementById('device-photo-set-taken-form');
             var filenameInput = document.getElementById('device-photo-set-taken-filename');
             var deviceInput = document.getElementById('device-photo-set-taken-device-id');
+            var returnAnchorInput = document.getElementById('device-photo-set-taken-return-anchor');
             var dateInput = document.getElementById('device-photo-set-taken-input');
             var cancelButton = document.getElementById('device-photo-set-taken-cancel');
 
@@ -3317,12 +3374,18 @@
             function closeModal() {
                 modal.style.display = 'none';
                 filenameInput.value = '';
+                if (returnAnchorInput) {
+                    returnAnchorInput.value = '';
+                }
                 dateInput.value = '';
             }
 
             document.querySelectorAll('.device-photo-set-taken-button').forEach(function (button) {
                 button.addEventListener('click', function () {
                     filenameInput.value = button.getAttribute('data-filename') || '';
+                    if (returnAnchorInput) {
+                        returnAnchorInput.value = button.getAttribute('data-return-anchor') || '';
+                    }
                     dateInput.value = button.getAttribute('data-photo-taken') || '';
 
                     if (deviceInput) {

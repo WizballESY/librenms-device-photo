@@ -147,7 +147,7 @@ class ActionController extends Controller
 
         $this->order->save($safeShortName, $newOrder);
 
-        return $this->redirect($deviceId, 'order_updated');
+        return $this->redirectAfterAction($request, $deviceId, 'order_updated');
     }
 
     private function removeLink(Request $request, int $deviceId)
@@ -735,7 +735,7 @@ class ActionController extends Controller
          */
         $this->images->createThumbnail($photoPath, $filename);
 
-        return $this->redirect($deviceId, 'photo_taken_updated');
+        return $this->redirectAfterAction($request, $deviceId, 'photo_taken_updated');
     }
 
     private function removeBrokenLink(Request $request)
@@ -1009,6 +1009,22 @@ class ActionController extends Controller
             }
 
             return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : ''));
+        }
+
+        $query = [];
+
+        if ($deviceId > 0) {
+            $query['device_id'] = $deviceId;
+        }
+
+        if ($status !== null) {
+            $query['status'] = $status;
+        }
+
+        $anchor = trim((string) $request->input('return_anchor', ''));
+
+        if ($anchor !== '' && preg_match('/^[A-Za-z0-9_-]{1,120}$/', $anchor)) {
+            return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : '') . '#' . $anchor);
         }
 
         return $this->redirect($deviceId, $status);
