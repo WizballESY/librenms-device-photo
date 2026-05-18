@@ -1094,13 +1094,19 @@
                             Search
                         </span>
 
-                        <input
-                            type="text"
-                            id="device-photo-overview-filter"
-                            class="form-control"
-                            placeholder="Search by device ID or device name"
-                            style="max-width: 640px;"
-                        >
+                        <div class="input-group" style="max-width: 640px; flex: 1 1 auto;">
+                            <input
+                                type="text"
+                                id="device-photo-overview-filter"
+                                class="form-control"
+                                placeholder="Search by device ID or device name"
+                            >
+                            <span class="input-group-btn">
+                                <button type="button" id="device-photo-overview-filter-clear" class="btn btn-default">
+                                    Clear
+                                </button>
+                            </span>
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 6px; align-items: center; flex: 0 0 auto;">
@@ -1132,10 +1138,10 @@
                                         <span class="device-photo-sort-label">Owned photos <span class="device-photo-sort-indicator"></span></span>
                                     </th>
                                     <th class="device-photo-sort-header" data-sort-key="linked_in" title="Sort by number of photos owned by other devices, but shown on this device.">
-                                        <span class="device-photo-sort-label">Linked in <span class="device-photo-sort-indicator"></span></span>
+                                        <span class="device-photo-sort-label">Linked from <span class="device-photo-sort-indicator"></span></span>
                                     </th>
                                     <th class="device-photo-sort-header" data-sort-key="linked_out" title="Sort by number of photos owned by this device, but shown on other devices.">
-                                        <span class="device-photo-sort-label">Linked out <span class="device-photo-sort-indicator"></span></span>
+                                        <span class="device-photo-sort-label">Shared to <span class="device-photo-sort-indicator"></span></span>
                                     </th>
                                     <th title="Thumbnail preview of photos owned by this device.">Preview</th>
                                     <th title="Open the device or manage photos for this device.">Actions</th>
@@ -1201,71 +1207,63 @@
                                             style="display: none;"
                                             data-filter="{{ strtolower($row['device_id'] . ' ' . $row['name'] . ' ' . collect($row['linked_in'])->pluck('filename')->implode(' ') . ' ' . collect($row['linked_out'])->pluck('filename')->implode(' ')) }}">
                                             <td colspan="6" style="background: #fafafa;">
-                                                @if (!empty($row['linked_in']))
-                                                    <div style="margin-bottom: 8px;">
-                                                        <strong>Linked photos shown on this device:</strong>
-                                                        <ul style="margin: 4px 0 0 18px;">
-                                                            @foreach ($row['linked_in'] as $link)
-                                                                <li>
-                                                                    {{ $link['filename'] }}
-                                                                    from
-                                                                    <a href="{{ url('device/' . $link['owner_device_id']) }}">
-                                                                        Device ID: {{ $link['owner_device_id'] }}
-                                                                    </a>
-                                                                    @if (!empty($link['owner_name']))
-                                                                        - <a href="{{ url('device/' . $link['owner_device_id']) }}">{{ $link['owner_name'] }}</a>
-                                                                    @endif
+                                                @if (!empty($row['linked_out']))
+                                                    <div style="margin-bottom: 10px;">
+                                                        <strong>Photos shared to other devices</strong>
 
-                                                                    @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
-                                                                            @csrf
-                                                                            <input type="hidden" name="action" value="remove_link">
-                                                                            <input type="hidden" name="return_to" value="overview">
-                                                                            <input type="hidden" name="device_id" value="{{ $row['device_id'] }}">
-                                                                            <input type="hidden" name="owner_device_id" value="{{ $link['owner_device_id'] }}">
-                                                                            <input type="hidden" name="filename" value="{{ $link['filename'] }}">
-                                                                            <button type="submit" class="btn btn-warning btn-xs">
-                                                                                Remove link
-                                                                            </button>
-                                                                        </form>
-                                                                    @endif
-                                                                </li>
+                                                        <div style="margin-top: 5px;">
+                                                            @foreach ($row['linked_out'] as $link)
+                                                                <div style="margin: 4px 0 0 18px;">
+                                                                    <span class="label label-primary"
+                                                                          style="margin-right: 5px;"
+                                                                          title="This photo is owned by this device. It is shared to the device listed on this line.">
+                                                                        <i class="fa fa-home"></i> Owned
+                                                                    </span>
+
+                                                                    <code>{{ $link['filename'] }}</code>
+                                                                    shared to
+
+                                                                    <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
+                                                                        @if (!empty($link['target_name']))
+                                                                            {{ $link['target_name'] }}
+                                                                        @else
+                                                                            device-{{ $link['target_device_id'] }}
+                                                                        @endif
+                                                                        <span class="text-muted">(Device ID {{ $link['target_device_id'] }})</span>
+                                                                    </a>
+                                                                </div>
                                                             @endforeach
-                                                        </ul>
+                                                        </div>
                                                     </div>
                                                 @endif
 
-                                                @if (!empty($row['linked_out']))
+                                                @if (!empty($row['linked_in']))
                                                     <div>
-                                                        <strong>Owned photos linked to other devices:</strong>
-                                                        <ul style="margin: 4px 0 0 18px;">
-                                                            @foreach ($row['linked_out'] as $link)
-                                                                <li>
-                                                                    {{ $link['filename'] }}
-                                                                    linked to
-                                                                    <a href="{{ url('device/' . $link['target_device_id']) }}">
-                                                                        Device ID: {{ $link['target_device_id'] }}
-                                                                    </a>
-                                                                    @if (!empty($link['target_name']))
-                                                                        - <a href="{{ url('device/' . $link['target_device_id']) }}">{{ $link['target_name'] }}</a>
-                                                                    @endif
+                                                        <strong>Photos linked from other devices</strong>
 
-                                                                    @if ($can_delete)
-                                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="display: inline;" data-device-photo-confirm="Remove this outgoing link? The original photo will not be deleted.">
-                                                                            @csrf
-                                                                            <input type="hidden" name="action" value="remove_outgoing_link">
-                                                                            <input type="hidden" name="return_to" value="overview">
-                                                                            <input type="hidden" name="device_id" value="{{ $row['device_id'] }}">
-                                                                            <input type="hidden" name="target_device_id" value="{{ $link['target_device_id'] }}">
-                                                                            <input type="hidden" name="filename" value="{{ $link['filename'] }}">
-                                                                            <button type="submit" class="btn btn-warning btn-xs">
-                                                                                Remove link
-                                                                            </button>
-                                                                        </form>
-                                                                    @endif
-                                                                </li>
+                                                        <div style="margin-top: 5px;">
+                                                            @foreach ($row['linked_in'] as $link)
+                                                                <div style="margin: 4px 0 0 18px;">
+                                                                    <span class="label label-success"
+                                                                          style="margin-right: 5px;"
+                                                                          title="This photo is linked from another device. The device listed on this line owns the original photo.">
+                                                                        <i class="fa fa-link"></i> Linked
+                                                                    </span>
+
+                                                                    <code>{{ $link['filename'] }}</code>
+                                                                    from
+
+                                                                    <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['owner_device_id'] }}">
+                                                                        @if (!empty($link['owner_name']))
+                                                                            {{ $link['owner_name'] }}
+                                                                        @else
+                                                                            device-{{ $link['owner_device_id'] }}
+                                                                        @endif
+                                                                        <span class="text-muted">(Device ID {{ $link['owner_device_id'] }})</span>
+                                                                    </a>
+                                                                </div>
                                                             @endforeach
-                                                        </ul>
+                                                        </div>
                                                     </div>
                                                 @endif
                                             </td>
@@ -1672,12 +1670,12 @@
                                 @foreach ($overview['broken_links'] as $link)
                                     <tr>
                                         <td>
-                                            <a href="{{ url('device/' . $link['target_device_id']) }}">
+                                            <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
                                                 <code>Device ID: {{ $link['target_device_id'] }}</code>
                                             </a>
                                             @if (!empty($link['target_name']))
                                                 <br>
-                                                <a href="{{ url('device/' . $link['target_device_id']) }}">
+                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
                                                     {{ $link['target_name'] }}
                                                 </a>
                                             @endif
@@ -1685,11 +1683,11 @@
 
                                         <td>
                                             @if (!empty($link['owner_name']))
-                                                <a href="{{ url('device/' . $link['owner_device_id']) }}">
+                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['owner_device_id'] }}">
                                                     <code>Device ID: {{ $link['owner_device_id'] }}</code>
                                                 </a>
                                                 <br>
-                                                <a href="{{ url('device/' . $link['owner_device_id']) }}">
+                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['owner_device_id'] }}">
                                                     {{ $link['owner_name'] }}
                                                 </a>
                                             @else
@@ -1735,6 +1733,7 @@
         <script>
             (function () {
                 var input = document.getElementById('device-photo-overview-filter');
+                var clearFilterButton = document.getElementById('device-photo-overview-filter-clear');
                 var pageSizeSelect = document.getElementById('device-photo-overview-page-size');
                 var prevButton = document.getElementById('device-photo-overview-prev');
                 var nextButton = document.getElementById('device-photo-overview-next');
@@ -2024,6 +2023,16 @@
                         applyOverviewState();
                     });
                 });
+
+                if (clearFilterButton && input) {
+                    clearFilterButton.addEventListener('click', function () {
+                        input.value = '';
+                        currentPage = 1;
+                        openLinkRows = {};
+                        applyOverviewState();
+                        input.focus();
+                    });
+                }
 
                 if (pageSizeSelect) {
                     pageSizeSelect.addEventListener('change', function () {
@@ -2860,21 +2869,6 @@
                                                                 {{ $linkedDevice['name'] }}
                                                             </a>
                                                         </div>
-                                                    @endif
-
-                                                    @if ($can_delete)
-                                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;" data-device-photo-confirm="Remove this link? The original photo will not be deleted.">
-                                                            @csrf
-                                                            <input type="hidden" name="action" value="remove_outgoing_link">
-                                                            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
-                                                            <input type="hidden" name="target_device_id" value="{{ $linkedDevice['device_id'] }}">
-                                                            <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
-                                                            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
-
-                                                            <button type="submit" class="btn btn-warning btn-xs">
-                                                                <i class="fa fa-unlink"></i> Remove link
-                                                            </button>
-                                                        </form>
                                                     @endif
                                                 </div>
                                             @endforeach
