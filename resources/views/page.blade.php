@@ -2730,7 +2730,7 @@
                 @if (count($photos) === 0 && count($linked_photos) === 0)
                     <div class="alert alert-info">No device photos found</div>
                 @else
-                    @if (count($photos) > 0)
+                    @if ((count($photos) + count($linked_photos)) > 0)
                     @if ($can_reorder)
                     <div class="device-photo-drag-hint">
                         Drag and drop photos to change the order. The order is saved automatically.
@@ -2756,7 +2756,7 @@
 
                     <div class="device-photo-manager-grid" id="device-photo-manager-grid">
                         @foreach ($photos as $photo)
-                            <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}">
+                            <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
                                 <img
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -2916,7 +2916,7 @@
                         @endforeach
 
                         @foreach ($linked_photos as $photo)
-                            <div class="device-photo-linked-photo-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                            <div class="device-photo-manager-card device-photo-linked-photo-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? ('linked:' . ($photo['owner_device_id'] ?? 0) . ':' . $photo['filename']) }}" style="order: {{ $photo['display_order_index'] ?? 9999 }}; background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -3023,7 +3023,7 @@
                         })();
                     </script>
 
-                    @if ($can_reorder && count($photos) > 0)
+                    @if ($can_reorder && ((count($photos) + count($linked_photos)) > 0))
                     <script>
                         (function () {
                             var grid = document.getElementById('device-photo-manager-grid');
@@ -3034,9 +3034,40 @@
                                 return Array.prototype.slice.call(grid.querySelectorAll('.device-photo-manager-card'));
                             }
 
+                            function normalizeInitialDomOrder() {
+                                /*
+                                 * The server may use CSS order to mix owned and linked photos
+                                 * while still rendering them in separate Blade loops.
+                                 *
+                                 * Drag/drop works on DOM order, so normalize the DOM to match
+                                 * the visual order once, then remove CSS order values.
+                                 */
+                                cards()
+                                    .map(function (card, index) {
+                                        var order = parseInt(card.style.order || '', 10);
+
+                                        return {
+                                            card: card,
+                                            order: isNaN(order) ? index : order,
+                                            index: index
+                                        };
+                                    })
+                                    .sort(function (a, b) {
+                                        if (a.order === b.order) {
+                                            return a.index - b.index;
+                                        }
+
+                                        return a.order - b.order;
+                                    })
+                                    .forEach(function (item) {
+                                        item.card.style.order = '';
+                                        grid.appendChild(item.card);
+                                    });
+                            }
+
                             function updateOrderJson() {
                                 var order = cards().map(function (card) {
-                                    return card.getAttribute('data-filename');
+                                    return card.getAttribute('data-order-key');
                                 });
 
                                 orderInput.value = JSON.stringify(order);
@@ -3059,7 +3090,7 @@
                                 dragged = card;
                                 card.classList.add('dragging');
                                 e.dataTransfer.effectAllowed = 'move';
-                                e.dataTransfer.setData('text/plain', card.getAttribute('data-filename'));
+                                e.dataTransfer.setData('text/plain', card.getAttribute('data-order-key'));
                             });
 
                             grid.addEventListener('dragend', function () {
@@ -3138,6 +3169,7 @@
                                 updateOrderJson();
                             });
 
+                            normalizeInitialDomOrder();
                             updateOrderJson();
                         })();
                     </script>

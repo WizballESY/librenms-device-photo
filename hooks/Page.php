@@ -745,6 +745,8 @@ class Page extends PageHook
                     if (is_file($path)) {
                         $photos[$filename] = [
                             'filename' => $filename,
+                            'photo_type' => 'owned',
+                            'order_key' => $filename,
                             'url' => $this->photoUrl($filename),
                             'thumb_url' => $this->thumbUrl($filename),
                             'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
@@ -849,6 +851,8 @@ class Page extends PageHook
 
                 $linkedPhotos[$filename] = [
                     'filename' => $filename,
+                    'photo_type' => 'linked',
+                    'order_key' => 'linked:' . $ownerDeviceId . ':' . $filename,
                     'url' => $this->photoUrl($filename),
                     'thumb_url' => $this->thumbUrl($filename),
                     'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
@@ -858,6 +862,55 @@ class Page extends PageHook
                     'owner_device_id' => $ownerDeviceId,
                     'owner_name' => $this->deviceLabel($ownerDevice, $ownerDeviceId),
                 ];
+            }
+
+            /*
+             * Assign mixed display order indexes.
+             * Old order files with only owned filenames remain valid.
+             */
+            $existingOrderKeys = [];
+            $orderTargets = [];
+
+            foreach ($photos as $filename => $photo) {
+                $key = (string) ($photo['order_key'] ?? $filename);
+                $existingOrderKeys[$key] = true;
+                $orderTargets[$key] = ['type' => 'owned', 'filename' => $filename];
+            }
+
+            foreach ($linkedPhotos as $filename => $photo) {
+                $key = (string) ($photo['order_key'] ?? ('linked:' . ($photo['owner_device_id'] ?? 0) . ':' . $filename));
+                $existingOrderKeys[$key] = true;
+                $orderTargets[$key] = ['type' => 'linked', 'filename' => $filename];
+            }
+
+            $orderedKeys = [];
+
+            foreach ($order as $item) {
+                if (is_string($item) && isset($existingOrderKeys[$item]) && ! in_array($item, $orderedKeys, true)) {
+                    $orderedKeys[] = $item;
+                }
+            }
+
+            foreach (array_keys($existingOrderKeys) as $item) {
+                if (! in_array($item, $orderedKeys, true)) {
+                    $orderedKeys[] = $item;
+                }
+            }
+
+            foreach ($orderedKeys as $index => $key) {
+                $target = $orderTargets[$key] ?? null;
+
+                if (! $target) {
+                    continue;
+                }
+
+                if ($target['type'] === 'owned' && isset($photos[$target['filename']])) {
+                    $photos[$target['filename']]['display_order_index'] = $index;
+                }
+
+                if ($target['type'] === 'linked' && isset($linkedPhotos[$target['filename']])) {
+                    $linkedPhotos[$target['filename']]['display_order_index'] = $index;
+                }
             }
         }
 

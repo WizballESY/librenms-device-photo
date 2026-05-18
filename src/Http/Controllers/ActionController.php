@@ -78,22 +78,70 @@ class ActionController extends Controller
         }
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
-        $existing = $this->photos->listFilenamesForDevice($deviceId);
-        $existingLookup = array_flip($existing);
+
+        /*
+         * Mixed display order supports both owned and linked photos.
+         *
+         * Owned photo key:
+         *   device-108-1.jpg
+         *
+         * Linked photo key:
+         *   linked:109:device-109-2.jpg
+         */
+        $existing = [];
+
+        foreach ($this->photos->listFilenamesForDevice($deviceId) as $filename) {
+            $existing[$filename] = true;
+        }
+
+        $linksFile = $this->paths->linksDir() . '/device-' . $deviceId . '.json';
+        $links = [];
+
+        if (is_file($linksFile)) {
+            $decodedLinks = json_decode((string) file_get_contents($linksFile), true);
+            $links = is_array($decodedLinks) ? $decodedLinks : [];
+        }
+
+        foreach ($links as $link) {
+            if (! is_array($link)) {
+                continue;
+            }
+
+            $ownerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+            $filename = basename((string) ($link['filename'] ?? ''));
+
+            if ($ownerDeviceId < 1 || $filename === '') {
+                continue;
+            }
+
+            if (! preg_match('/^device-' . preg_quote((string) $ownerDeviceId, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            if (! is_file($this->paths->photoPath($filename))) {
+                continue;
+            }
+
+            $existing['linked:' . $ownerDeviceId . ':' . $filename] = true;
+        }
 
         $newOrder = [];
 
-        foreach ($decoded as $filename) {
-            $filename = basename((string) $filename);
+        foreach ($decoded as $item) {
+            if (! is_string($item)) {
+                continue;
+            }
 
-            if (isset($existingLookup[$filename])) {
-                $newOrder[] = $filename;
+            $item = trim($item);
+
+            if ($item !== '' && isset($existing[$item])) {
+                $newOrder[] = $item;
             }
         }
 
-        foreach ($existing as $filename) {
-            if (! in_array($filename, $newOrder, true)) {
-                $newOrder[] = $filename;
+        foreach (array_keys($existing) as $item) {
+            if (! in_array($item, $newOrder, true)) {
+                $newOrder[] = $item;
             }
         }
 

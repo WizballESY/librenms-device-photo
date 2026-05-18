@@ -300,6 +300,32 @@
         ];
     }
 
+    /*
+     * Re-apply custom order after linked photos have been added.
+     * This supports mixed order keys from the management page:
+     *
+     * Owned:
+     *   device-108-1.jpg
+     *
+     * Linked:
+     *   linked:109:device-109-2.jpg
+     */
+    $mixedOrderedPhotos = [];
+
+    foreach ($order as $item) {
+        if (is_string($item) && isset($photos[$item])) {
+            $mixedOrderedPhotos[$item] = $photos[$item];
+        }
+    }
+
+    foreach ($photos as $key => $photo) {
+        if (! isset($mixedOrderedPhotos[$key])) {
+            $mixedOrderedPhotos[$key] = $photo;
+        }
+    }
+
+    $photos = $mixedOrderedPhotos;
+
     $photoCount = count($photos);
     $modalId = 'device-photo-modal-' . $device->device_id;
 @endphp
