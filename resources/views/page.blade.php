@@ -2756,11 +2756,7 @@
 
                     <div class="device-photo-manager-grid" id="device-photo-manager-grid">
                         @foreach ($photos as $photo)
-                            @php
-                                $devicePhotoCardAnchor = 'device-photo-card-' . preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($photo['order_key'] ?? $photo['filename']));
-                            @endphp
-
-                            <div id="{{ $devicePhotoCardAnchor }}" class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
+                            <div class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
                                 <img
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -2875,7 +2871,6 @@
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                                     <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
-                                    <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
 
                                     <div class="input-group input-group-sm">
                                         <input
