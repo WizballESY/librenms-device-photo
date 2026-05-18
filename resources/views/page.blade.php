@@ -612,7 +612,7 @@
                         </div>
 
                         <div class="device-photo-summary-panel-description">
-                            Current photo inventory and storage usage. Sizes do not include thumbnails.
+                            Current photo inventory and storage usage. Size totals include thumbnails.
                         </div>
 
                         <div class="device-photo-summary-panel-items">
@@ -624,16 +624,16 @@
                                 <span class="number">{{ $overview['active_photo_count'] ?? 0 }}</span><span class="label">active photos</span>
                             </span>
 
-                            <span class="device-photo-summary-item" title="Total size of active original photos. Thumbnails are not included.">
-                                <span class="number">{{ $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">active size</span>
+                            <span class="device-photo-summary-item" title="Total size of active photos and thumbnails. Originals: {{ $overview['active_photo_mb'] ?? 0 }} MB, thumbnails: {{ $overview['thumbnail_mb'] ?? 0 }} MB.">
+                                <span class="number">{{ $overview['active_total_mb'] ?? $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">size</span>
                             </span>
 
                             <span class="device-photo-summary-item" title="Photos moved to the deleted folder.">
                                 <span class="number">{{ $overview['deleted_photo_count'] ?? 0 }}</span><span class="label">deleted photos</span>
                             </span>
 
-                            <span class="device-photo-summary-item" title="Total size of deleted original photos. Deleted thumbnails are not included.">
-                                <span class="number">{{ $overview['deleted_photo_mb'] ?? 0 }} MB</span><span class="label">deleted size</span>
+                            <span class="device-photo-summary-item" title="Total size of deleted photos and deleted thumbnails. Originals: {{ $overview['deleted_photo_mb'] ?? 0 }} MB, thumbnails: {{ $overview['deleted_thumbnail_mb'] ?? 0 }} MB.">
+                                <span class="number">{{ $overview['deleted_total_mb'] ?? $overview['deleted_photo_mb'] ?? 0 }} MB</span><span class="label">deleted size</span>
                             </span>
                         </div>
                     </div>

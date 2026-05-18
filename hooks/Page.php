@@ -401,6 +401,8 @@ class Page extends PageHook
             'active_photo_count' => $activePhotoCount,
             'active_photo_bytes' => $activePhotoBytes,
             'active_photo_mb' => round($activePhotoBytes / 1024 / 1024, 2),
+            'active_total_bytes' => $activePhotoBytes + $thumbnailBytes,
+            'active_total_mb' => round(($activePhotoBytes + $thumbnailBytes) / 1024 / 1024, 2),
             'deleted_photo_count' => $deletedPhotoCount,
             'deleted_photo_bytes' => $deletedPhotoBytes,
             'deleted_photo_mb' => round($deletedPhotoBytes / 1024 / 1024, 2),
