@@ -2725,11 +2725,12 @@
                     });
                 </script>
 
-                <h4 style="margin-bottom: 8px;">Photos owned by this device</h4>
+                <h4 style="margin-bottom: 8px;">Device photos</h4>
 
-                @if (count($photos) === 0)
-                    <div class="alert alert-info">No device photo found</div>
+                @if (count($photos) === 0 && count($linked_photos) === 0)
+                    <div class="alert alert-info">No device photos found</div>
                 @else
+                    @if (count($photos) > 0)
                     @if ($can_reorder)
                     <div class="device-photo-drag-hint">
                         Drag and drop photos to change the order. The order is saved automatically.
@@ -2751,6 +2752,7 @@
                         You do not have permission to reorder photos.
                     </div>
                     @endif
+                    @endif
 
                     <div class="device-photo-manager-grid" id="device-photo-manager-grid">
                         @foreach ($photos as $photo)
@@ -2762,6 +2764,12 @@
                                     src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
                                     draggable="false"
                                 >
+
+                                <div style="margin: 6px 0 4px 0;">
+                                    <span class="label label-primary">
+                                        <i class="fa fa-home"></i> Owned
+                                    </span>
+                                </div>
 
                                 <div class="text-muted" style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
                                     @if (!empty($photo['photo_taken_display']))
@@ -2906,6 +2914,70 @@
                                 @endif
                             </div>
                         @endforeach
+
+                        @foreach ($linked_photos as $photo)
+                            <div class="device-photo-linked-photo-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                                <img
+                                    data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
+                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
+                                    src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
+                                    style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
+                                >
+
+                                <div class="alert alert-info device-photo-linked-owner-box" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
+                                    <strong>
+                                        <i class="fa fa-link"></i>
+                                        Linked from
+                                    </strong>
+
+                                    <div style="margin-top: 8px;">
+                                        <div>
+                                            <a href="{{ url('device/' . $photo['owner_device_id']) }}">
+                                                <code>Device ID: {{ $photo['owner_device_id'] }}</code>
+                                            </a>
+                                        </div>
+
+                                        @if (!empty($photo['owner_name']))
+                                            <div style="margin-top: 2px; word-break: break-word;">
+                                                <a href="{{ url('device/' . $photo['owner_device_id']) }}">
+                                                    {{ $photo['owner_name'] }}
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="text-muted" style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
+                                    <div title="Stored filename on the owner device.">
+                                        <strong>Filename:</strong>
+                                        <span>{{ $photo['filename'] }}</span>
+                                    </div>
+                                </div>
+
+                                <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
+                                    <i class="fa fa-download"></i> Download
+                                </a>
+
+                                <a href="{{ url('device/' . $photo['owner_device_id']) }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
+                                    <i class="fa fa-external-link"></i> Open owner device
+                                </a>
+
+                                @if ($can_delete)
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
+                                    @csrf
+                                    <input type="hidden" name="action" value="remove_link">
+                                    <input type="hidden" name="device_id" value="{{ $device->device_id }}">
+                                    <input type="hidden" name="owner_device_id" value="{{ $photo['owner_device_id'] }}">
+                                    <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+
+                                    <button type="submit" class="btn btn-warning btn-sm btn-block">
+                                        <i class="fa fa-unlink"></i> Remove link
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
                     <script>
                         (function () {
@@ -2951,7 +3023,7 @@
                         })();
                     </script>
 
-                    @if ($can_reorder)
+                    @if ($can_reorder && count($photos) > 0)
                     <script>
                         (function () {
                             var grid = document.getElementById('device-photo-manager-grid');
@@ -3150,71 +3222,6 @@
                             </div>
                         @endif
                     @endif
-                @endif
-
-                @if (!empty($linked_photos) && count($linked_photos) > 0)
-                    <hr>
-
-                    <h4 style="margin-bottom: 8px;">Linked photos</h4>
-
-                    <div class="device-photo-drag-hint">
-                        These photos are owned by other devices, but are linked to this device.
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 230px)); gap: 14px;">
-                        @foreach ($linked_photos as $photo)
-                            <div class="device-photo-linked-photo-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
-                                <img
-                                    data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
-                                    data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
-                                    data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
-                                    src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
-                                    style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
-                                >
-
-                                <div class="alert alert-info device-photo-linked-owner-box" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
-                                    <strong>
-                                        <i class="fa fa-link"></i>
-                                        Linked from
-                                    </strong>
-
-                                    <div style="margin-top: 8px;">
-                                        <div>
-                                            <a href="{{ url('device/' . $photo['owner_device_id']) }}">
-                                                <code>Device ID: {{ $photo['owner_device_id'] }}</code>
-                                            </a>
-                                        </div>
-
-                                        @if (!empty($photo['owner_name']))
-                                            <div style="margin-top: 2px; word-break: break-word;">
-                                                <a href="{{ url('device/' . $photo['owner_device_id']) }}">
-                                                    {{ $photo['owner_name'] }}
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
-                                    <i class="fa fa-download"></i> Download
-                                </a>
-
-                                @if ($can_delete)
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
-                                    @csrf
-                                    <input type="hidden" name="action" value="remove_link">
-                                    <input type="hidden" name="device_id" value="{{ $device->device_id }}">
-                                    <input type="hidden" name="owner_device_id" value="{{ $photo['owner_device_id'] }}">
-                                    <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
-
-                                    <button type="submit" class="btn btn-warning btn-sm btn-block">
-                                        <i class="fa fa-unlink"></i> Remove link
-                                    </button>
-                                </form>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
                 @endif
             </div>
         </div>
