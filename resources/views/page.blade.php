@@ -680,21 +680,12 @@
                     </div>
 
                     <div class="device-photo-summary-panel">
-                        <div class="device-photo-summary-panel-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                            <span>
-                                <i class="fa fa-wrench"></i>
-                                Maintenance
-                            </span>
-
-                            @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
-                                <button type="button"
-                                        class="btn btn-danger btn-xs"
-                                        id="device-photo-empty-deleted-open"
-                                        title="Permanently remove all files from the deleted folder">
-                                    <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
-                                </button>
-                            @endif
-                        </div>
+                        <div style="display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                            <div style="min-width: 0; flex: 1 1 auto;">
+                                <div class="device-photo-summary-panel-header">
+                                    <i class="fa fa-wrench"></i>
+                                    Maintenance
+                                </div>
 
                         <div class="device-photo-summary-panel-description">
                             Cleanup checks for orphaned photos, broken links and thumbnail cache issues.
@@ -730,6 +721,79 @@
                                         <span class="number">{{ $overview['stale_thumbnail_count'] ?? 0 }}</span><span class="label">stale thumbnails</span>
                                     </span>
                                 @endif
+                            @endif
+                        </div>
+                            </div>
+
+                            @if (
+                                ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
+                                || (count($overview['orphaned_photos'] ?? []) > 0)
+                                || (count($overview['broken_links'] ?? []) > 0)
+                                || ($can_upload && !empty($overview['gd_available']) && !empty($overview['thumb_dir_writable']) && (($overview['missing_thumbnail_count'] ?? 0) > 0))
+                                || ($can_upload && (($overview['stale_thumbnail_count'] ?? 0) > 0))
+                            )
+                                <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                    @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
+                                        <button type="button"
+                                                class="btn btn-danger btn-xs"
+                                                id="device-photo-empty-deleted-open"
+                                                title="Permanently remove all files from the deleted folder">
+                                            <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
+                                        </button>
+                                    @endif
+
+                                    @if (count($overview['orphaned_photos'] ?? []) > 0)
+                                        <a href="{{ url('plugin/device-photo') }}#device-photo-orphaned-photos"
+                                           class="btn btn-warning btn-xs"
+                                           title="Jump to orphaned photos so they can be assigned or moved to deleted">
+                                            <i class="fa fa-exclamation-triangle"></i> Manage orphaned photos
+                                        </a>
+                                    @endif
+
+                                    @if (count($overview['broken_links'] ?? []) > 0)
+                                        <a href="{{ url('plugin/device-photo') }}#device-photo-broken-links"
+                                           class="btn btn-warning btn-xs"
+                                           title="Jump to broken links so invalid link entries can be reviewed">
+                                            <i class="fa fa-unlink"></i> Manage broken links
+                                        </a>
+                                    @endif
+
+                                    @if ($can_upload && !empty($overview['gd_available']) && !empty($overview['thumb_dir_writable']) && (($overview['missing_thumbnail_count'] ?? 0) > 0))
+                                        <form method="post"
+                                              action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten."
+                                              style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="action" value="generate_missing_thumbnails">
+                                            <input type="hidden" name="device_id" value="0">
+                                            <input type="hidden" name="return_to" value="overview">
+
+                                            <button type="submit"
+                                                    class="btn btn-warning btn-xs"
+                                                    title="Generate thumbnails for active photos that are missing thumbnails">
+                                                <i class="fa fa-magic"></i> Generate missing thumbnails
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if ($can_upload && (($overview['stale_thumbnail_count'] ?? 0) > 0))
+                                        <form method="post"
+                                              action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?"
+                                              style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="action" value="clean_stale_thumbnails">
+                                            <input type="hidden" name="device_id" value="0">
+                                            <input type="hidden" name="return_to" value="overview">
+
+                                            <button type="submit"
+                                                    class="btn btn-warning btn-xs"
+                                                    title="Remove thumbnail files where the original active photo no longer exists">
+                                                <i class="fa fa-trash"></i> Clean stale thumbnails
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -1016,41 +1080,8 @@
                         <strong>Thumbnail folder is not writable:</strong>
                         Check permissions on <code>storage/app/device-photos/thumbs</code>.
                     </div>
-                @elseif (($overview['missing_thumbnail_count'] ?? 0) > 0)
-                    <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten." style="display: inline;">
-                            @csrf
-                            <input type="hidden" name="action" value="generate_missing_thumbnails">
-                            <input type="hidden" name="device_id" value="0">
-                            <input type="hidden" name="return_to" value="overview">
-
-                            <strong>{{ $overview['missing_thumbnail_count'] ?? 0 }}</strong>
-                            active photo{{ ($overview['missing_thumbnail_count'] ?? 0) === 1 ? '' : 's' }} missing thumbnails.
-
-                            <button type="submit" class="btn btn-warning btn-xs" style="margin-left: 8px;">
-                                <i class="fa fa-magic"></i> Generate missing thumbnails
-                            </button>
-                        </form>
-                    </div>
                 @endif
 
-                @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
-                    <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?" style="display: inline;">
-                            @csrf
-                            <input type="hidden" name="action" value="clean_stale_thumbnails">
-                            <input type="hidden" name="device_id" value="0">
-                            <input type="hidden" name="return_to" value="overview">
-
-                            <strong>{{ $overview['stale_thumbnail_count'] ?? 0 }}</strong>
-                            stale thumbnail{{ ($overview['stale_thumbnail_count'] ?? 0) === 1 ? '' : 's' }} without matching original photo.
-
-                            <button type="submit" class="btn btn-warning btn-xs" style="margin-left: 8px;">
-                                <i class="fa fa-trash"></i> Clean stale thumbnails
-                            </button>
-                        </form>
-                    </div>
-                @endif
 
                 <style>
                     .device-photo-sort-header {
@@ -1455,7 +1486,7 @@
                     });
                 </script>
 
-                <h4>Orphaned photos</h4>
+                <h4 id="device-photo-orphaned-photos">Orphaned photos</h4>
 
                 <p class="text-muted">
                     Orphaned photos are image files where the original LibreNMS Device ID no longer exists.
@@ -1511,6 +1542,8 @@
                                         @csrf
                                         <input type="hidden" name="action" value="delete_orphan_photo">
                                         <input type="hidden" name="device_id" value="0">
+                                        <input type="hidden" name="return_to" value="overview">
+                                        <input type="hidden" name="return_anchor" value="device-photo-orphaned-photos">
                                         <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
 
                                         <button type="submit" class="btn btn-danger btn-xs btn-block">
@@ -1644,7 +1677,7 @@
                 </script>
 
                 <hr>
-                <h4>Broken links</h4>
+                <h4 id="device-photo-broken-links">Broken links</h4>
 
                 <p class="text-muted">
                     Broken links are photo link entries that point to an image file that no longer exists.
@@ -1709,6 +1742,7 @@
                                                     @csrf
                                                     <input type="hidden" name="action" value="remove_broken_link">
                                                     <input type="hidden" name="return_to" value="overview">
+                                                    <input type="hidden" name="return_anchor" value="device-photo-broken-links">
                                                     <input type="hidden" name="target_device_id" value="{{ $link['target_device_id'] }}">
                                                     <input type="hidden" name="owner_device_id" value="{{ $link['owner_device_id'] }}">
                                                     <input type="hidden" name="filename" value="{{ $link['filename'] }}">

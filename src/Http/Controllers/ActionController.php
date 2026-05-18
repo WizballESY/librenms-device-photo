@@ -600,7 +600,7 @@ class ActionController extends Controller
             @chmod($this->paths->deletedPath($deletedName), 0664);
             $this->moveThumbnailToDeleted($filename, $deletedName);
 
-            return $this->redirect(0, 'deleted');
+            return $this->redirectAfterAction($request, 0, 'deleted');
         }
 
         return $this->redirect(0, 'delete_failed');
@@ -1082,6 +1082,12 @@ class ActionController extends Controller
 
             if ($status !== null) {
                 $query['status'] = $status;
+            }
+
+            $anchor = trim((string) $request->input('return_anchor', ''));
+
+            if ($anchor !== '' && preg_match('/^[A-Za-z0-9_-]{1,120}$/', $anchor)) {
+                return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : '') . '#' . $anchor);
             }
 
             return redirect(url('plugin/device-photo') . ($query ? '?' . http_build_query($query) : ''));

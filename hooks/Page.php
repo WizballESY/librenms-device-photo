@@ -203,12 +203,11 @@ class Page extends PageHook
             $activePhotoBytes += $size;
 
             $thumbPath = $thumbDir . '/' . $filename;
+            $hasThumbnail = is_file($thumbPath);
 
-            if (is_file($thumbPath)) {
+            if ($hasThumbnail) {
                 $thumbnailCount++;
                 $thumbnailBytes += filesize($thumbPath);
-            } else {
-                $missingThumbnailCount++;
             }
 
             $photoFilesByDevice[$ownerDeviceId][] = [
@@ -220,7 +219,7 @@ class Page extends PageHook
                 'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
                 'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
                 'size' => $size,
-                'has_thumbnail' => is_file($thumbPath),
+                'has_thumbnail' => $hasThumbnail,
             ];
         }
 
@@ -347,6 +346,14 @@ class Page extends PageHook
 
         foreach ($allDeviceIds as $deviceId) {
             $device = $devices[$deviceId] ?? null;
+
+            if ($device && ! empty($photoFilesByDevice[$deviceId])) {
+                foreach ($photoFilesByDevice[$deviceId] as $photo) {
+                    if (empty($photo['has_thumbnail'])) {
+                        $missingThumbnailCount++;
+                    }
+                }
+            }
 
             if (! $device) {
                 if (! empty($photoFilesByDevice[$deviceId])) {
