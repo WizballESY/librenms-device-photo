@@ -203,6 +203,7 @@ class ActionController extends Controller
         }
 
         $this->links->remove($targetDeviceId, $deviceId, $filename);
+        $this->pruneOrderForDevice($targetDeviceId);
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
     }
@@ -379,12 +380,11 @@ class ActionController extends Controller
         }
 
         /*
-         * Refresh JSON order after upload.
-         * Existing custom order is preserved, new files are appended.
+         * Do not rewrite the order file after upload.
+         * The order file may contain mixed owned/linked photo keys.
+         * New uploaded photos are appended automatically when rendering if
+         * they do not already exist in the saved order.
          */
-        $order = $this->photos->listFilenamesForDevice($deviceId);
-        $this->order->save($safeShortName, $order);
-
         return $this->redirect($deviceId, 'uploaded');
     }
 
@@ -655,12 +655,15 @@ class ActionController extends Controller
              * Remove all links from other devices that pointed to this original photo.
              * Otherwise deleting an owned photo would leave broken linked-photo entries.
              */
+            $targetDeviceIds = $this->linkedTargetDeviceIdsForPhoto($deviceId, $filename);
             $this->links->removeAllForFilename($filename);
 
             $safeShortName = $this->photos->safeDevicePrefix($deviceId);
-            $order = $this->photos->listFilenamesForDevice($deviceId);
-            $order = array_values(array_filter($order, fn ($item) => $item !== $filename));
-            $this->order->save($safeShortName, $order);
+            $this->order->remove($safeShortName, $filename);
+
+            foreach ($targetDeviceIds as $targetDeviceId) {
+                $this->pruneOrderForDevice((int) $targetDeviceId);
+            }
 
             return $this->redirectAfterAction($request, $deviceId, 'deleted');
         }
@@ -941,6 +944,75 @@ class ActionController extends Controller
         return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'link_added');
     }
 
+    private function pruneOrderForDevice(int $deviceId): void
+    {
+        if ($deviceId < 1) {
+            return;
+        }
+
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $validOrderKeys = [];
+
+        foreach ($this->photos->listFilenamesForDevice($deviceId) as $filename) {
+            if (is_string($filename) && $filename !== '' && is_file($this->paths->photoPath($filename))) {
+                $validOrderKeys[] = $filename;
+            }
+        }
+
+        foreach ($this->links->load($deviceId) as $link) {
+            if (! is_array($link)) {
+                continue;
+            }
+
+            $ownerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+            $filename = basename((string) ($link['filename'] ?? ''));
+
+            if ($ownerDeviceId < 1 || $filename === '') {
+                continue;
+            }
+
+            if (! preg_match('/^device-' . preg_quote((string) $ownerDeviceId, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            if (! is_file($this->paths->photoPath($filename))) {
+                continue;
+            }
+
+            $validOrderKeys[] = 'linked:' . $ownerDeviceId . ':' . $filename;
+        }
+
+        $this->order->prune($safeShortName, $validOrderKeys);
+    }
+
+    private function linkedTargetDeviceIdsForPhoto(int $ownerDeviceId, string $filename): array
+    {
+        $targetDeviceIds = [];
+
+        foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
+            $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
+
+            if ($targetDeviceId < 1) {
+                continue;
+            }
+
+            foreach ($this->links->load($targetDeviceId) as $link) {
+                if (! is_array($link)) {
+                    continue;
+                }
+
+                $linkOwnerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+                $linkFilename = basename((string) ($link['filename'] ?? ''));
+
+                if ($linkOwnerDeviceId === $ownerDeviceId && $linkFilename === $filename) {
+                    $targetDeviceIds[$targetDeviceId] = true;
+                }
+            }
+        }
+
+        return array_keys($targetDeviceIds);
+    }
+
     private function findDeviceFromInput(string $targetInput): ?Device
     {
         if ($targetInput !== '' && preg_match('/^\\s*(\\d+)\\b/', $targetInput, $matches)) {
@@ -978,6 +1050,8 @@ class ActionController extends Controller
 
     private function redirectAfterIncomingLink(Request $request, int $deviceId, int $ownerDeviceId, ?string $status = null)
     {
+        $this->pruneOrderForDevice($deviceId);
+
         $ownerDeviceQuery = trim((string) $request->input('owner_device_query', ''));
 
         $query = [
@@ -999,6 +1073,8 @@ class ActionController extends Controller
 
     private function redirectAfterAction(Request $request, int $deviceId, ?string $status = null)
     {
+        $this->pruneOrderForDevice($deviceId);
+
         $returnTo = (string) $request->input('return_to', '');
 
         if ($returnTo === 'overview') {
@@ -1032,6 +1108,8 @@ class ActionController extends Controller
 
     private function redirect(int $deviceId, ?string $status = null)
     {
+        $this->pruneOrderForDevice($deviceId);
+
         $query = [];
 
         if ($deviceId > 0) {

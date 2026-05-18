@@ -69,4 +69,52 @@ class PhotoOrderService
 
         return $this->save($safeShortName, $order);
     }
+
+    public function prune(string $safeShortName, array $validOrderKeys): bool
+    {
+        /*
+         * Reconcile the saved order file with the current valid photo keys.
+         *
+         * This keeps existing order, removes stale keys and appends new valid
+         * keys at the end. This is important for mixed owned/linked ordering:
+         *
+         * - existing custom order should not be reset
+         * - removed links/photos should disappear from JSON
+         * - new uploads/links should be added to JSON automatically
+         */
+        $valid = [];
+        $validKeys = [];
+
+        foreach ($validOrderKeys as $key) {
+            if (is_string($key) && trim($key) !== '') {
+                $key = trim($key);
+
+                if (! isset($valid[$key])) {
+                    $valid[$key] = true;
+                    $validKeys[] = $key;
+                }
+            }
+        }
+
+        $order = $this->load($safeShortName);
+        $cleaned = [];
+
+        foreach ($order as $item) {
+            if (isset($valid[$item]) && ! in_array($item, $cleaned, true)) {
+                $cleaned[] = $item;
+            }
+        }
+
+        foreach ($validKeys as $item) {
+            if (! in_array($item, $cleaned, true)) {
+                $cleaned[] = $item;
+            }
+        }
+
+        if ($cleaned === $order) {
+            return true;
+        }
+
+        return $this->save($safeShortName, $cleaned);
+    }
 }
