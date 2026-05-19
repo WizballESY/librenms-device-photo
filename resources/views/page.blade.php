@@ -639,7 +639,7 @@
 
         <div class="panel panel-default">
             <div class="panel-heading">
-                <strong><i class="fa fa-undo"></i> Restore deleted photos</strong>
+                <strong><i class="fa fa-trash"></i> Manage deleted photos</strong>
             </div>
 
             <div class="panel-body">
@@ -648,11 +648,205 @@
                     Choose a target device to restore a photo. The restored file will be renamed to match the selected device.
                 </p>
 
-                <p>
+                <div class="alert alert-info" style="font-size: 12px; padding: 8px 10px; margin-bottom: 14px;">
+                    Deleted photos: <strong>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
+                    Total deleted size: <strong>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
                     <a href="{{ url('plugin/device-photo') }}" class="btn btn-primary btn-sm">
                         <i class="fa fa-arrow-left"></i> Back to overview
                     </a>
-                </p>
+
+                    @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
+                        <button type="button"
+                                class="btn btn-danger btn-sm"
+                                id="device-photo-empty-deleted-open-manage"
+                                title="Permanently remove all files from the deleted folder">
+                            <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
+                        </button>
+                    @endif
+                </div>
+
+                @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
+
+                    <div class="device-photo-confirm-backdrop"
+                         id="device-photo-empty-deleted-backdrop-manage"
+                         style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 20000; align-items: center; justify-content: center;">
+                        <div class="device-photo-confirm-modal" style="background: #fff; border-radius: 8px; padding: 18px; max-width: 520px; width: calc(100% - 32px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);">
+                            <h4 style="margin-top: 0;">Permanently delete deleted photos?</h4>
+
+                            <p>
+                                This will permanently remove all photos and thumbnails from the deleted folder.
+                                This cannot be undone.
+                            </p>
+
+                            <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
+                                Deleted originals: <strong>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
+                                Deleted thumbnails: <strong>{{ $overview['deleted_thumbnail_count'] ?? 0 }}</strong><br>
+                                Total size: <strong>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
+                            </div>
+
+                            <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-empty-deleted-form-manage">
+                                @csrf
+                                <input type="hidden" name="action" value="empty_deleted_photos">
+                                <input type="hidden" name="device_id" value="0">
+                                <input type="hidden" name="confirm_code" id="device-photo-empty-deleted-code-value-manage" value="">
+
+                                <div class="alert alert-danger" style="font-size: 12px; padding: 8px 10px;">
+                                    Type this code to confirm:
+                                    <strong id="device-photo-empty-deleted-code-manage" style="font-size: 16px; letter-spacing: 2px;"></strong>
+                                </div>
+
+                                <input type="text"
+                                       name="confirm_input"
+                                       id="device-photo-empty-deleted-input-manage"
+                                       class="form-control input-sm"
+                                       maxlength="4"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       placeholder="Enter 4-digit code"
+                                       style="max-width: 180px; margin-bottom: 12px;">
+
+                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                    <button type="button" class="btn btn-default btn-sm" id="device-photo-empty-deleted-cancel-manage">
+                                        Cancel
+                                    </button>
+
+                                    <button type="submit" class="btn btn-danger btn-sm" id="device-photo-empty-deleted-submit-manage" disabled>
+                                        <i class="fa fa-trash"></i> Empty deleted photos
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <script>
+                        (function () {
+                            var openButton = document.getElementById('device-photo-empty-deleted-open-manage');
+                            var backdrop = document.getElementById('device-photo-empty-deleted-backdrop-manage');
+                            var cancelButton = document.getElementById('device-photo-empty-deleted-cancel-manage');
+                            var codeText = document.getElementById('device-photo-empty-deleted-code-manage');
+                            var codeValue = document.getElementById('device-photo-empty-deleted-code-value-manage');
+                            var input = document.getElementById('device-photo-empty-deleted-input-manage');
+                            var submitButton = document.getElementById('device-photo-empty-deleted-submit-manage');
+
+                            function generateCode() {
+                                return String(Math.floor(1000 + Math.random() * 9000));
+                            }
+
+                            function closeModal() {
+                                backdrop.style.display = 'none';
+                                input.value = '';
+                                submitButton.disabled = true;
+                            }
+
+                            if (openButton && backdrop && codeText && codeValue && input && submitButton) {
+                                openButton.addEventListener('click', function () {
+                                    var code = generateCode();
+
+                                    codeText.textContent = code;
+                                    codeValue.value = code;
+                                    input.value = '';
+                                    submitButton.disabled = true;
+                                    backdrop.style.display = 'flex';
+                                    input.focus();
+                                });
+
+                                cancelButton.addEventListener('click', closeModal);
+
+                                backdrop.addEventListener('click', function (e) {
+                                    if (e.target === backdrop) {
+                                        closeModal();
+                                    }
+                                });
+
+                                input.addEventListener('input', function () {
+                                    submitButton.disabled = input.value !== codeValue.value;
+                                });
+                            }
+                        })();
+                    </script>
+                @endif
+
+
+                <div class="device-photo-confirm-backdrop"
+                     id="device-photo-manage-deleted-confirm-backdrop"
+                     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 20000; align-items: center; justify-content: center;">
+                    <div class="device-photo-confirm-box" style="background: #fff; border-radius: 10px; padding: 16px; max-width: 460px; width: calc(100% - 32px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);">
+                        <h4 style="margin-top: 0;">
+                            <i class="fa fa-exclamation-triangle"></i> Permanently delete photo?
+                        </h4>
+
+                        <p id="device-photo-manage-deleted-confirm-message" style="margin-bottom: 16px;"></p>
+
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button type="button" class="btn btn-default btn-sm" id="device-photo-manage-deleted-confirm-cancel">
+                                Cancel
+                            </button>
+
+                            <button type="button" class="btn btn-danger btn-sm" id="device-photo-manage-deleted-confirm-ok">
+                                <i class="fa fa-trash"></i> Permanently delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    (function () {
+                        var backdrop = document.getElementById('device-photo-manage-deleted-confirm-backdrop');
+                        var message = document.getElementById('device-photo-manage-deleted-confirm-message');
+                        var cancelButton = document.getElementById('device-photo-manage-deleted-confirm-cancel');
+                        var okButton = document.getElementById('device-photo-manage-deleted-confirm-ok');
+                        var pendingForm = null;
+
+                        if (!backdrop || !message || !cancelButton || !okButton) {
+                            return;
+                        }
+
+                        function closeConfirm() {
+                            backdrop.style.display = 'none';
+                            message.textContent = '';
+                            pendingForm = null;
+                        }
+
+                        document.addEventListener('submit', function (e) {
+                            var form = e.target.closest('form[data-device-photo-confirm]');
+
+                            if (!form) {
+                                return;
+                            }
+
+                            if (form.getAttribute('data-device-photo-confirmed') === '1') {
+                                return;
+                            }
+
+                            e.preventDefault();
+
+                            pendingForm = form;
+                            message.textContent = form.getAttribute('data-device-photo-confirm') || 'Are you sure?';
+                            backdrop.style.display = 'flex';
+                        }, true);
+
+                        cancelButton.addEventListener('click', closeConfirm);
+
+                        backdrop.addEventListener('click', function (e) {
+                            if (e.target === backdrop) {
+                                closeConfirm();
+                            }
+                        });
+
+                        okButton.addEventListener('click', function () {
+                            if (!pendingForm) {
+                                closeConfirm();
+                                return;
+                            }
+
+                            pendingForm.setAttribute('data-device-photo-confirmed', '1');
+                            pendingForm.submit();
+                        });
+                    })();
+                </script>
 
                 <style>
                     .device-photo-restore-suggestions {
@@ -871,6 +1065,22 @@
                                         </span>
                                     </div>
                                 </form>
+
+                                @if ($can_delete)
+                                    <form method="post"
+                                          action="{{ url('plugin/device-photo-package/action') }}"
+                                          style="margin-top: 8px;"
+                                          data-device-photo-confirm="Permanently delete this photo from the deleted folder? This cannot be undone.">
+                                        @csrf
+                                        <input type="hidden" name="action" value="delete_deleted_photo">
+                                        <input type="hidden" name="device_id" value="0">
+                                        <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+
+                                        <button type="submit" class="btn btn-danger btn-xs btn-block">
+                                            <i class="fa fa-trash"></i> Permanently delete
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -1095,18 +1305,11 @@
                             )
                                 <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                                     @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
-                                        <button type="button"
-                                                class="btn btn-danger btn-xs"
-                                                id="device-photo-empty-deleted-open"
-                                                title="Permanently remove all files from the deleted folder">
-                                            <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
-                                        </button>
-
-                                            <a href="{{ url('plugin/device-photo') }}?view=restore-deleted"
-                                               class="btn btn-primary btn-xs"
-                                               title="Review and restore photos from the deleted folder">
-                                                <i class="fa fa-undo"></i> Restore deleted photos
-                                            </a>
+                                        <a href="{{ url('plugin/device-photo') }}?view=restore-deleted"
+                                           class="btn btn-primary btn-xs"
+                                           title="Review, restore or permanently delete photos from the deleted folder">
+                                            <i class="fa fa-trash"></i> Manage deleted photos
+                                        </a>
                                     @endif
 
                                     @if (count($overview['orphaned_photos'] ?? []) > 0)

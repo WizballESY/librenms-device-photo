@@ -49,6 +49,7 @@ class ActionController extends Controller
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
             'empty_deleted_photos' => $this->emptyDeletedPhotos($request),
             'restore_deleted_photo' => $this->restoreDeletedPhoto($request),
+            'delete_deleted_photo' => $this->deleteDeletedPhoto($request),
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
             'delete' => $this->deletePhoto($request, $deviceId),
@@ -599,6 +600,44 @@ class ActionController extends Controller
          * it does not already exist in the saved order.
          */
         return $this->redirect($targetDeviceId, 'restored');
+    }
+
+    private function deleteDeletedPhoto(Request $request)
+    {
+        /*
+         * Permanently delete one photo from the deleted folder.
+         * This removes both the deleted original and its deleted thumbnail if present.
+         */
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirectRestoreDeleted('permission_denied');
+        }
+
+        $filename = basename((string) $request->input('filename', ''));
+
+        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            return $this->redirectRestoreDeleted('invalid_filename');
+        }
+
+        $deletedPath = $this->paths->deletedPath($filename);
+        $deletedThumbPath = $this->paths->deletedThumbPath($filename);
+
+        if (! is_file($deletedPath)) {
+            return $this->redirectRestoreDeleted('not_found');
+        }
+
+        $deletedOriginal = @unlink($deletedPath);
+
+        if (! $deletedOriginal) {
+            return $this->redirectRestoreDeleted('delete_failed');
+        }
+
+        if (is_file($deletedThumbPath)) {
+            @unlink($deletedThumbPath);
+        }
+
+        return $this->redirectRestoreDeleted('deleted_photo_permanently_deleted');
     }
 
     private function redirectRestoreDeleted(?string $status = null)

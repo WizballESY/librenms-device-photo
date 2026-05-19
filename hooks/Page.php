@@ -658,6 +658,7 @@ class Page extends PageHook
             'photo_taken_updated' => 'Photo taken date was written to EXIF metadata.',
             'deleted_photos_emptied' => 'Deleted photos were permanently removed.',
             'deleted_photos_empty' => 'No deleted photos were found.',
+            'deleted_photo_permanently_deleted' => 'Deleted photo was permanently removed.',
             'restored' => 'Photo restored.',
             'restore_failed' => 'Could not restore photo.',
         ];
