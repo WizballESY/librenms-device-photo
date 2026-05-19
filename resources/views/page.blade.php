@@ -1308,8 +1308,10 @@
                                 @endif
 
                                 @if (count($overview['broken_links'] ?? []) > 0)
-                                    <span class="device-photo-summary-item is-problem" title="Photo links that point to a missing original file.">
-                                        <span class="number">{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-broken-links-summary
+                                          title="Photo links that point to a missing original file.">
+                                        <span class="number" data-device-photo-broken-links-count>{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
                                     </span>
                                 @endif
 
@@ -1355,6 +1357,7 @@
                                     @if (count($overview['broken_links'] ?? []) > 0)
                                         <a href="{{ url('plugin/device-photo') }}#device-photo-broken-links"
                                            class="btn btn-warning btn-xs"
+                                           data-device-photo-broken-links-manage-button
                                            title="Jump to broken links so invalid link entries can be reviewed">
                                             <i class="fa fa-unlink"></i> Manage broken links
                                         </a>
@@ -2176,15 +2179,120 @@
                             backdrop.style.display = 'flex';
                         }, true);
 
+                        function showAjaxToast(messageText, type) {
+                            var toast = document.createElement('div');
+                            toast.className = 'alert alert-' + (type || 'success');
+                            toast.style.position = 'fixed';
+                            toast.style.right = '18px';
+                            toast.style.bottom = '18px';
+                            toast.style.zIndex = '30000';
+                            toast.style.maxWidth = '420px';
+                            toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.25)';
+                            toast.textContent = messageText;
+
+                            document.body.appendChild(toast);
+
+                            window.setTimeout(function () {
+                                if (toast.parentNode) {
+                                    toast.parentNode.removeChild(toast);
+                                }
+                            }, 3500);
+                        }
+
+                        function submitNormally(form) {
+                            form.removeAttribute('data-device-photo-ajax');
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
+                        }
+
+                        function updateBrokenLinksUi() {
+                            var rows = document.querySelectorAll('[data-device-photo-ajax-row="broken-link"]');
+                            var remaining = rows.length;
+                            var count = document.querySelector('[data-device-photo-broken-links-count]');
+                            var summary = document.querySelector('[data-device-photo-broken-links-summary]');
+                            var manageButton = document.querySelector('[data-device-photo-broken-links-manage-button]');
+                            var table = document.querySelector('[data-device-photo-broken-links-table]');
+                            var empty = document.querySelector('[data-device-photo-broken-links-empty]');
+
+                            if (count) {
+                                count.textContent = String(remaining);
+                            }
+
+                            if (remaining < 1) {
+                                if (summary) {
+                                    summary.style.display = 'none';
+                                }
+
+                                if (manageButton) {
+                                    manageButton.style.display = 'none';
+                                }
+
+                                if (table) {
+                                    table.style.display = 'none';
+                                }
+
+                                if (empty) {
+                                    empty.style.display = 'block';
+                                }
+                            }
+                        }
+
+                        function submitAjax(form) {
+                            var formData = new FormData(form);
+
+                            formData.set('ajax', '1');
+
+                            fetch(form.getAttribute('action'), {
+                                method: (form.method || 'POST').toUpperCase(),
+                                body: formData,
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            }).then(function (response) {
+                                if (!response.ok) {
+                                    throw new Error('HTTP ' + response.status);
+                                }
+
+                                return response.json();
+                            }).then(function (data) {
+                                if (!data || data.ok !== true) {
+                                    throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                                }
+
+                                var row = form.closest('[data-device-photo-ajax-row]');
+                                if (row && row.parentNode) {
+                                    row.parentNode.removeChild(row);
+                                }
+
+                                updateBrokenLinksUi();
+
+                                showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
+                            }).catch(function (error) {
+                                console.error('DevicePhoto AJAX failed:', error);
+                                submitNormally(form);
+                            });
+                        }
+
                         ok.addEventListener('click', function () {
                             if (!pendingForm) {
                                 backdrop.style.display = 'none';
                                 return;
                             }
 
-                            pendingForm.setAttribute('data-device-photo-confirmed', '1');
+                            var form = pendingForm;
+
+                            pendingForm = null;
                             backdrop.style.display = 'none';
-                            pendingForm.submit();
+
+                            if (form.getAttribute('data-device-photo-ajax') === '1') {
+                                submitAjax(form);
+                                return;
+                            }
+
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
                         });
 
                         cancel.addEventListener('click', function () {
@@ -2228,10 +2336,11 @@
                 </p>
 
                 @if (empty($overview['broken_links']))
-                    <div class="alert alert-info">No broken links found.</div>
+                    <div class="alert alert-info" data-device-photo-broken-links-empty>No broken links found.</div>
                 @else
+                    <div class="alert alert-info" data-device-photo-broken-links-empty style="display: none;">No broken links found.</div>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" data-device-photo-broken-links-table>
                         <table class="table table-condensed table-striped">
                             <thead>
                                 <tr>
@@ -2243,7 +2352,7 @@
                             </thead>
                             <tbody>
                                 @foreach ($overview['broken_links'] as $link)
-                                    <tr>
+                                    <tr data-device-photo-ajax-row="broken-link">
                                         <td>
                                             <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
                                                 <code>Device ID: {{ $link['target_device_id'] }}</code>
@@ -2280,7 +2389,10 @@
 
                                         <td>
                                             @if ($can_delete)
-                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm-title="Remove broken link?"
+                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                                    data-device-photo-ajax="1"
+                                                    data-device-photo-ajax-success="Broken link removed."
+                                                    data-device-photo-confirm-title="Remove broken link?"
                                                     data-device-photo-confirm-ok-text="Remove link"
                                                     data-device-photo-confirm-ok-class="btn-warning"
                                                     data-device-photo-confirm-ok-icon="fa-unlink"
