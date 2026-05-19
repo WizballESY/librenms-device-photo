@@ -1110,7 +1110,7 @@
                 @else
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
                         @foreach ($overview['deleted_photos'] as $photo)
-                            <div class="device-photo-orphan-card" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                            <div class="device-photo-orphan-card" data-device-photo-ajax-row="orphaned-photo" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img data-device-photo-gallery="restore-deleted"
                                      data-device-photo-preview-src="{{ $photo['url'] }}"
                                      data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -1366,8 +1366,10 @@
                                 </span>
                             @else
                                 @if (count($overview['orphaned_photos'] ?? []) > 0)
-                                    <span class="device-photo-summary-item is-problem" title="Photos where the original LibreNMS device ID no longer exists.">
-                                        <span class="number">{{ count($overview['orphaned_photos'] ?? []) }}</span><span class="label">orphans</span>
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-orphaned-summary
+                                          title="Photos where the original LibreNMS device ID no longer exists.">
+                                        <span class="number" data-device-photo-orphaned-count>{{ count($overview['orphaned_photos'] ?? []) }}</span><span class="label">orphans</span>
                                     </span>
                                 @endif
 
@@ -1413,6 +1415,7 @@
                                     @if (count($overview['orphaned_photos'] ?? []) > 0)
                                         <a href="{{ url('plugin/device-photo') }}#device-photo-orphaned-photos"
                                            class="btn btn-warning btn-xs"
+                                           data-device-photo-orphaned-manage-button
                                            title="Jump to orphaned photos so they can be assigned or moved to deleted">
                                             <i class="fa fa-exclamation-triangle"></i> Manage orphaned photos
                                         </a>
@@ -2071,9 +2074,11 @@
                 </p>
 
                 @if (empty($overview['orphaned_photos']))
-                    <div class="alert alert-info">No orphaned photos found.</div>
+                    <div class="alert alert-info" data-device-photo-orphaned-empty>No orphaned photos found.</div>
                 @else
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
+                    <div class="alert alert-info" data-device-photo-orphaned-empty style="display: none;">No orphaned photos found.</div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;" data-device-photo-orphaned-grid>
                         @foreach ($overview['orphaned_photos'] as $photo)
                             <div class="device-photo-orphan-card" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img data-device-photo-gallery="overview-orphans" data-device-photo-preview-src="{{ $photo['url'] }}"
@@ -2117,7 +2122,12 @@
                                 @endif
 
                                 @if ($can_delete)
-                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px;" data-device-photo-confirm-title="Delete orphaned photo?"
+                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                          style="margin-top: 8px;"
+                                          data-device-photo-ajax="1"
+                                          data-device-photo-ajax-success="Orphaned photo moved to deleted photos."
+                                          data-device-photo-ajax-remove-card="orphaned-photo"
+                                          data-device-photo-confirm-title="Delete orphaned photo?"
                                            data-device-photo-confirm-ok-text="Delete"
                                            data-device-photo-confirm-ok-class="btn-danger"
                                            data-device-photo-confirm-ok-icon="fa-trash"
@@ -2280,6 +2290,38 @@
                             }
                         }
 
+                        function updateOrphanedPhotosUi() {
+                            var rows = document.querySelectorAll('[data-device-photo-ajax-row="orphaned-photo"]');
+                            var remaining = rows.length;
+                            var count = document.querySelector('[data-device-photo-orphaned-count]');
+                            var summary = document.querySelector('[data-device-photo-orphaned-summary]');
+                            var manageButton = document.querySelector('[data-device-photo-orphaned-manage-button]');
+                            var grid = document.querySelector('[data-device-photo-orphaned-grid]');
+                            var empty = document.querySelector('[data-device-photo-orphaned-empty]');
+
+                            if (count) {
+                                count.textContent = String(remaining);
+                            }
+
+                            if (remaining < 1) {
+                                if (summary) {
+                                    summary.style.display = 'none';
+                                }
+
+                                if (manageButton) {
+                                    manageButton.style.display = 'none';
+                                }
+
+                                if (grid) {
+                                    grid.style.display = 'none';
+                                }
+
+                                if (empty) {
+                                    empty.style.display = 'block';
+                                }
+                            }
+                        }
+
                         function submitAjax(form) {
                             var formData = new FormData(form);
 
@@ -2305,11 +2347,22 @@
                                 }
 
                                 var row = form.closest('[data-device-photo-ajax-row]');
+                                var rowType = row ? row.getAttribute('data-device-photo-ajax-row') : '';
+
+                                if (!row && form.getAttribute('data-device-photo-ajax-remove-card') === 'orphaned-photo') {
+                                    row = form.closest('.device-photo-orphan-card');
+                                    rowType = 'orphaned-photo';
+                                }
+
                                 if (row && row.parentNode) {
                                     row.parentNode.removeChild(row);
                                 }
 
-                                updateBrokenLinksUi();
+                                if (rowType === 'broken-link') {
+                                    updateBrokenLinksUi();
+                                } else if (rowType === 'orphaned-photo') {
+                                    updateOrphanedPhotosUi();
+                                }
 
                                 window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                                 }).catch(function (error) {
