@@ -715,20 +715,36 @@ class ActionController extends Controller
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect(0, 'permission_denied');
         }
 
         $filename = basename((string) $request->input('filename', ''));
 
         if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_filename');
         }
 
         if (! is_file($this->paths->photoPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect(0, 'not_found');
         }
 
         if (! preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $filename, $matches)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_filename');
         }
 
@@ -738,6 +754,10 @@ class ActionController extends Controller
          * Only allow delete_orphan_photo if the owner device no longer exists.
          */
         if ($oldDeviceId > 0 && Device::find($oldDeviceId)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_orphaned', false, 409);
+            }
+
             return $this->redirect(0, 'not_orphaned');
         }
 
@@ -752,7 +772,15 @@ class ActionController extends Controller
             @chmod($this->paths->deletedPath($deletedName), 0664);
             $this->moveThumbnailToDeleted($filename, $deletedName);
 
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('deleted');
+            }
+
             return $this->redirectAfterAction($request, 0, 'deleted');
+        }
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('delete_failed', false, 500);
         }
 
         return $this->redirect(0, 'delete_failed');
