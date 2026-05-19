@@ -471,13 +471,7 @@
             @include('device-photo::partials.version-badge')
         </h2>
 
-        @if ($global_overview ?? false)
-            <a href="{{ url('plugin/settings/device-photo') }}"
-               class="btn btn-primary btn-sm"
-               title="Device Photos settings">
-                <i class="fa fa-cog"></i> Device Photos Settings
-            </a>
-        @else
+        @if (! ($global_overview ?? false))
             <a href="{{ url('plugin/device-photo') }}"
                class="btn btn-primary btn-sm"
                title="Device Photos overview">
