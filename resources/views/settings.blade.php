@@ -19,7 +19,7 @@
 
     <div class="alert alert-warning" style="font-size: 12px; max-width: 720px;">
         <strong>Notice:</strong>
-        This plugin was created with assistance from AI. Use at your own risk.
+        This plugin is currently an alpha release. Use at your own risk.
         Make sure you have tested it before using it in production.
     </div>
 
