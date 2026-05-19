@@ -1074,12 +1074,20 @@ class ActionController extends Controller
     private function addLink(Request $request, int $deviceId)
     {
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -1093,18 +1101,37 @@ class ActionController extends Controller
         $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\\.(jpg|jpeg|png|webp)$/i';
 
         if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
         if (! is_file($this->paths->photoPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'not_found');
         }
 
         if ($targetDeviceId < 1 || $targetDeviceId === $deviceId) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_target_device');
         }
 
         $this->links->add($targetDeviceId, $deviceId, $filename);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('link_added', true, 200, [
+                'target_device_id' => $targetDeviceId,
+                'target_device_name' => (string) ($targetDevice->display ?? $targetDevice->hostname ?? $targetDeviceId),
+            ]);
+        }
 
         return $this->redirectAfterAction($request, $deviceId, 'link_added');
     }
@@ -1112,12 +1139,20 @@ class ActionController extends Controller
     private function addIncomingLink(Request $request, int $deviceId)
     {
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -1125,6 +1160,10 @@ class ActionController extends Controller
         $filename = basename((string) $request->input('filename', ''));
 
         if ($ownerDeviceId < 1 || $ownerDeviceId === $deviceId || ! Device::find($ownerDeviceId)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_target_device');
         }
 
@@ -1132,14 +1171,29 @@ class ActionController extends Controller
         $pattern = '/^' . preg_quote($ownerKey, '/') . '-[0-9]{1,3}\\.(jpg|jpeg|png|webp)$/i';
 
         if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
         if (! is_file($this->paths->photoPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'not_found');
         }
 
         $this->links->add($deviceId, $ownerDeviceId, $filename);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('link_added', true, 200, [
+                'owner_device_id' => $ownerDeviceId,
+                'filename' => $filename,
+            ]);
+        }
 
         return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'link_added');
     }

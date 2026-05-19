@@ -688,6 +688,84 @@
         };
     </script>
 
+    <script id="device-photo-link-ajax-helper">
+        document.addEventListener('DOMContentLoaded', function () {
+            function submitPhotoLinkAjax(form) {
+                var formData = new FormData(form);
+                var button = form.querySelector('button[type="submit"]');
+                var targetInput = form.querySelector('input[name="target_device_query"]');
+                var isIncoming = form.getAttribute('data-device-photo-ajax-add-incoming-link') === '1';
+
+                formData.set('ajax', '1');
+
+                if (button) {
+                    button.disabled = true;
+                }
+
+                fetch(form.getAttribute('action'), {
+                    method: (form.method || 'POST').toUpperCase(),
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    return response.json();
+                }).then(function (data) {
+                    if (!data || data.ok !== true) {
+                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                    }
+
+                    if (targetInput) {
+                        targetInput.value = '';
+                    }
+
+                    if (isIncoming && button) {
+                        button.className = 'btn btn-success btn-sm btn-block';
+                        button.innerHTML = '<i class="fa fa-check"></i> Linked';
+                    }
+
+                    if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                        window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Photo linked. Refresh to see updated photo list.');
+                    }
+                }).catch(function (error) {
+                    console.error('DevicePhoto AJAX link failed:', error);
+
+                    /*
+                     * Normal POST fallback if AJAX fails.
+                     */
+                    form.removeAttribute('data-device-photo-ajax-add-link');
+                    form.removeAttribute('data-device-photo-ajax-add-incoming-link');
+                    form.submit();
+                }).finally(function () {
+                    if (button && !isIncoming) {
+                        button.disabled = false;
+                    }
+                });
+            }
+
+            document.addEventListener('submit', function (e) {
+                var form = e.target.closest('form[data-device-photo-ajax-add-link="1"], form[data-device-photo-ajax-add-incoming-link="1"]');
+
+                if (!form) {
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                submitPhotoLinkAjax(form);
+            }, true);
+        });
+    </script>
+
+
+
 
 
     @if (($global_overview ?? false) && request()->query('view') === 'restore-deleted')
@@ -1639,8 +1717,7 @@
                                 }
                             });
                         });
-
-                        document.addEventListener('click', function (e) {
+document.addEventListener('click', function (e) {
                             if (!e.target.closest('.device-photo-target-suggestions') && !e.target.closest('.device-photo-target-input')) {
                                 closeAllSuggestions();
                             }
@@ -3772,7 +3849,11 @@
                                     <i class="fa fa-link"></i> Link this photo to another device
                                 </div>
 
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-bottom: 8px; position: relative;">
+                                <form method="post"
+                                      action="{{ url('plugin/device-photo-package/action') }}"
+                                      style="margin-bottom: 8px; position: relative;"
+                                      data-device-photo-ajax-add-link="1"
+                                      data-device-photo-ajax-success="Photo linked. Refresh to see updated photo list.">
                                     @csrf
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -4178,7 +4259,10 @@
                                             style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                         >
 
-                                        <form method="post" action="{{ url('plugin/device-photo-package/action') }}">
+                                        <form method="post"
+                                              action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-ajax-add-incoming-link="1"
+                                              data-device-photo-ajax-success="Photo linked. Refresh to see updated photo list.">
                                             @csrf
                                             <input type="hidden" name="action" value="add_incoming_link">
                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
