@@ -2875,15 +2875,90 @@
                 backdrop.style.display = 'flex';
             }, true);
 
+            function showAjaxToast(messageText, type) {
+                var toast = document.createElement('div');
+                toast.className = 'alert alert-' + (type || 'success');
+                toast.style.position = 'fixed';
+                toast.style.top = '18px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.zIndex = '30000';
+                toast.style.maxWidth = '420px';
+                toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.25)';
+                toast.textContent = messageText;
+
+                document.body.appendChild(toast);
+
+                window.setTimeout(function () {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 3500);
+            }
+
+            function submitNormally(form) {
+                form.removeAttribute('data-device-photo-ajax');
+                form.setAttribute('data-device-photo-confirmed', '1');
+                form.submit();
+            }
+
+            function submitAjax(form) {
+                var formData = new FormData(form);
+
+                formData.set('ajax', '1');
+
+                fetch(form.getAttribute('action'), {
+                    method: (form.method || 'POST').toUpperCase(),
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    return response.json();
+                }).then(function (data) {
+                    if (!data || data.ok !== true) {
+                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                    }
+
+                    if (form.getAttribute('data-device-photo-ajax-remove-card') === '1') {
+                        var card = form.closest('.device-photo-manager-card');
+
+                        if (card && card.parentNode) {
+                            card.parentNode.removeChild(card);
+                        }
+                    }
+
+                    showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
+                }).catch(function (error) {
+                    console.error('DevicePhoto AJAX failed:', error);
+                    submitNormally(form);
+                });
+            }
+
             ok.addEventListener('click', function () {
                 if (!pendingForm) {
                     closeConfirm();
                     return;
                 }
 
-                pendingForm.setAttribute('data-device-photo-confirmed', '1');
+                var form = pendingForm;
+
+                pendingForm = null;
                 backdrop.style.display = 'none';
-                pendingForm.submit();
+
+                if (form.getAttribute('data-device-photo-ajax') === '1') {
+                    submitAjax(form);
+                    return;
+                }
+
+                form.setAttribute('data-device-photo-confirmed', '1');
+                form.submit();
             });
 
             cancel.addEventListener('click', closeConfirm);
@@ -3748,6 +3823,9 @@
 
                                 @if ($can_delete)
                                 <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                      data-device-photo-ajax="1"
+                                      data-device-photo-ajax-success="Linked photo removed."
+                                      data-device-photo-ajax-remove-card="1"
                                       data-device-photo-confirm-title="Remove linked photo?"
                                       data-device-photo-confirm-ok-text="Remove link"
                                       data-device-photo-confirm-ok-class="btn-warning"
