@@ -886,6 +886,10 @@ class ActionController extends Controller
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect(0, 'permission_denied');
         }
 
@@ -894,10 +898,18 @@ class ActionController extends Controller
         $filename = basename((string) $request->input('filename', ''));
 
         if ($targetDeviceId < 1 || $ownerDeviceId < 1 || $filename === '') {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_link', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_link');
         }
 
         if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_filename');
         }
 
@@ -922,10 +934,18 @@ class ActionController extends Controller
         }
 
         if (! $removed) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect(0, 'not_found');
         }
 
         $this->links->save($targetDeviceId, $newLinks);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('link_removed');
+        }
 
         return $this->redirectAfterAction($request, 0, 'link_removed');
     }
@@ -1205,6 +1225,19 @@ class ActionController extends Controller
         }
 
         return redirect(url('plugin/device-photo') . '?' . http_build_query($query) . '#device-photo-incoming-link');
+    }
+
+    private function wantsJsonResponse(Request $request): bool
+    {
+        return $request->ajax() || $request->expectsJson() || $request->boolean('ajax');
+    }
+
+    private function jsonStatus(string $status, bool $ok = true, int $httpStatus = 200, array $extra = [])
+    {
+        return response()->json(array_merge([
+            'ok' => $ok,
+            'status' => $status,
+        ], $extra), $httpStatus);
     }
 
     private function redirectAfterAction(Request $request, int $deviceId, ?string $status = null)

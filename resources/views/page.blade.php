@@ -2176,15 +2176,86 @@
                             backdrop.style.display = 'flex';
                         }, true);
 
+                        function showAjaxToast(messageText, type) {
+                            var toast = document.createElement('div');
+                            toast.className = 'alert alert-' + (type || 'success');
+                            toast.style.position = 'fixed';
+                            toast.style.right = '18px';
+                            toast.style.bottom = '18px';
+                            toast.style.zIndex = '30000';
+                            toast.style.maxWidth = '420px';
+                            toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.25)';
+                            toast.textContent = messageText;
+
+                            document.body.appendChild(toast);
+
+                            window.setTimeout(function () {
+                                if (toast.parentNode) {
+                                    toast.parentNode.removeChild(toast);
+                                }
+                            }, 3500);
+                        }
+
+                        function submitNormally(form) {
+                            form.removeAttribute('data-device-photo-ajax');
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
+                        }
+
+                        function submitAjax(form) {
+                            var formData = new FormData(form);
+
+                            formData.set('ajax', '1');
+
+                            fetch(form.getAttribute('action'), {
+                                method: (form.method || 'POST').toUpperCase(),
+                                body: formData,
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            }).then(function (response) {
+                                if (!response.ok) {
+                                    throw new Error('HTTP ' + response.status);
+                                }
+
+                                return response.json();
+                            }).then(function (data) {
+                                if (!data || data.ok !== true) {
+                                    throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                                }
+
+                                var row = form.closest('[data-device-photo-ajax-row]');
+                                if (row && row.parentNode) {
+                                    row.parentNode.removeChild(row);
+                                }
+
+                                showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
+                            }).catch(function (error) {
+                                console.error('DevicePhoto AJAX failed:', error);
+                                submitNormally(form);
+                            });
+                        }
+
                         ok.addEventListener('click', function () {
                             if (!pendingForm) {
                                 backdrop.style.display = 'none';
                                 return;
                             }
 
-                            pendingForm.setAttribute('data-device-photo-confirmed', '1');
+                            var form = pendingForm;
+
+                            pendingForm = null;
                             backdrop.style.display = 'none';
-                            pendingForm.submit();
+
+                            if (form.getAttribute('data-device-photo-ajax') === '1') {
+                                submitAjax(form);
+                                return;
+                            }
+
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
                         });
 
                         cancel.addEventListener('click', function () {
@@ -2243,7 +2314,7 @@
                             </thead>
                             <tbody>
                                 @foreach ($overview['broken_links'] as $link)
-                                    <tr>
+                                    <tr data-device-photo-ajax-row="broken-link">
                                         <td>
                                             <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
                                                 <code>Device ID: {{ $link['target_device_id'] }}</code>
@@ -2280,7 +2351,10 @@
 
                                         <td>
                                             @if ($can_delete)
-                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm-title="Remove broken link?"
+                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                                    data-device-photo-ajax="1"
+                                                    data-device-photo-ajax-success="Broken link removed."
+                                                    data-device-photo-confirm-title="Remove broken link?"
                                                     data-device-photo-confirm-ok-text="Remove link"
                                                     data-device-photo-confirm-ok-class="btn-warning"
                                                     data-device-photo-confirm-ok-icon="fa-unlink"
