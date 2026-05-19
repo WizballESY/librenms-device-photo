@@ -1308,8 +1308,10 @@
                                 @endif
 
                                 @if (count($overview['broken_links'] ?? []) > 0)
-                                    <span class="device-photo-summary-item is-problem" title="Photo links that point to a missing original file.">
-                                        <span class="number">{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-broken-links-summary
+                                          title="Photo links that point to a missing original file.">
+                                        <span class="number" data-device-photo-broken-links-count>{{ count($overview['broken_links'] ?? []) }}</span><span class="label">broken links</span>
                                     </span>
                                 @endif
 
@@ -1355,6 +1357,7 @@
                                     @if (count($overview['broken_links'] ?? []) > 0)
                                         <a href="{{ url('plugin/device-photo') }}#device-photo-broken-links"
                                            class="btn btn-warning btn-xs"
+                                           data-device-photo-broken-links-manage-button
                                            title="Jump to broken links so invalid link entries can be reviewed">
                                             <i class="fa fa-unlink"></i> Manage broken links
                                         </a>
@@ -2202,6 +2205,38 @@
                             form.submit();
                         }
 
+                        function updateBrokenLinksUi() {
+                            var rows = document.querySelectorAll('[data-device-photo-ajax-row="broken-link"]');
+                            var remaining = rows.length;
+                            var count = document.querySelector('[data-device-photo-broken-links-count]');
+                            var summary = document.querySelector('[data-device-photo-broken-links-summary]');
+                            var manageButton = document.querySelector('[data-device-photo-broken-links-manage-button]');
+                            var table = document.querySelector('[data-device-photo-broken-links-table]');
+                            var empty = document.querySelector('[data-device-photo-broken-links-empty]');
+
+                            if (count) {
+                                count.textContent = String(remaining);
+                            }
+
+                            if (remaining < 1) {
+                                if (summary) {
+                                    summary.style.display = 'none';
+                                }
+
+                                if (manageButton) {
+                                    manageButton.style.display = 'none';
+                                }
+
+                                if (table) {
+                                    table.style.display = 'none';
+                                }
+
+                                if (empty) {
+                                    empty.style.display = 'block';
+                                }
+                            }
+                        }
+
                         function submitAjax(form) {
                             var formData = new FormData(form);
 
@@ -2230,6 +2265,8 @@
                                 if (row && row.parentNode) {
                                     row.parentNode.removeChild(row);
                                 }
+
+                                updateBrokenLinksUi();
 
                                 showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
                             }).catch(function (error) {
@@ -2299,10 +2336,11 @@
                 </p>
 
                 @if (empty($overview['broken_links']))
-                    <div class="alert alert-info">No broken links found.</div>
+                    <div class="alert alert-info" data-device-photo-broken-links-empty>No broken links found.</div>
                 @else
+                    <div class="alert alert-info" data-device-photo-broken-links-empty style="display: none;">No broken links found.</div>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" data-device-photo-broken-links-table>
                         <table class="table table-condensed table-striped">
                             <thead>
                                 <tr>
