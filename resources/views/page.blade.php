@@ -2691,7 +2691,8 @@
     <div id="device-photo-confirm-backdrop" class="device-photo-confirm-backdrop">
         <div class="device-photo-confirm-box">
             <div class="device-photo-confirm-title">
-                <i class="fa fa-exclamation-circle"></i> Confirm action
+                <i class="fa fa-exclamation-circle"></i>
+                <span id="device-photo-confirm-title">Confirm action</span>
             </div>
 
             <div id="device-photo-confirm-message" class="device-photo-confirm-message"></div>
@@ -2701,7 +2702,8 @@
                     Cancel
                 </button>
                 <button type="button" class="btn btn-primary" id="device-photo-confirm-ok">
-                    Continue
+                    <i class="fa fa-check" id="device-photo-confirm-ok-icon"></i>
+                    <span id="device-photo-confirm-ok-text">Continue</span>
                 </button>
             </div>
         </div>
@@ -2711,31 +2713,59 @@
         document.addEventListener('DOMContentLoaded', function () {
             var pendingForm = null;
             var backdrop = document.getElementById('device-photo-confirm-backdrop');
+            var title = document.getElementById('device-photo-confirm-title');
             var message = document.getElementById('device-photo-confirm-message');
             var ok = document.getElementById('device-photo-confirm-ok');
+            var okIcon = document.getElementById('device-photo-confirm-ok-icon');
+            var okText = document.getElementById('device-photo-confirm-ok-text');
             var cancel = document.getElementById('device-photo-confirm-cancel');
 
-            if (!backdrop || !message || !ok || !cancel) {
+            if (!backdrop || !title || !message || !ok || !okIcon || !okText || !cancel) {
                 return;
             }
 
-            document.querySelectorAll('form[data-device-photo-confirm]').forEach(function (form) {
-                form.addEventListener('submit', function (e) {
-                    if (form.getAttribute('data-device-photo-confirmed') === '1') {
-                        return;
-                    }
+            function resetConfirm() {
+                title.textContent = 'Confirm action';
+                message.textContent = '';
+                okText.textContent = 'Continue';
+                ok.className = 'btn btn-primary';
+                okIcon.className = 'fa fa-check';
+            }
 
-                    e.preventDefault();
+            function closeConfirm() {
+                pendingForm = null;
+                backdrop.style.display = 'none';
+                resetConfirm();
+            }
 
-                    pendingForm = form;
-                    message.textContent = form.getAttribute('data-device-photo-confirm') || 'Continue?';
-                    backdrop.style.display = 'flex';
-                });
-            });
+            document.addEventListener('submit', function (e) {
+                var form = e.target.closest('form[data-device-photo-confirm]');
+
+                if (!form) {
+                    return;
+                }
+
+                if (form.getAttribute('data-device-photo-confirmed') === '1') {
+                    return;
+                }
+
+                e.preventDefault();
+
+                pendingForm = form;
+
+                title.textContent = form.getAttribute('data-device-photo-confirm-title') || 'Confirm action';
+                message.textContent = form.getAttribute('data-device-photo-confirm') || 'Continue?';
+                okText.textContent = form.getAttribute('data-device-photo-confirm-ok-text') || 'Continue';
+
+                ok.className = 'btn ' + (form.getAttribute('data-device-photo-confirm-ok-class') || 'btn-primary');
+                okIcon.className = 'fa ' + (form.getAttribute('data-device-photo-confirm-ok-icon') || 'fa-check');
+
+                backdrop.style.display = 'flex';
+            }, true);
 
             ok.addEventListener('click', function () {
                 if (!pendingForm) {
-                    backdrop.style.display = 'none';
+                    closeConfirm();
                     return;
                 }
 
@@ -2744,22 +2774,17 @@
                 pendingForm.submit();
             });
 
-            cancel.addEventListener('click', function () {
-                pendingForm = null;
-                backdrop.style.display = 'none';
-            });
+            cancel.addEventListener('click', closeConfirm);
 
             backdrop.addEventListener('click', function (e) {
                 if (e.target === backdrop) {
-                    pendingForm = null;
-                    backdrop.style.display = 'none';
+                    closeConfirm();
                 }
             });
 
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    pendingForm = null;
-                    backdrop.style.display = 'none';
+                if (e.key === 'Escape' && backdrop.style.display === 'flex') {
+                    closeConfirm();
                 }
             });
         });
@@ -3522,7 +3547,12 @@
                                     }
                                 @endphp
 
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" class="device-photo-delete-form" data-device-photo-confirm="{{ $deleteConfirm }}">
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" class="device-photo-delete-form"
+                                      data-device-photo-confirm-title="Delete photo?"
+                                      data-device-photo-confirm-ok-text="Delete"
+                                      data-device-photo-confirm-ok-class="btn-danger"
+                                      data-device-photo-confirm-ok-icon="fa-trash"
+                                      data-device-photo-confirm="{{ $deleteConfirm }}">
                                     @csrf
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -3605,7 +3635,12 @@
                                 </a>
 
                                 @if ($can_delete)
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                      data-device-photo-confirm-title="Remove linked photo?"
+                                      data-device-photo-confirm-ok-text="Remove link"
+                                      data-device-photo-confirm-ok-class="btn-warning"
+                                      data-device-photo-confirm-ok-icon="fa-unlink"
+                                      data-device-photo-confirm="Remove this linked photo from this device? The original photo will not be deleted.">
                                     @csrf
                                     <input type="hidden" name="action" value="remove_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
