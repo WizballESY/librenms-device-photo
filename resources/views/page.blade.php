@@ -769,7 +769,8 @@
                      style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 20000; align-items: center; justify-content: center;">
                     <div class="device-photo-confirm-box" style="background: #fff; border-radius: 10px; padding: 16px; max-width: 460px; width: calc(100% - 32px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);">
                         <h4 style="margin-top: 0;">
-                            <i class="fa fa-exclamation-triangle"></i> Permanently delete photo?
+                            <i class="fa fa-exclamation-triangle"></i>
+                            <span id="device-photo-manage-deleted-confirm-title">Confirm action</span>
                         </h4>
 
                         <p id="device-photo-manage-deleted-confirm-message" style="margin-bottom: 16px;"></p>
@@ -780,7 +781,8 @@
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" id="device-photo-manage-deleted-confirm-ok">
-                                <i class="fa fa-trash"></i> Permanently delete
+                                <i class="fa fa-trash" id="device-photo-manage-deleted-confirm-ok-icon"></i>
+                                <span id="device-photo-manage-deleted-confirm-ok-text">Confirm</span>
                             </button>
                         </div>
                     </div>
@@ -789,18 +791,25 @@
                 <script>
                     (function () {
                         var backdrop = document.getElementById('device-photo-manage-deleted-confirm-backdrop');
+                        var title = document.getElementById('device-photo-manage-deleted-confirm-title');
                         var message = document.getElementById('device-photo-manage-deleted-confirm-message');
                         var cancelButton = document.getElementById('device-photo-manage-deleted-confirm-cancel');
                         var okButton = document.getElementById('device-photo-manage-deleted-confirm-ok');
+                        var okIcon = document.getElementById('device-photo-manage-deleted-confirm-ok-icon');
+                        var okText = document.getElementById('device-photo-manage-deleted-confirm-ok-text');
                         var pendingForm = null;
 
-                        if (!backdrop || !message || !cancelButton || !okButton) {
+                        if (!backdrop || !title || !message || !cancelButton || !okButton || !okIcon || !okText) {
                             return;
                         }
 
                         function closeConfirm() {
                             backdrop.style.display = 'none';
+                            title.textContent = 'Confirm action';
                             message.textContent = '';
+                            okText.textContent = 'Confirm';
+                            okIcon.className = 'fa fa-trash';
+                            okButton.className = 'btn btn-danger btn-sm';
                             pendingForm = null;
                         }
 
@@ -818,7 +827,14 @@
                             e.preventDefault();
 
                             pendingForm = form;
+
+                            title.textContent = form.getAttribute('data-device-photo-confirm-title') || 'Confirm action';
                             message.textContent = form.getAttribute('data-device-photo-confirm') || 'Are you sure?';
+                            okText.textContent = form.getAttribute('data-device-photo-confirm-ok-text') || 'Confirm';
+
+                            okButton.className = 'btn btn-sm ' + (form.getAttribute('data-device-photo-confirm-ok-class') || 'btn-primary');
+                            okIcon.className = 'fa ' + (form.getAttribute('data-device-photo-confirm-ok-icon') || 'fa-check');
+
                             backdrop.style.display = 'flex';
                         }, true);
 
@@ -1037,7 +1053,14 @@
                                     <i class="fa fa-download"></i> Download
                                 </a>
 
-                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Restore this deleted photo to the selected device? The file will be renamed to match the target device.">
+                                <form method="post"
+                                      action="{{ url('plugin/device-photo-package/action') }}"
+                                      style="margin-top: 8px; position: relative;"
+                                      data-device-photo-confirm-title="Restore photo?"
+                                      data-device-photo-confirm-ok-text="Restore"
+                                      data-device-photo-confirm-ok-class="btn-primary"
+                                      data-device-photo-confirm-ok-icon="fa-undo"
+                                      data-device-photo-confirm="Restore this deleted photo to the selected device? The file will be renamed to match the target device.">
                                     @csrf
                                     <input type="hidden" name="action" value="restore_deleted_photo">
                                     <input type="hidden" name="device_id" value="0">
@@ -1064,6 +1087,10 @@
                                     <form method="post"
                                           action="{{ url('plugin/device-photo-package/action') }}"
                                           style="margin-top: 8px;"
+                                          data-device-photo-confirm-title="Permanently delete photo?"
+                                          data-device-photo-confirm-ok-text="Permanently delete"
+                                          data-device-photo-confirm-ok-class="btn-danger"
+                                          data-device-photo-confirm-ok-icon="fa-trash"
                                           data-device-photo-confirm="Permanently delete this photo from the deleted folder? This cannot be undone.">
                                         @csrf
                                         <input type="hidden" name="action" value="delete_deleted_photo">
@@ -1362,108 +1389,6 @@
                         </div>
                     </div>
                 </div>
-
-                @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
-                    <div class="device-photo-confirm-backdrop" id="device-photo-empty-deleted-backdrop" style="align-items: center; justify-content: center;">
-                        <div class="device-photo-confirm-modal" style="background: #fff; border-radius: 8px; padding: 18px; max-width: 520px; width: calc(100% - 32px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);">
-                            <h4 style="margin-top: 0;">Permanently delete deleted photos?</h4>
-
-                            <p>
-                                This will permanently remove all photos and thumbnails from the deleted folder.
-                                This cannot be undone.
-                            </p>
-
-                            <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                                Deleted originals: <strong>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
-                                Deleted thumbnails: <strong>{{ $overview['deleted_thumbnail_count'] ?? 0 }}</strong><br>
-                                Total size: <strong>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
-                            </div>
-
-                            <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-empty-deleted-form">
-                                @csrf
-                                <input type="hidden" name="action" value="empty_deleted_photos">
-                                <input type="hidden" name="device_id" value="0">
-                                <input type="hidden" name="confirm_code" id="device-photo-empty-deleted-code-value" value="">
-
-                                <div class="alert alert-danger" style="font-size: 12px; padding: 8px 10px;">
-                                    Type this code to confirm:
-                                    <strong id="device-photo-empty-deleted-code" style="font-size: 16px; letter-spacing: 2px;"></strong>
-                                </div>
-
-                                <input type="text"
-                                       name="confirm_input"
-                                       id="device-photo-empty-deleted-input"
-                                       class="form-control input-sm"
-                                       maxlength="4"
-                                       inputmode="numeric"
-                                       autocomplete="off"
-                                       placeholder="Enter 4-digit code"
-                                       style="max-width: 180px; margin-bottom: 12px;">
-
-                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                    <button type="button" class="btn btn-default btn-sm" id="device-photo-empty-deleted-cancel">
-                                        Cancel
-                                    </button>
-
-                                    <button type="submit" class="btn btn-danger btn-sm" id="device-photo-empty-deleted-submit" disabled>
-                                        <i class="fa fa-trash"></i> Permanently delete
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <script>
-                        (function () {
-                            var openButton = document.getElementById('device-photo-empty-deleted-open');
-                            var backdrop = document.getElementById('device-photo-empty-deleted-backdrop');
-                            var cancelButton = document.getElementById('device-photo-empty-deleted-cancel');
-                            var codeText = document.getElementById('device-photo-empty-deleted-code');
-                            var codeValue = document.getElementById('device-photo-empty-deleted-code-value');
-                            var input = document.getElementById('device-photo-empty-deleted-input');
-                            var submitButton = document.getElementById('device-photo-empty-deleted-submit');
-
-                            function generateCode() {
-                                return String(Math.floor(1000 + Math.random() * 9000));
-                            }
-
-                            function closeModal() {
-                                backdrop.style.display = 'none';
-                                input.value = '';
-                                submitButton.disabled = true;
-                            }
-
-                            if (openButton && backdrop && codeText && codeValue && input && submitButton) {
-                                openButton.addEventListener('click', function () {
-                                    var code = generateCode();
-
-                                    codeText.textContent = code;
-                                    codeValue.value = code;
-                                    input.value = '';
-                                    submitButton.disabled = true;
-                                    backdrop.style.display = 'flex';
-                                    input.focus();
-                                });
-
-                                input.addEventListener('input', function () {
-                                    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4);
-                                    submitButton.disabled = input.value !== codeValue.value;
-                                });
-
-                                if (cancelButton) {
-                                    cancelButton.addEventListener('click', closeModal);
-                                }
-
-                                backdrop.addEventListener('click', function (event) {
-                                    if (event.target === backdrop) {
-                                        closeModal();
-                                    }
-                                });
-                            }
-                        })();
-                    </script>
-                @endif
-
                 <style>
                     .device-photo-target-suggestions {
                         display: none;
