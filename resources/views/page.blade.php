@@ -624,6 +624,70 @@
 
     @include('device-photo::partials.photo-modal')
 
+    <script id="device-photo-ajax-helper">
+        window.DevicePhotoAjax = window.DevicePhotoAjax || {};
+
+        window.DevicePhotoAjax.toast = function (message) {
+            if (typeof window.devicePhotoToast === 'function') {
+                window.devicePhotoToast(message);
+                return;
+            }
+
+            var stack = document.getElementById('device-photo-ajax-toast-stack');
+
+            if (!stack) {
+                stack = document.createElement('div');
+                stack.id = 'device-photo-ajax-toast-stack';
+                stack.style.position = 'fixed';
+                stack.style.top = '18px';
+                stack.style.left = '50%';
+                stack.style.transform = 'translateX(-50%)';
+                stack.style.zIndex = '30000';
+                stack.style.width = 'min(520px, calc(100vw - 32px))';
+                stack.style.display = 'flex';
+                stack.style.flexDirection = 'column';
+                stack.style.gap = '8px';
+                stack.style.pointerEvents = 'none';
+                document.body.appendChild(stack);
+            }
+
+            var toast = document.createElement('div');
+            toast.textContent = message || '';
+            toast.style.width = '100%';
+            toast.style.padding = '12px 16px';
+            toast.style.borderRadius = '9px';
+            toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.24)';
+            toast.style.fontSize = '13px';
+            toast.style.lineHeight = '1.35';
+            toast.style.textAlign = 'center';
+            toast.style.background = '#dff0d8';
+            toast.style.border = '1px solid #c8e5bc';
+            toast.style.color = '#3c763d';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-24px)';
+            toast.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            toast.style.pointerEvents = 'auto';
+
+            stack.appendChild(toast);
+
+            window.requestAnimationFrame(function () {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
+            window.setTimeout(function () {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-12px)';
+
+                window.setTimeout(function () {
+                    if (toast && toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 400);
+            }, 5000);
+        };
+    </script>
+
 
 
     @if (($global_overview ?? false) && request()->query('view') === 'restore-deleted')
@@ -2178,27 +2242,6 @@
 
                             backdrop.style.display = 'flex';
                         }, true);
-
-                        function showAjaxToast(messageText, type) {
-                            var toast = document.createElement('div');
-                            toast.className = 'alert alert-' + (type || 'success');
-                            toast.style.position = 'fixed';
-                            toast.style.right = '18px';
-                            toast.style.bottom = '18px';
-                            toast.style.zIndex = '30000';
-                            toast.style.maxWidth = '420px';
-                            toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.25)';
-                            toast.textContent = messageText;
-
-                            document.body.appendChild(toast);
-
-                            window.setTimeout(function () {
-                                if (toast.parentNode) {
-                                    toast.parentNode.removeChild(toast);
-                                }
-                            }, 3500);
-                        }
-
                         function submitNormally(form) {
                             form.removeAttribute('data-device-photo-ajax');
                             form.setAttribute('data-device-photo-confirmed', '1');
@@ -2268,11 +2311,11 @@
 
                                 updateBrokenLinksUi();
 
-                                showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
-                            }).catch(function (error) {
-                                console.error('DevicePhoto AJAX failed:', error);
-                                submitNormally(form);
-                            });
+                                window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                                }).catch(function (error) {
+                    console.error('DevicePhoto AJAX failed:', error);
+                    submitNormally(form);
+                });
                         }
 
                         ok.addEventListener('click', function () {
@@ -2874,28 +2917,6 @@
 
                 backdrop.style.display = 'flex';
             }, true);
-
-            function showAjaxToast(messageText, type) {
-                var toast = document.createElement('div');
-                toast.className = 'alert alert-' + (type || 'success');
-                toast.style.position = 'fixed';
-                toast.style.top = '18px';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.zIndex = '30000';
-                toast.style.maxWidth = '420px';
-                toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.25)';
-                toast.textContent = messageText;
-
-                document.body.appendChild(toast);
-
-                window.setTimeout(function () {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 3500);
-            }
-
             function submitNormally(form) {
                 form.removeAttribute('data-device-photo-ajax');
                 form.setAttribute('data-device-photo-confirmed', '1');
@@ -2934,8 +2955,8 @@
                         }
                     }
 
-                    showAjaxToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.', 'success');
-                }).catch(function (error) {
+                    window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                    }).catch(function (error) {
                     console.error('DevicePhoto AJAX failed:', error);
                     submitNormally(form);
                 });
