@@ -48,6 +48,7 @@ class ActionController extends Controller
             'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
             'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
             'empty_deleted_photos' => $this->emptyDeletedPhotos($request),
+            'restore_deleted_photo' => $this->restoreDeletedPhoto($request),
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
             'delete' => $this->deletePhoto($request, $deviceId),
@@ -515,6 +516,102 @@ class ActionController extends Controller
         $this->order->save($targetSafeShortName, $order);
 
         return $this->redirect(0, 'assigned');
+    }
+
+    private function restoreDeletedPhoto(Request $request)
+    {
+        /*
+         * Restore a deleted photo to a selected target device.
+         * The restored file is renamed to the target device ID and next available number.
+         */
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            return $this->redirectRestoreDeleted('permission_denied');
+        }
+
+        $filename = basename((string) $request->input('filename', ''));
+        $targetInput = trim((string) $request->input('target_device_query', $request->input('target_device_id', '')));
+
+        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            return $this->redirectRestoreDeleted('invalid_filename');
+        }
+
+        if (! is_file($this->paths->deletedPath($filename))) {
+            return $this->redirectRestoreDeleted('not_found');
+        }
+
+        $targetDevice = $this->findDeviceFromInput($targetInput);
+        $targetDeviceId = $targetDevice ? (int) $targetDevice->device_id : 0;
+
+        if (! $targetDevice || $targetDeviceId < 1) {
+            return $this->redirectRestoreDeleted('invalid_target_device');
+        }
+
+        $pathInfo = pathinfo($filename);
+        $ext = strtolower((string) ($pathInfo['extension'] ?? ''));
+
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return $this->redirectRestoreDeleted('invalid_type');
+        }
+
+        $targetPrefix = 'device-' . $targetDeviceId;
+        $nextNumber = 1;
+
+        foreach (glob($this->paths->photosDir() . '/' . $targetPrefix . '-*.*') ?: [] as $existingPath) {
+            $existingName = basename($existingPath);
+
+            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d+)\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
+                $nextNumber = max($nextNumber, ((int) $numberMatches[1]) + 1);
+            }
+        }
+
+        $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+
+        while (is_file($this->paths->photoPath($targetName))) {
+            $nextNumber++;
+            $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+        }
+
+        if (! @rename($this->paths->deletedPath($filename), $this->paths->photoPath($targetName))) {
+            return $this->redirectRestoreDeleted('restore_failed');
+        }
+
+        @chmod($this->paths->photoPath($targetName), 0664);
+
+        $oldThumbPath = $this->paths->deletedThumbPath($filename);
+        $newThumbPath = $this->paths->thumbPath($targetName);
+
+        if (is_file($oldThumbPath)) {
+            @rename($oldThumbPath, $newThumbPath);
+            @chmod($newThumbPath, 0664);
+        }
+
+        /*
+         * Create or refresh thumbnail for restored photo if possible.
+         */
+        $this->images->createThumbnail($this->paths->photoPath($targetName), $targetName);
+
+        /*
+         * Do not rewrite the order file after restore.
+         * The order file may contain mixed owned/linked photo keys.
+         * The restored owned photo is appended automatically when rendering if
+         * it does not already exist in the saved order.
+         */
+        return $this->redirect($targetDeviceId, 'restored');
+    }
+
+    private function redirectRestoreDeleted(?string $status = null)
+    {
+        $query = [
+            'view' => 'restore-deleted',
+        ];
+
+        if ($status !== null) {
+            $query['status'] = $status;
+        }
+
+        return redirect(url('plugin/device-photo') . '?' . http_build_query($query));
     }
 
     private function emptyDeletedPhotos(Request $request)

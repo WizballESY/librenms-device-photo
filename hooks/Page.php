@@ -170,6 +170,7 @@ class Page extends PageHook
     {
         $photoFilesByDevice = [];
         $orphanedPhotos = [];
+        $deletedPhotos = [];
         $linkedInByDevice = [];
         $linkedOutByDevice = [];
         $brokenLinks = [];
@@ -234,9 +235,40 @@ class Page extends PageHook
                 continue;
             }
 
+            $filename = basename($deletedPath);
+
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            $size = filesize($deletedPath);
+
             $deletedPhotoCount++;
-            $deletedPhotoBytes += filesize($deletedPath);
+            $deletedPhotoBytes += $size;
+
+            $originalFilename = preg_replace('/\.deleted-\d{8}-\d{6}\./i', '.', $filename);
+            $thumbPath = $photoDir . '/deleted/thumbs/' . $filename;
+            $hasThumbnail = is_file($thumbPath);
+
+            $deletedPhotos[] = [
+                'filename' => $filename,
+                'original_filename' => $originalFilename,
+                'url' => url('plugin/device-photo-package/image') . '?action=deleted_photo&filename=' . rawurlencode($filename),
+                'thumb_url' => $hasThumbnail
+                    ? url('plugin/device-photo-package/image') . '?action=deleted_thumb&filename=' . rawurlencode($filename)
+                    : url('plugin/device-photo-package/image') . '?action=deleted_photo&filename=' . rawurlencode($filename),
+                'photo_taken_display' => $this->photoDateData($deletedPath)['photo_taken_display'],
+                'photo_taken_iso' => $this->photoDateData($deletedPath)['photo_taken_iso'],
+                'file_date_display' => $this->photoDateData($deletedPath)['file_date_display'],
+                'file_date_iso' => $this->photoDateData($deletedPath)['file_date_iso'],
+                'size' => $size,
+                'has_thumbnail' => $hasThumbnail,
+            ];
         }
+
+        usort($deletedPhotos, function ($a, $b) {
+            return strcmp((string) ($a['filename'] ?? ''), (string) ($b['filename'] ?? ''));
+        });
 
         foreach (glob($photoDir . '/deleted/thumbs/*') ?: [] as $deletedThumbPath) {
             if (! is_file($deletedThumbPath)) {
@@ -404,6 +436,7 @@ class Page extends PageHook
         return [
             'rows' => $rows,
             'orphaned_photos' => $orphanedPhotos,
+            'deleted_photos' => $deletedPhotos,
             'broken_links' => $brokenLinks,
             'active_photo_count' => $activePhotoCount,
             'active_photo_bytes' => $activePhotoBytes,
@@ -625,6 +658,8 @@ class Page extends PageHook
             'photo_taken_updated' => 'Photo taken date was written to EXIF metadata.',
             'deleted_photos_emptied' => 'Deleted photos were permanently removed.',
             'deleted_photos_empty' => 'No deleted photos were found.',
+            'restored' => 'Photo restored.',
+            'restore_failed' => 'Could not restore photo.',
         ];
 
         $errors = [

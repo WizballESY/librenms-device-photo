@@ -502,46 +502,124 @@
     </div>
 
     @if ($message)
-        <div id="device-photo-toast"
+        <div id="device-photo-toast-stack"
              style="
                 position: fixed;
-                top: 72px;
-                right: 18px;
+                top: 22px;
+                left: 50%;
+                transform: translateX(-50%);
                 z-index: 26000;
-                min-width: 240px;
-                max-width: 420px;
-                padding: 12px 16px;
-                border-radius: 7px;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.22);
-                font-size: 13px;
-                line-height: 1.35;
-                background: #dff0d8;
-                border: 1px solid #c8e5bc;
-                color: #3c763d;
-                opacity: 1;
-                transition: opacity 0.35s ease, transform 0.35s ease;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                width: min(520px, calc(100vw - 32px));
+                pointer-events: none;
              ">
-            {{ $message }}
+            <div class="device-photo-toast"
+                 data-device-photo-toast-auto="1"
+                 style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border-radius: 9px;
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.24);
+                    font-size: 13px;
+                    line-height: 1.35;
+                    text-align: center;
+                    background: #dff0d8;
+                    border: 1px solid #c8e5bc;
+                    color: #3c763d;
+                    opacity: 0;
+                    transform: translateY(-24px);
+                    transition: opacity 0.35s ease, transform 0.35s ease;
+                    pointer-events: auto;
+                 ">
+                {{ $message }}
+            </div>
         </div>
 
         <script>
             (function () {
-                var toast = document.getElementById('device-photo-toast');
+                function ensureToastStack() {
+                    var stack = document.getElementById('device-photo-toast-stack');
 
-                if (!toast) {
-                    return;
+                    if (!stack) {
+                        stack = document.createElement('div');
+                        stack.id = 'device-photo-toast-stack';
+                        stack.style.position = 'fixed';
+                        stack.style.top = '22px';
+                        stack.style.left = '50%';
+                        stack.style.transform = 'translateX(-50%)';
+                        stack.style.zIndex = '26000';
+                        stack.style.display = 'flex';
+                        stack.style.flexDirection = 'column';
+                        stack.style.alignItems = 'center';
+                        stack.style.gap = '10px';
+                        stack.style.width = 'min(520px, calc(100vw - 32px))';
+                        stack.style.pointerEvents = 'none';
+                        document.body.appendChild(stack);
+                    }
+
+                    return stack;
                 }
 
-                window.setTimeout(function () {
+                window.devicePhotoToast = function (message) {
+                    var stack = ensureToastStack();
+                    var toast = document.createElement('div');
+
+                    toast.className = 'device-photo-toast';
+                    toast.textContent = message || '';
+                    toast.style.width = '100%';
+                    toast.style.padding = '12px 16px';
+                    toast.style.borderRadius = '9px';
+                    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.24)';
+                    toast.style.fontSize = '13px';
+                    toast.style.lineHeight = '1.35';
+                    toast.style.textAlign = 'center';
+                    toast.style.background = '#dff0d8';
+                    toast.style.border = '1px solid #c8e5bc';
+                    toast.style.color = '#3c763d';
                     toast.style.opacity = '0';
-                    toast.style.transform = 'translateY(-8px)';
+                    toast.style.transform = 'translateY(-24px)';
+                    toast.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                    toast.style.pointerEvents = 'auto';
+
+                    stack.appendChild(toast);
+
+                    window.requestAnimationFrame(function () {
+                        toast.style.opacity = '1';
+                        toast.style.transform = 'translateY(0)';
+                    });
 
                     window.setTimeout(function () {
-                        if (toast && toast.parentNode) {
-                            toast.parentNode.removeChild(toast);
-                        }
-                    }, 400);
-                }, 5000);
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateY(-12px)';
+
+                        window.setTimeout(function () {
+                            if (toast && toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 400);
+                    }, 5000);
+                };
+
+                document.querySelectorAll('.device-photo-toast[data-device-photo-toast-auto="1"]').forEach(function (toast) {
+                    window.requestAnimationFrame(function () {
+                        toast.style.opacity = '1';
+                        toast.style.transform = 'translateY(0)';
+                    });
+
+                    window.setTimeout(function () {
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateY(-12px)';
+
+                        window.setTimeout(function () {
+                            if (toast && toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 400);
+                    }, 5000);
+                });
             })();
         </script>
     @endif
@@ -554,9 +632,254 @@
 
 
 
-    @if ($global_overview ?? false)
+    @if (($global_overview ?? false) && request()->query('view') === 'restore-deleted')
         @php
-            $overview = $global_photo_overview ?? ['rows' => [], 'orphaned_photos' => [], 'broken_links' => []];
+            $overview = $global_photo_overview ?? ['rows' => [], 'orphaned_photos' => [], 'deleted_photos' => [], 'broken_links' => []];
+        @endphp
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong><i class="fa fa-undo"></i> Restore deleted photos</strong>
+            </div>
+
+            <div class="panel-body">
+                <p class="text-muted">
+                    This page shows photos that have been moved to the deleted folder.
+                    Choose a target device to restore a photo. The restored file will be renamed to match the selected device.
+                </p>
+
+                <p>
+                    <a href="{{ url('plugin/device-photo') }}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-arrow-left"></i> Back to overview
+                    </a>
+                </p>
+
+                <style>
+                    .device-photo-restore-suggestions {
+                        display: none;
+                        position: absolute;
+                        z-index: 99999;
+                        left: 0;
+                        bottom: 100%;
+                        margin-bottom: 4px;
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+                        max-height: 320px;
+                        overflow-y: auto;
+                        min-width: 260px;
+                        width: 100%;
+                        font-size: 12px;
+                    }
+
+                    .device-photo-restore-suggestion {
+                        padding: 6px 8px;
+                        cursor: pointer;
+                        border-bottom: 1px solid #eee;
+                    }
+
+                    .device-photo-restore-suggestion:hover {
+                        background: #f3f7fb;
+                    }
+
+                    .device-photo-restore-suggestion .device-id {
+                        font-family: monospace;
+                        color: #b00040;
+                    }
+
+                    .device-photo-restore-suggestion .device-name {
+                        margin-left: 6px;
+                    }
+                </style>
+
+                <script id="device-photo-restore-deleted-autocomplete">
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var restoreDevices = @json(collect($link_target_devices ?? [])->values());
+                        var maxResults = 20;
+
+                        function normalize(value) {
+                            return String(value || '').toLowerCase();
+                        }
+
+                        function findRestoreMatches(query) {
+                            query = String(query || '').trim();
+
+                            if (query === '') {
+                                return [];
+                            }
+
+                            var q = normalize(query);
+                            var exactId = [];
+                            var startsWithId = [];
+                            var startsWithName = [];
+                            var containsName = [];
+
+                            restoreDevices.forEach(function (device) {
+                                var id = String(device.device_id);
+                                var label = String(device.label || '');
+                                var labelLower = normalize(label);
+
+                                if (id === query) {
+                                    exactId.push(device);
+                                } else if (id.indexOf(query) === 0) {
+                                    startsWithId.push(device);
+                                } else if (labelLower.indexOf(q) === 0) {
+                                    startsWithName.push(device);
+                                } else if (labelLower.indexOf(q) !== -1) {
+                                    containsName.push(device);
+                                }
+                            });
+
+                            return exactId
+                                .concat(startsWithId)
+                                .concat(startsWithName)
+                                .concat(containsName)
+                                .slice(0, maxResults);
+                        }
+
+                        function closeRestoreSuggestions() {
+                            document.querySelectorAll('.device-photo-restore-suggestions').forEach(function (box) {
+                                box.style.display = 'none';
+                            });
+                        }
+
+                        function ensureRestoreSuggestionBox(input) {
+                            var form = input.closest('form');
+                            var box = form.querySelector('.device-photo-restore-suggestions');
+
+                            if (!box) {
+                                box = document.createElement('div');
+                                box.className = 'device-photo-restore-suggestions';
+                                form.appendChild(box);
+                            }
+
+                            return box;
+                        }
+
+                        function renderRestoreSuggestions(input) {
+                            var box = ensureRestoreSuggestionBox(input);
+                            var matches = findRestoreMatches(input.value);
+
+                            box.innerHTML = '';
+
+                            if (matches.length === 0) {
+                                box.style.display = 'none';
+                                return;
+                            }
+
+                            matches.forEach(function (device) {
+                                var item = document.createElement('div');
+                                item.className = 'device-photo-restore-suggestion';
+
+                                var id = document.createElement('span');
+                                id.className = 'device-id';
+                                id.textContent = device.device_id;
+
+                                var name = document.createElement('span');
+                                name.className = 'device-name';
+                                name.textContent = device.label || '';
+
+                                item.appendChild(id);
+                                item.appendChild(document.createTextNode(' - '));
+                                item.appendChild(name);
+
+                                item.addEventListener('mousedown', function (e) {
+                                    e.preventDefault();
+                                    input.value = device.device_id + ' - ' + (device.label || '');
+                                    box.style.display = 'none';
+                                });
+
+                                box.appendChild(item);
+                            });
+
+                            box.style.display = 'block';
+                        }
+
+                        document.querySelectorAll('.device-photo-orphan-target-input').forEach(function (input) {
+                            input.addEventListener('input', function () {
+                                renderRestoreSuggestions(input);
+                            });
+
+                            input.addEventListener('focus', function () {
+                                renderRestoreSuggestions(input);
+                            });
+
+                            input.addEventListener('keydown', function (e) {
+                                if (e.key === 'Escape') {
+                                    closeRestoreSuggestions();
+                                }
+                            });
+                        });
+
+                        document.addEventListener('click', function (e) {
+                            if (!e.target.closest('.device-photo-restore-suggestions') && !e.target.closest('.device-photo-orphan-target-input')) {
+                                closeRestoreSuggestions();
+                            }
+                        });
+                    });
+                </script>
+
+                @if (! $can_delete)
+                    <div class="alert alert-warning">
+                        You do not have permission to restore deleted photos.
+                    </div>
+                @elseif (empty($overview['deleted_photos']))
+                    <div class="alert alert-info">
+                        No deleted photos found.
+                    </div>
+                @else
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
+                        @foreach ($overview['deleted_photos'] as $photo)
+                            <div class="device-photo-orphan-card" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                                <img data-device-photo-gallery="restore-deleted"
+                                     data-device-photo-preview-src="{{ $photo['url'] }}"
+                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
+                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
+                                     src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
+                                     style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
+
+                                <div style="font-size: 12px;">
+                                    <strong>{{ $photo['original_filename'] }}</strong><br>
+                                    <span class="text-muted">{{ $photo['filename'] }}</span><br>
+                                    <span class="text-muted">Size: {{ round(($photo['size'] ?? 0) / 1024, 1) }} KB</span>
+                                </div>
+
+                                <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-xs btn-block" style="margin-top: 8px;">
+                                    <i class="fa fa-download"></i> Download
+                                </a>
+
+                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm="Restore this deleted photo to the selected device? The file will be renamed to match the target device.">
+                                    @csrf
+                                    <input type="hidden" name="action" value="restore_deleted_photo">
+                                    <input type="hidden" name="device_id" value="0">
+                                    <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+
+                                    <div class="input-group input-group-sm">
+                                        <input
+                                            type="text"
+                                            name="target_device_query"
+                                            class="form-control device-photo-orphan-target-input"
+                                            placeholder="Search Device ID or name"
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        <span class="input-group-btn">
+                                            <button type="submit" class="btn btn-primary">
+                                                Restore
+                                            </button>
+                                        </span>
+                                    </div>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    @elseif ($global_overview ?? false)
+        @php
+            $overview = $global_photo_overview ?? ['rows' => [], 'orphaned_photos' => [], 'deleted_photos' => [], 'broken_links' => []];
         @endphp
 
         <div class="panel panel-default">
@@ -778,6 +1101,12 @@
                                                 title="Permanently remove all files from the deleted folder">
                                             <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
                                         </button>
+
+                                            <a href="{{ url('plugin/device-photo') }}?view=restore-deleted"
+                                               class="btn btn-primary btn-xs"
+                                               title="Review and restore photos from the deleted folder">
+                                                <i class="fa fa-undo"></i> Restore deleted photos
+                                            </a>
                                     @endif
 
                                     @if (count($overview['orphaned_photos'] ?? []) > 0)
@@ -3395,6 +3724,7 @@
     @endif
     @endif
 
+    @if (request()->query('view') !== 'restore-deleted')
     <div id="device-photo-set-taken-modal" class="device-photo-confirm-backdrop">
         <div class="device-photo-confirm-box" style="max-width: 460px; padding-bottom: 18px;">
             <h4 style="margin-top: 0;">
@@ -3501,6 +3831,7 @@
             });
         })();
     </script>
+    @endif
 
     <hr>
 
