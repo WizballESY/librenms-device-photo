@@ -2930,19 +2930,16 @@
                                         <div style="margin-top: 8px;">
                                             @foreach ($photo['linked_to'] as $linkedDevice)
                                                 <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eadfbf;">
-                                                    <div>
-                                                        <a href="{{ url('device/' . $linkedDevice['device_id']) }}">
-                                                            <code>Device ID: {{ $linkedDevice['device_id'] }}</code>
+                                                    <div style="word-break: break-word;">
+                                                        <a href="{{ url('plugin/device-photo') }}?device_id={{ $linkedDevice['device_id'] }}">
+                                                            @if (!empty($linkedDevice['name']))
+                                                                {{ $linkedDevice['name'] }}
+                                                            @else
+                                                                device-{{ $linkedDevice['device_id'] }}
+                                                            @endif
+                                                            <span class="text-muted">(Device ID {{ $linkedDevice['device_id'] }})</span>
                                                         </a>
                                                     </div>
-
-                                                    @if (!empty($linkedDevice['name']))
-                                                        <div style="margin-top: 2px; word-break: break-word;">
-                                                            <a href="{{ url('device/' . $linkedDevice['device_id']) }}">
-                                                                {{ $linkedDevice['name'] }}
-                                                            </a>
-                                                        </div>
-                                                    @endif
                                                 </div>
                                             @endforeach
                                         </div>
