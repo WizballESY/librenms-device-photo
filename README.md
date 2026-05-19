@@ -57,6 +57,7 @@ It is under active development and may contain bugs, incomplete documentation or
 - Detect orphaned photos from removed LibreNMS devices.
 - Assign orphaned photos to existing devices.
 - Soft-delete photos by moving them to a deleted folder.
+- Restore deleted photos to a selected target device.
 - Search, pagination and sortable overview table.
 - Browser-saved page size preference for the overview table.
 - Cache-busting image URLs.
@@ -90,7 +91,7 @@ Recommended installation method:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.9
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.10
 sudo -u librenms php artisan optimize:clear
 ```
 
@@ -234,6 +235,33 @@ Example mixed order file:
 
 The plugin keeps existing order where possible, removes stale order entries, and appends new valid uploaded or linked photos to the saved order.
 
+### Deleted photo restore
+
+Deleted photos are moved to:
+
+    storage/app/device-photos/deleted
+
+Deleted thumbnails are moved to:
+
+    storage/app/device-photos/deleted/thumbs
+
+Deleted photo filenames include the original filename plus a deletion timestamp before the file extension.
+
+Example deleted filename:
+
+    device-108-5.deleted-20260518-174625.jpg
+
+When restoring a deleted photo, the admin selects the target LibreNMS device. The plugin does not blindly restore the photo to the old device ID from the deleted filename.
+
+Instead, the restored photo is renamed to match the selected target device using the next available filename.
+
+Example:
+
+    device-108-5.deleted-20260518-174625.jpg
+    -> device-109-3.jpg
+
+Restoring a photo does not rewrite the saved mixed order file. Existing owned and linked photo order is preserved, and the restored owned photo is appended automatically when the target device photo manager is rendered.
+
 ---
 
 ## Optional dependencies
@@ -328,11 +356,11 @@ To update to a specific release:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.9
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.10
 sudo -u librenms php artisan optimize:clear
 ```
 
-Replace `v0.1.0-alpha.9` with the version you want to install.
+Replace `v0.1.0-alpha.10` with the version you want to install.
 
 LibreNMS `validate` may warn that `composer.json` and `composer.lock` are modified after installing or updating third-party plugin packages. This is expected because the plugin is installed as a Composer dependency inside the LibreNMS application directory.
 
