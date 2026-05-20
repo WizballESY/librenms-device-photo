@@ -416,6 +416,10 @@ class ActionController extends Controller
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect(0, 'permission_denied');
         }
 
@@ -426,14 +430,26 @@ class ActionController extends Controller
         $targetDeviceId = $targetDevice ? (int) $targetDevice->device_id : 0;
 
         if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_filename');
         }
 
         if (! is_file($this->paths->photoPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect(0, 'not_found');
         }
 
         if (! preg_match('/^device-(\d+)-\d+\.(jpg|jpeg|png|webp)$/i', $filename, $matches)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_filename');
         }
 
@@ -443,10 +459,18 @@ class ActionController extends Controller
          * Only allow assigning photos whose original owner device no longer exists.
          */
         if ($oldDeviceId > 0 && Device::find($oldDeviceId)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_orphaned', false, 409);
+            }
+
             return $this->redirect(0, 'not_orphaned');
         }
 
         if (! $targetDevice) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_target_device');
         }
 
@@ -454,6 +478,10 @@ class ActionController extends Controller
         $ext = strtolower((string) ($pathInfo['extension'] ?? ''));
 
         if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_type', false, 422);
+            }
+
             return $this->redirect(0, 'invalid_type');
         }
 
@@ -476,6 +504,10 @@ class ActionController extends Controller
         }
 
         if (! @rename($this->paths->photoPath($filename), $this->paths->photoPath($targetName))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('assign_failed', false, 500);
+            }
+
             return $this->redirect(0, 'assign_failed');
         }
 
@@ -531,6 +563,10 @@ class ActionController extends Controller
         $targetSafeShortName = $this->photos->safeDevicePrefix($targetDeviceId);
         $order = $this->photos->listFilenamesForDevice($targetDeviceId);
         $this->order->save($targetSafeShortName, $order);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('assigned');
+        }
 
         return $this->redirect(0, 'assigned');
     }

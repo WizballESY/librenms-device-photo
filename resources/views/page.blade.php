@@ -2281,8 +2281,13 @@ document.addEventListener('click', function (e) {
                                 </a>
 
                                 @if ($can_upload)
-                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 8px; position: relative;" data-device-photo-confirm-title="Assign orphaned photo?"
-                                        data-device-photo-confirm-ok-text="Assign"
+                                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
+                                          style="margin-top: 8px; position: relative;"
+                                          data-device-photo-ajax="1"
+                                          data-device-photo-ajax-success="Orphaned photo assigned."
+                                          data-device-photo-ajax-remove-card="orphaned-photo"
+                                          data-device-photo-confirm-title="Assign orphaned photo?"
+                                          data-device-photo-confirm-ok-text="Assign"
                                         data-device-photo-confirm-ok-class="btn-primary"
                                         data-device-photo-confirm-ok-icon="fa-check"
                                         data-device-photo-confirm="Assign this orphaned photo to the selected device? The file will be renamed.">
