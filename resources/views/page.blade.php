@@ -4001,6 +4001,9 @@ document.addEventListener('click', function (e) {
                                 @endphp
 
                                 <form method="post" action="{{ url('plugin/device-photo-package/action') }}" class="device-photo-delete-form"
+                                      data-device-photo-ajax="1"
+                                      data-device-photo-ajax-success="Photo moved to deleted folder."
+                                      data-device-photo-ajax-remove-card="1"
                                       data-device-photo-confirm-title="Delete photo?"
                                       data-device-photo-confirm-ok-text="Delete"
                                       data-device-photo-confirm-ok-class="btn-danger"

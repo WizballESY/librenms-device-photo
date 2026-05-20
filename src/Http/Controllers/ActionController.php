@@ -873,12 +873,20 @@ class ActionController extends Controller
         $filename = basename((string) $request->input('filename', ''));
 
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -886,12 +894,20 @@ class ActionController extends Controller
         $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\\.(jpg|jpeg|png|webp)$/i';
 
         if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
         $photoPath = $this->paths->photoPath($filename);
 
         if (! is_file($photoPath)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'not_found');
         }
 
@@ -903,6 +919,10 @@ class ActionController extends Controller
         $deletedName = preg_replace('/\\.(jpg|jpeg|png|webp)$/i', '.deleted-' . $timestamp . '.$1', $filename);
 
         if (! is_string($deletedName) || $deletedName === '') {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('delete_failed', false, 500);
+            }
+
             return $this->redirect($deviceId, 'delete_failed');
         }
 
@@ -927,7 +947,15 @@ class ActionController extends Controller
                 $this->pruneOrderForDevice((int) $targetDeviceId);
             }
 
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('deleted');
+            }
+
             return $this->redirectAfterAction($request, $deviceId, 'deleted');
+        }
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('delete_failed', false, 500);
         }
 
         return $this->redirect($deviceId, 'delete_failed');
