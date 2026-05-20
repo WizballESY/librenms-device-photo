@@ -544,6 +544,10 @@ class ActionController extends Controller
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirectRestoreDeleted('permission_denied');
         }
 
@@ -551,10 +555,18 @@ class ActionController extends Controller
         $targetInput = trim((string) $request->input('target_device_query', $request->input('target_device_id', '')));
 
         if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirectRestoreDeleted('invalid_filename');
         }
 
         if (! is_file($this->paths->deletedPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirectRestoreDeleted('not_found');
         }
 
@@ -562,6 +574,10 @@ class ActionController extends Controller
         $targetDeviceId = $targetDevice ? (int) $targetDevice->device_id : 0;
 
         if (! $targetDevice || $targetDeviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
             return $this->redirectRestoreDeleted('invalid_target_device');
         }
 
@@ -569,6 +585,10 @@ class ActionController extends Controller
         $ext = strtolower((string) ($pathInfo['extension'] ?? ''));
 
         if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_type', false, 422);
+            }
+
             return $this->redirectRestoreDeleted('invalid_type');
         }
 
@@ -591,6 +611,10 @@ class ActionController extends Controller
         }
 
         if (! @rename($this->paths->deletedPath($filename), $this->paths->photoPath($targetName))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('restore_failed', false, 500);
+            }
+
             return $this->redirectRestoreDeleted('restore_failed');
         }
 
@@ -615,7 +639,13 @@ class ActionController extends Controller
          * The restored owned photo is appended automatically when rendering if
          * it does not already exist in the saved order.
          */
-        return $this->redirect($targetDeviceId, 'restored');
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('restored', true, 200, [
+                'deleted_stats' => $this->deletedFolderStats(),
+            ]);
+        }
+
+        return $this->redirectRestoreDeleted('restored');
     }
 
     private function deleteDeletedPhoto(Request $request)
@@ -627,12 +657,20 @@ class ActionController extends Controller
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirectRestoreDeleted('permission_denied');
         }
 
         $filename = basename((string) $request->input('filename', ''));
 
         if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirectRestoreDeleted('invalid_filename');
         }
 
@@ -640,12 +678,20 @@ class ActionController extends Controller
         $deletedThumbPath = $this->paths->deletedThumbPath($filename);
 
         if (! is_file($deletedPath)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirectRestoreDeleted('not_found');
         }
 
         $deletedOriginal = @unlink($deletedPath);
 
         if (! $deletedOriginal) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('delete_failed', false, 500);
+            }
+
             return $this->redirectRestoreDeleted('delete_failed');
         }
 
@@ -653,7 +699,43 @@ class ActionController extends Controller
             @unlink($deletedThumbPath);
         }
 
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('deleted_photo_permanently_deleted', true, 200, [
+                'deleted_stats' => $this->deletedFolderStats(),
+            ]);
+        }
+
         return $this->redirectRestoreDeleted('deleted_photo_permanently_deleted');
+    }
+
+    private function deletedFolderStats(): array
+    {
+        $photoCount = 0;
+        $thumbnailCount = 0;
+        $totalBytes = 0;
+
+        foreach ([$this->paths->deletedDir(), $this->paths->deletedThumbsDir()] as $index => $dir) {
+            foreach (glob($dir . '/*') ?: [] as $path) {
+                if (! is_file($path)) {
+                    continue;
+                }
+
+                if ($index === 0) {
+                    $photoCount++;
+                } else {
+                    $thumbnailCount++;
+                }
+
+                $totalBytes += filesize($path) ?: 0;
+            }
+        }
+
+        return [
+            'photo_count' => $photoCount,
+            'thumbnail_count' => $thumbnailCount,
+            'total_bytes' => $totalBytes,
+            'total_mb' => round($totalBytes / 1024 / 1024, 2),
+        ];
     }
 
     private function redirectRestoreDeleted(?string $status = null)

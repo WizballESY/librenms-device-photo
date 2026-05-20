@@ -785,8 +785,8 @@
                 </p>
 
                 <div class="alert alert-info" style="font-size: 12px; padding: 8px 10px; margin-bottom: 14px;">
-                    Deleted photos: <strong>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
-                    Total deleted size: <strong>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
+                    Deleted photos: <strong data-device-photo-deleted-count>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
+                    Total deleted size: <strong data-device-photo-deleted-total-size>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
@@ -818,9 +818,9 @@
                             </p>
 
                             <div class="alert alert-warning" style="font-size: 12px; padding: 8px 10px;">
-                                Deleted originals: <strong>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
-                                Deleted thumbnails: <strong>{{ $overview['deleted_thumbnail_count'] ?? 0 }}</strong><br>
-                                Total size: <strong>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
+                                Deleted originals: <strong data-device-photo-deleted-modal-count>{{ $overview['deleted_photo_count'] ?? 0 }}</strong><br>
+                                Deleted thumbnails: <strong data-device-photo-deleted-modal-thumbnail-count>{{ $overview['deleted_thumbnail_count'] ?? 0 }}</strong><br>
+                                Total size: <strong data-device-photo-deleted-modal-total-size>{{ $overview['deleted_total_mb'] ?? 0 }} MB</strong>
                             </div>
 
                             <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-empty-deleted-form-manage">
@@ -998,15 +998,122 @@
                             }
                         });
 
+                        function submitNormally(form) {
+                            form.removeAttribute('data-device-photo-ajax');
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
+                        }
+
+                        function updateDeletedPhotosUi(data) {
+                            var stats = data && data.deleted_stats ? data.deleted_stats : {};
+                            var count = document.querySelector('[data-device-photo-deleted-count]');
+                            var totalSize = document.querySelector('[data-device-photo-deleted-total-size]');
+                            var modalCount = document.querySelector('[data-device-photo-deleted-modal-count]');
+                            var modalThumbnailCount = document.querySelector('[data-device-photo-deleted-modal-thumbnail-count]');
+                            var modalTotalSize = document.querySelector('[data-device-photo-deleted-modal-total-size]');
+                            var grid = document.querySelector('[data-device-photo-deleted-grid]');
+                            var emptyButton = document.getElementById('device-photo-empty-deleted-open-manage');
+
+                            if (typeof stats.photo_count !== 'undefined' && count) {
+                                count.textContent = String(stats.photo_count);
+                            }
+
+                            if (typeof stats.photo_count !== 'undefined' && modalCount) {
+                                modalCount.textContent = String(stats.photo_count);
+                            }
+
+                            if (typeof stats.thumbnail_count !== 'undefined' && modalThumbnailCount) {
+                                modalThumbnailCount.textContent = String(stats.thumbnail_count);
+                            }
+
+                            if (typeof stats.total_mb !== 'undefined' && totalSize) {
+                                totalSize.textContent = String(stats.total_mb) + ' MB';
+                            }
+
+                            if (typeof stats.total_mb !== 'undefined' && modalTotalSize) {
+                                modalTotalSize.textContent = String(stats.total_mb) + ' MB';
+                            }
+
+                            if (typeof stats.photo_count !== 'undefined' && Number(stats.photo_count) < 1) {
+                                if (emptyButton) {
+                                    emptyButton.style.display = 'none';
+                                }
+
+                                if (grid) {
+                                    grid.style.display = 'none';
+
+                                    if (!document.querySelector('[data-device-photo-deleted-empty-dynamic]')) {
+                                        var empty = document.createElement('div');
+                                        empty.className = 'alert alert-info';
+                                        empty.setAttribute('data-device-photo-deleted-empty-dynamic', '1');
+                                        empty.textContent = 'No deleted photos found.';
+                                        grid.parentNode.insertBefore(empty, grid);
+                                    }
+                                }
+                            }
+                        }
+
+                        function submitAjax(form) {
+                            var formData = new FormData(form);
+
+                            formData.set('ajax', '1');
+
+                            fetch(form.getAttribute('action'), {
+                                method: (form.method || 'POST').toUpperCase(),
+                                body: formData,
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            }).then(function (response) {
+                                if (!response.ok) {
+                                    throw new Error('HTTP ' + response.status);
+                                }
+
+                                return response.json();
+                            }).then(function (data) {
+                                if (!data || data.ok !== true) {
+                                    throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                                }
+
+                                var row = form.closest('[data-device-photo-ajax-row]');
+
+                                if (row && row.parentNode) {
+                                    row.parentNode.removeChild(row);
+                                }
+
+                                updateDeletedPhotosUi(data);
+
+                                if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                                    window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                                } else if (typeof window.devicePhotoToast === 'function') {
+                                    window.devicePhotoToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                                }
+                            }).catch(function (error) {
+                                console.error('DevicePhoto AJAX failed:', error);
+                                submitNormally(form);
+                            });
+                        }
+
                         okButton.addEventListener('click', function () {
                             if (!pendingForm) {
                                 closeConfirm();
                                 return;
                             }
 
-                            pendingForm.setAttribute('data-device-photo-confirmed', '1');
+                            var form = pendingForm;
+
+                            pendingForm = null;
                             backdrop.style.display = 'none';
-                            pendingForm.submit();
+
+                            if (form.getAttribute('data-device-photo-ajax') === '1') {
+                                submitAjax(form);
+                                return;
+                            }
+
+                            form.setAttribute('data-device-photo-confirmed', '1');
+                            form.submit();
                         });
                     });
                 </script>
@@ -1186,9 +1293,9 @@
                         No deleted photos found.
                     </div>
                 @else
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
+                    <div data-device-photo-deleted-grid style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); gap: 14px;">
                         @foreach ($overview['deleted_photos'] as $photo)
-                            <div class="device-photo-orphan-card" data-device-photo-ajax-row="orphaned-photo" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                            <div class="device-photo-orphan-card" data-device-photo-ajax-row="deleted-photo" style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                 <img data-device-photo-gallery="restore-deleted"
                                      data-device-photo-preview-src="{{ $photo['url'] }}"
                                      data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
@@ -1209,6 +1316,8 @@
                                 <form method="post"
                                       action="{{ url('plugin/device-photo-package/action') }}"
                                       style="margin-top: 8px; position: relative;"
+                                      data-device-photo-ajax="1"
+                                      data-device-photo-ajax-success="Photo restored."
                                       data-device-photo-confirm-title="Restore photo?"
                                       data-device-photo-confirm-ok-text="Restore"
                                       data-device-photo-confirm-ok-class="btn-primary"
@@ -1240,6 +1349,8 @@
                                     <form method="post"
                                           action="{{ url('plugin/device-photo-package/action') }}"
                                           style="margin-top: 8px;"
+                                          data-device-photo-ajax="1"
+                                          data-device-photo-ajax-success="Deleted photo was permanently removed."
                                           data-device-photo-confirm-title="Permanently delete photo?"
                                           data-device-photo-confirm-ok-text="Permanently delete"
                                           data-device-photo-confirm-ok-class="btn-danger"
