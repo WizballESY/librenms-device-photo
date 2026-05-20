@@ -3193,7 +3193,29 @@ document.addEventListener('click', function (e) {
                         throw new Error((data && data.status) ? data.status : 'ajax_failed');
                     }
 
-                    if (form.getAttribute('data-device-photo-ajax-remove-card') === '1') {
+                    var row = form.closest('[data-device-photo-ajax-row]');
+                    var rowType = row ? row.getAttribute('data-device-photo-ajax-row') : '';
+
+                    if (rowType === 'outgoing-link') {
+                        var linkedToBox = row.closest('[data-device-photo-linked-to-box]');
+
+                        if (row.parentNode) {
+                            row.parentNode.removeChild(row);
+                        }
+
+                        if (linkedToBox) {
+                            var remaining = linkedToBox.querySelectorAll('[data-device-photo-ajax-row="outgoing-link"]').length;
+                            var count = linkedToBox.querySelector('[data-device-photo-linked-to-count]');
+
+                            if (count) {
+                                count.textContent = String(remaining);
+                            }
+
+                            if (remaining < 1 && linkedToBox.parentNode) {
+                                linkedToBox.parentNode.removeChild(linkedToBox);
+                            }
+                        }
+                    } else if (form.getAttribute('data-device-photo-ajax-remove-card') === '1') {
                         var card = form.closest('.device-photo-manager-card');
 
                         if (card && card.parentNode) {
@@ -3908,15 +3930,18 @@ document.addEventListener('click', function (e) {
                                 </div>
 
                                 @if (!empty($photo['linked_to']))
-                                    <div class="alert alert-warning" style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
+                                    <div class="alert alert-warning"
+                                         data-device-photo-linked-to-box
+                                         style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
                                         <strong>
                                             <i class="fa fa-link"></i>
-                                            Linked to {{ count($photo['linked_to']) }} device{{ count($photo['linked_to']) === 1 ? '' : 's' }}
+                                            Linked to <span data-device-photo-linked-to-count>{{ count($photo['linked_to']) }}</span> device{{ count($photo['linked_to']) === 1 ? '' : 's' }}
                                         </strong>
 
                                         <div style="margin-top: 8px;">
                                             @foreach ($photo['linked_to'] as $linkedDevice)
-                                                <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eadfbf;">
+                                                <div data-device-photo-ajax-row="outgoing-link"
+                                                     style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eadfbf;">
                                                     <div style="word-break: break-word;">
                                                         <a href="{{ url('plugin/device-photo') }}?device_id={{ $linkedDevice['device_id'] }}">
                                                             @if (!empty($linkedDevice['name']))
@@ -3927,6 +3952,30 @@ document.addEventListener('click', function (e) {
                                                             <span class="text-muted">(Device ID {{ $linkedDevice['device_id'] }})</span>
                                                         </a>
                                                     </div>
+
+                                                    @if ($can_delete)
+                                                        <form method="post"
+                                                              action="{{ url('plugin/device-photo-package/action') }}"
+                                                              style="margin-top: 6px;"
+                                                              data-device-photo-ajax="1"
+                                                              data-device-photo-ajax-success="Shared photo link removed."
+                                                              data-device-photo-confirm-title="Remove shared link?"
+                                                              data-device-photo-confirm-ok-text="Remove link"
+                                                              data-device-photo-confirm-ok-class="btn-warning"
+                                                              data-device-photo-confirm-ok-icon="fa-unlink"
+                                                              data-device-photo-confirm="Remove this shared photo link? The original photo will not be deleted.">
+                                                            @csrf
+                                                            <input type="hidden" name="action" value="remove_outgoing_link">
+                                                            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
+                                                            <input type="hidden" name="target_device_id" value="{{ $linkedDevice['device_id'] }}">
+                                                            <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                                                            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
+
+                                                            <button type="submit" class="btn btn-warning btn-xs">
+                                                                <i class="fa fa-unlink"></i> Remove link
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                         </div>

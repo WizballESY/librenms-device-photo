@@ -197,12 +197,20 @@ class ActionController extends Controller
     private function removeOutgoingLink(Request $request, int $deviceId)
     {
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -213,15 +221,27 @@ class ActionController extends Controller
         $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i';
 
         if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
         if ($targetDeviceId < 1 || ! Device::find($targetDeviceId)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_target_device');
         }
 
         $this->links->remove($targetDeviceId, $deviceId, $filename);
         $this->pruneOrderForDevice($targetDeviceId);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('link_removed');
+        }
 
         return $this->redirectAfterAction($request, $deviceId, 'link_removed');
     }
