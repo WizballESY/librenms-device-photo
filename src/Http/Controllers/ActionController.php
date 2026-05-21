@@ -1325,7 +1325,9 @@ class ActionController extends Controller
         $ownerDeviceId = (int) $request->input('owner_device_id', 0);
         $filename = basename((string) $request->input('filename', ''));
 
-        if ($ownerDeviceId < 1 || $ownerDeviceId === $deviceId || ! Device::find($ownerDeviceId)) {
+        $ownerDevice = $ownerDeviceId > 0 ? Device::find($ownerDeviceId) : null;
+
+        if ($ownerDeviceId < 1 || $ownerDeviceId === $deviceId || ! $ownerDevice) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('invalid_target_device', false, 422);
             }
@@ -1355,9 +1357,39 @@ class ActionController extends Controller
         $this->links->add($deviceId, $ownerDeviceId, $filename);
 
         if ($this->wantsJsonResponse($request)) {
+            $photoPath = $this->paths->photoPath($filename);
+            $thumbPath = $this->paths->thumbPath($filename);
+            $imageUrl = url('plugin/device-photo-package/image') . '?action=photo&filename=' . rawurlencode($filename);
+            $thumbUrl = is_file($thumbPath)
+                ? url('plugin/device-photo-package/image') . '?action=thumb&filename=' . rawurlencode($filename)
+                : $imageUrl;
+
+            $fileTime = is_file($photoPath) ? (int) filemtime($photoPath) : 0;
+
+            $photo = [
+                'filename' => $filename,
+                'owner_device_id' => $ownerDeviceId,
+                'owner_name' => (string) ($ownerDevice->display ?? $ownerDevice->hostname ?? $ownerDevice->sysName ?? ''),
+                'url' => $imageUrl,
+                'thumb_url' => $thumbUrl,
+                'order_key' => 'linked:' . $ownerDeviceId . ':' . $filename,
+                'display_order_index' => 9999,
+                'photo_taken_display' => '',
+                'photo_taken_iso' => '',
+                'file_date_display' => $fileTime > 0 ? date('Y-m-d H:i', $fileTime) : '',
+                'file_date_iso' => $fileTime > 0 ? date('c', $fileTime) : '',
+            ];
+
             return $this->jsonStatus('link_added', true, 200, [
                 'owner_device_id' => $ownerDeviceId,
                 'filename' => $filename,
+                'order_key' => $photo['order_key'],
+                'html' => view('device-photo::partials.manager-linked-photo-card', [
+                    'photo' => $photo,
+                    'device' => Device::find($deviceId),
+                    'can_reorder' => $this->permissions->userCanAction(auth()->user(), $settings, 'reorder_roles'),
+                    'can_delete' => $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles'),
+                ])->render(),
             ]);
         }
 

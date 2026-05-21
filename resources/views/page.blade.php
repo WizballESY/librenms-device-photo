@@ -725,13 +725,58 @@
                         targetInput.value = '';
                     }
 
+                    if (isIncoming && data.html) {
+                        var grid = document.getElementById('device-photo-manager-grid');
+                        var template = document.createElement('template');
+
+                        template.innerHTML = String(data.html).trim();
+
+                        var card = template.content.firstElementChild;
+
+                        if (grid && card) {
+                            grid.appendChild(card);
+
+                            card.querySelectorAll('.device-photo-local-date[data-device-photo-date]').forEach(function (el) {
+                                var value = el.getAttribute('data-device-photo-date');
+
+                                if (!value) {
+                                    return;
+                                }
+
+                                var date = new Date(value);
+
+                                if (isNaN(date.getTime())) {
+                                    return;
+                                }
+
+                                var format = el.getAttribute('data-device-photo-format') || 'datetime';
+
+                                if (format === 'date') {
+                                    el.textContent = date.toLocaleDateString(undefined, {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit'
+                                    });
+                                } else {
+                                    el.textContent = date.toLocaleString(undefined, {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                }
+                            });
+                        }
+                    }
+
                     if (isIncoming && button) {
                         button.className = 'btn btn-success btn-sm btn-block';
                         button.innerHTML = '<i class="fa fa-check"></i> Linked';
                     }
 
                     if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
-                        window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Photo linked. Refresh to see updated photo list.');
+                        window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Photo linked.');
                     }
                 }).catch(function (error) {
                     console.error('DevicePhoto AJAX link failed:', error);
@@ -4018,7 +4063,7 @@ document.addEventListener('click', function (e) {
                                       action="{{ url('plugin/device-photo-package/action') }}"
                                       style="margin-bottom: 8px; position: relative;"
                                       data-device-photo-ajax-add-link="1"
-                                      data-device-photo-ajax-success="Photo linked. Refresh to see updated photo list.">
+                                      data-device-photo-ajax-success="Photo linked.">
                                     @csrf
                                     <input type="hidden" name="action" value="add_link">
                                     <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -4347,7 +4392,7 @@ document.addEventListener('click', function (e) {
                                         <form method="post"
                                               action="{{ url('plugin/device-photo-package/action') }}"
                                               data-device-photo-ajax-add-incoming-link="1"
-                                              data-device-photo-ajax-success="Photo linked. Refresh to see updated photo list.">
+                                              data-device-photo-ajax-success="Photo linked.">
                                             @csrf
                                             <input type="hidden" name="action" value="add_incoming_link">
                                             <input type="hidden" name="device_id" value="{{ $device->device_id }}">
