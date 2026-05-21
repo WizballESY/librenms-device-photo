@@ -45,8 +45,8 @@ class ActionController extends Controller
             'remove_outgoing_link' => $this->removeOutgoingLink($request, $deviceId),
             'add_link' => $this->addLink($request, $deviceId),
             'add_incoming_link' => $this->addIncomingLink($request, $deviceId),
-            'clean_stale_thumbnails' => $this->cleanStaleThumbnails(),
-            'generate_missing_thumbnails' => $this->generateMissingThumbnails(),
+            'clean_stale_thumbnails' => $this->cleanStaleThumbnails($request),
+            'generate_missing_thumbnails' => $this->generateMissingThumbnails($request),
             'empty_deleted_photos' => $this->emptyDeletedPhotos($request),
             'restore_deleted_photo' => $this->restoreDeletedPhoto($request),
             'delete_deleted_photo' => $this->deleteDeletedPhoto($request),
@@ -1160,24 +1160,87 @@ class ActionController extends Controller
         return $this->redirectAfterAction($request, 0, 'link_removed');
     }
 
-    private function cleanStaleThumbnails()
+    private function thumbnailMaintenanceStats(): array
+    {
+        $missing = 0;
+        $stale = 0;
+        $activeBytes = 0;
+        $thumbnailBytes = 0;
+
+        foreach (glob($this->paths->photosDir() . '/device-*.*') ?: [] as $sourcePath) {
+            if (! is_file($sourcePath)) {
+                continue;
+            }
+
+            $filename = basename($sourcePath);
+
+            if (! preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            $activeBytes += filesize($sourcePath) ?: 0;
+
+            if (! is_file($this->paths->thumbPath($filename))) {
+                $missing++;
+            }
+        }
+
+        foreach (glob($this->paths->thumbsDir() . '/device-*.*') ?: [] as $thumbPath) {
+            if (! is_file($thumbPath)) {
+                continue;
+            }
+
+            $filename = basename($thumbPath);
+
+            $thumbnailBytes += filesize($thumbPath) ?: 0;
+
+            if (! is_file($this->paths->photoPath($filename))) {
+                $stale++;
+            }
+        }
+
+        return [
+            'missing_thumbnail_count' => $missing,
+            'stale_thumbnail_count' => $stale,
+            'active_photo_mb' => round($activeBytes / 1024 / 1024, 2),
+            'thumbnail_mb' => round($thumbnailBytes / 1024 / 1024, 2),
+            'active_total_mb' => round(($activeBytes + $thumbnailBytes) / 1024 / 1024, 2),
+        ];
+    }
+
+    private function cleanStaleThumbnails(Request $request)
     {
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect(0, 'permission_denied');
         }
 
         $this->images->cleanupStaleThumbnails($this->paths->photosDir());
 
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('thumbnails_cleaned', true, 200, [
+                'message' => 'Stale thumbnails cleaned.',
+                'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+            ]);
+        }
+
         return $this->redirect(0, 'thumbnails_cleaned');
     }
 
-    private function generateMissingThumbnails()
+    private function generateMissingThumbnails(Request $request)
     {
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect(0, 'permission_denied');
         }
 
@@ -1186,6 +1249,13 @@ class ActionController extends Controller
          * Fail-safe: if GD is missing, redirect without breaking anything.
          */
         if (! extension_loaded('gd')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('thumbnail_gd_missing', true, 200, [
+                    'message' => 'GD is missing. Thumbnails were not generated.',
+                    'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+                ]);
+            }
+
             return $this->redirect(0, 'thumbnail_gd_missing');
         }
 
@@ -1221,17 +1291,51 @@ class ActionController extends Controller
         }
 
         if ($generated > 0 && $failed > 0) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('thumbnails_partial', true, 200, [
+                    'generated' => $generated,
+                    'failed' => $failed,
+                    'message' => 'Generated ' . $generated . ' thumbnail(s). Failed: ' . $failed . '.',
+                    'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+                ]);
+            }
+
             return $this->redirect(0, 'thumbnails_partial');
         }
 
         if ($generated > 0) {
-            $this->images->cleanupStaleThumbnails($this->paths->photosDir());
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('thumbnails_generated', true, 200, [
+                    'generated' => $generated,
+                    'failed' => $failed,
+                    'message' => 'Generated ' . $generated . ' missing thumbnail(s).',
+                    'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+                ]);
+            }
 
             return $this->redirect(0, 'thumbnails_generated');
         }
 
         if ($failed > 0) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('thumbnails_failed', true, 200, [
+                    'generated' => $generated,
+                    'failed' => $failed,
+                    'message' => 'Thumbnail generation failed for ' . $failed . ' file(s).',
+                    'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+                ]);
+            }
+
             return $this->redirect(0, 'thumbnails_failed');
+        }
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('thumbnails_none_missing', true, 200, [
+                'generated' => $generated,
+                'failed' => $failed,
+                'message' => 'No missing thumbnails found.',
+                'maintenance_stats' => $this->thumbnailMaintenanceStats(),
+            ]);
         }
 
         return $this->redirect(0, 'thumbnails_none_missing');

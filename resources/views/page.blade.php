@@ -1131,7 +1131,7 @@
                                 updateDeletedPhotosUi(data);
 
                                 if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
-                                    window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                                    window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                                 } else if (typeof window.devicePhotoToast === 'function') {
                                     window.devicePhotoToast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                                 }
@@ -1566,8 +1566,10 @@
                                 <span class="number">{{ $overview['active_photo_count'] ?? 0 }}</span><span class="label">active photos</span>
                             </span>
 
-                            <span class="device-photo-summary-item" title="Total size of active photos and thumbnails. Originals: {{ $overview['active_photo_mb'] ?? 0 }} MB, thumbnails: {{ $overview['thumbnail_mb'] ?? 0 }} MB.">
-                                <span class="number">{{ $overview['active_total_mb'] ?? $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">size</span>
+                            <span class="device-photo-summary-item"
+                                  data-device-photo-active-size-summary
+                                  title="Total size of active photos and thumbnails. Originals: {{ $overview['active_photo_mb'] ?? 0 }} MB, thumbnails: {{ $overview['thumbnail_mb'] ?? 0 }} MB.">
+                                <span class="number" data-device-photo-active-size>{{ $overview['active_total_mb'] ?? $overview['active_photo_mb'] ?? 0 }} MB</span><span class="label">size</span>
                             </span>
 
                             <span class="device-photo-summary-item" title="Photos moved to the deleted folder.">
@@ -1616,14 +1618,18 @@
                                 @endif
 
                                 @if (($overview['missing_thumbnail_count'] ?? 0) > 0)
-                                    <span class="device-photo-summary-item is-problem" title="Active photos without a generated thumbnail.">
-                                        <span class="number">{{ $overview['missing_thumbnail_count'] ?? 0 }}</span><span class="label">missing thumbnails</span>
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-missing-thumbnails-summary
+                                          title="Active photos without a generated thumbnail.">
+                                        <span class="number" data-device-photo-missing-thumbnails-count>{{ $overview['missing_thumbnail_count'] ?? 0 }}</span><span class="label">missing thumbnails</span>
                                     </span>
                                 @endif
 
                                 @if (($overview['stale_thumbnail_count'] ?? 0) > 0)
-                                    <span class="device-photo-summary-item is-problem" title="Thumbnail files where the original active photo no longer exists.">
-                                        <span class="number">{{ $overview['stale_thumbnail_count'] ?? 0 }}</span><span class="label">stale thumbnails</span>
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-stale-thumbnails-summary
+                                          title="Thumbnail files where the original active photo no longer exists.">
+                                        <span class="number" data-device-photo-stale-thumbnails-count>{{ $overview['stale_thumbnail_count'] ?? 0 }}</span><span class="label">stale thumbnails</span>
                                     </span>
                                 @endif
                             @endif
@@ -1667,6 +1673,9 @@
                                     @if ($can_upload && !empty($overview['gd_available']) && !empty($overview['thumb_dir_writable']) && (($overview['missing_thumbnail_count'] ?? 0) > 0))
                                         <form method="post"
                                               action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-maintenance-form="missing-thumbnails"
+                                              data-device-photo-ajax="1"
+                                              data-device-photo-ajax-success="Thumbnail maintenance completed."
                                               data-device-photo-confirm-title="Generate missing thumbnails?"
                                               data-device-photo-confirm-ok-text="Generate"
                                               data-device-photo-confirm-ok-class="btn-warning"
@@ -1689,6 +1698,9 @@
                                     @if ($can_upload && (($overview['stale_thumbnail_count'] ?? 0) > 0))
                                         <form method="post"
                                               action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-maintenance-form="stale-thumbnails"
+                                              data-device-photo-ajax="1"
+                                              data-device-photo-ajax-success="Stale thumbnails cleaned."
                                               data-device-photo-confirm-title="Clean stale thumbnails?"
                                               data-device-photo-confirm-ok-text="Clean stale thumbnails"
                                               data-device-photo-confirm-ok-class="btn-warning"
@@ -2560,6 +2572,66 @@ document.addEventListener('click', function (e) {
                             }
                         }
 
+                        function updateThumbnailMaintenanceUi(data) {
+                            var stats = data && data.maintenance_stats ? data.maintenance_stats : null;
+
+                            if (!stats) {
+                                return;
+                            }
+
+                            var missing = parseInt(stats.missing_thumbnail_count || 0, 10);
+                            var stale = parseInt(stats.stale_thumbnail_count || 0, 10);
+                            var activeTotalMb = typeof stats.active_total_mb !== 'undefined' ? stats.active_total_mb : null;
+                            var activePhotoMb = typeof stats.active_photo_mb !== 'undefined' ? stats.active_photo_mb : null;
+                            var thumbnailMb = typeof stats.thumbnail_mb !== 'undefined' ? stats.thumbnail_mb : null;
+
+                            var activeSize = document.querySelector('[data-device-photo-active-size]');
+                            var activeSizeSummary = document.querySelector('[data-device-photo-active-size-summary]');
+
+                            if (activeSize && activeTotalMb !== null) {
+                                activeSize.textContent = String(activeTotalMb) + ' MB';
+                            }
+
+                            if (activeSizeSummary && activePhotoMb !== null && thumbnailMb !== null) {
+                                activeSizeSummary.setAttribute(
+                                    'title',
+                                    'Total size of active photos and thumbnails. Originals: ' + String(activePhotoMb) + ' MB, thumbnails: ' + String(thumbnailMb) + ' MB.'
+                                );
+                            }
+
+                            var missingSummary = document.querySelector('[data-device-photo-missing-thumbnails-summary]');
+                            var missingCount = document.querySelector('[data-device-photo-missing-thumbnails-count]');
+                            var missingForm = document.querySelector('[data-device-photo-maintenance-form="missing-thumbnails"]');
+
+                            if (missingCount) {
+                                missingCount.textContent = String(missing);
+                            }
+
+                            if (missingSummary && missing < 1) {
+                                missingSummary.style.display = 'none';
+                            }
+
+                            if (missingForm && missing < 1) {
+                                missingForm.style.display = 'none';
+                            }
+
+                            var staleSummary = document.querySelector('[data-device-photo-stale-thumbnails-summary]');
+                            var staleCount = document.querySelector('[data-device-photo-stale-thumbnails-count]');
+                            var staleForm = document.querySelector('[data-device-photo-maintenance-form="stale-thumbnails"]');
+
+                            if (staleCount) {
+                                staleCount.textContent = String(stale);
+                            }
+
+                            if (staleSummary && stale < 1) {
+                                staleSummary.style.display = 'none';
+                            }
+
+                            if (staleForm && stale < 1) {
+                                staleForm.style.display = 'none';
+                            }
+                        }
+
                         function submitAjax(form) {
                             var formData = new FormData(form);
 
@@ -2602,7 +2674,9 @@ document.addEventListener('click', function (e) {
                                     updateOrphanedPhotosUi();
                                 }
 
-                                window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                                updateThumbnailMaintenanceUi(data);
+
+                                window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                                 }).catch(function (error) {
                     console.error('DevicePhoto AJAX failed:', error);
                     submitNormally(form);
