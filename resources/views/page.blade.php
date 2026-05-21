@@ -3524,6 +3524,7 @@ document.addEventListener('click', function (e) {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(170px, 230px));
                 gap: 14px;
+                position: relative;
             }
 
             .device-photo-manager-card {
@@ -3539,12 +3540,14 @@ document.addEventListener('click', function (e) {
                 cursor: grabbing;
             }
 
-            .device-photo-manager-card.drop-before {
-                box-shadow: inset 10px 0 0 #337ab7;
-            }
-
-            .device-photo-manager-card.drop-after {
-                box-shadow: inset -10px 0 0 #337ab7;
+            .device-photo-drop-placeholder {
+                display: none;
+                min-height: 180px;
+                border: 2px dashed #337ab7;
+                border-radius: 8px;
+                background: rgba(51, 122, 183, 0.08);
+                box-shadow: inset 0 0 0 2px rgba(51, 122, 183, 0.12);
+                pointer-events: none;
             }
 
             .device-photo-manager-card img {
@@ -4383,6 +4386,9 @@ document.addEventListener('click', function (e) {
                             var grid = document.getElementById('device-photo-manager-grid');
                             var orderInput = document.getElementById('device-photo-order-json');
                             var dragged = null;
+                            var dropPlaceholder = document.createElement('div');
+
+                            dropPlaceholder.className = 'device-photo-drop-placeholder';
 
                             function cards() {
                                 return Array.prototype.slice.call(grid.querySelectorAll('.device-photo-manager-card'));
@@ -4453,6 +4459,7 @@ document.addEventListener('click', function (e) {
                                 }
 
                                 clearDropClasses();
+                                hideDropPlaceholder();
                                 dragged = null;
                                 updateOrderJson();
                             });
@@ -4502,6 +4509,28 @@ document.addEventListener('click', function (e) {
                                 return x > (box.left + (box.width / 2));
                             }
 
+                            function showDropPlaceholder(target, after) {
+                                if (!target || !dropPlaceholder) {
+                                    return;
+                                }
+
+                                dropPlaceholder.style.display = 'block';
+
+                                if (after) {
+                                    target.parentNode.insertBefore(dropPlaceholder, target.nextSibling);
+                                } else {
+                                    target.parentNode.insertBefore(dropPlaceholder, target);
+                                }
+                            }
+
+                            function hideDropPlaceholder() {
+                                if (dropPlaceholder && dropPlaceholder.parentNode) {
+                                    dropPlaceholder.parentNode.removeChild(dropPlaceholder);
+                                }
+
+                                dropPlaceholder.style.display = 'none';
+                            }
+
                             grid.addEventListener('dragover', function (e) {
                                 e.preventDefault();
 
@@ -4517,11 +4546,7 @@ document.addEventListener('click', function (e) {
                                     return;
                                 }
 
-                                if (dropAfterTarget(target, e.clientX)) {
-                                    target.classList.add('drop-after');
-                                } else {
-                                    target.classList.add('drop-before');
-                                }
+                                showDropPlaceholder(target, dropAfterTarget(target, e.clientX));
 
                                 e.dataTransfer.dropEffect = 'move';
                             });
@@ -4537,17 +4562,21 @@ document.addEventListener('click', function (e) {
 
                                 if (!target || target === dragged) {
                                     clearDropClasses();
+                                    hideDropPlaceholder();
                                     updateOrderJson();
                                     return;
                                 }
 
-                                if (dropAfterTarget(target, e.clientX)) {
+                                if (dropPlaceholder && dropPlaceholder.parentNode) {
+                                    dropPlaceholder.parentNode.insertBefore(dragged, dropPlaceholder);
+                                } else if (dropAfterTarget(target, e.clientX)) {
                                     target.parentNode.insertBefore(dragged, target.nextSibling);
                                 } else {
                                     target.parentNode.insertBefore(dragged, target);
                                 }
 
                                 clearDropClasses();
+                                hideDropPlaceholder();
                                 updateOrderJson();
 
                                 /*
