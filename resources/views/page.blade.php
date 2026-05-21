@@ -3986,7 +3986,11 @@ document.addEventListener('click', function (e) {
                         Drag and drop photos to change the order.
                     </div>
 
-                    <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-order-form" style="margin-bottom: 14px;">
+                    <form method="post"
+                          action="{{ url('plugin/device-photo-package/action') }}"
+                          id="device-photo-order-form"
+                          data-device-photo-ajax-success="Photo order saved."
+                          style="margin-bottom: 14px;">
                         @csrf
                         <input type="hidden" name="action" value="save_order">
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
@@ -4387,13 +4391,75 @@ document.addEventListener('click', function (e) {
                                  * Auto-save order after drag and drop.
                                  */
                                 setTimeout(function () {
-                                    document.getElementById('device-photo-order-form').submit();
+                                    saveOrderAjax();
                                 }, 150);
                             });
 
-                            document.getElementById('device-photo-order-form').addEventListener('submit', function () {
+                            var orderForm = document.getElementById('device-photo-order-form');
+                            var saveOrderInProgress = false;
+
+                            function saveOrderAjax() {
+                                if (!orderForm || saveOrderInProgress) {
+                                    return;
+                                }
+
                                 updateOrderJson();
-                            });
+
+                                var formData = new FormData(orderForm);
+                                var button = orderForm.querySelector('button[type="submit"]');
+
+                                formData.set('ajax', '1');
+                                saveOrderInProgress = true;
+
+                                if (button) {
+                                    button.disabled = true;
+                                }
+
+                                fetch(orderForm.getAttribute('action'), {
+                                    method: (orderForm.method || 'POST').toUpperCase(),
+                                    body: formData,
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    }
+                                }).then(function (response) {
+                                    if (!response.ok) {
+                                        throw new Error('HTTP ' + response.status);
+                                    }
+
+                                    return response.json();
+                                }).then(function (data) {
+                                    if (!data || data.ok !== true) {
+                                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                                    }
+
+                                    if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                                        window.DevicePhotoAjax.toast((data && data.message) || orderForm.getAttribute('data-device-photo-ajax-success') || 'Photo order saved.');
+                                    }
+                                }).catch(function (error) {
+                                    console.error('DevicePhoto save order AJAX failed:', error);
+
+                                    if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                                        window.DevicePhotoAjax.toast('Could not save photo order with AJAX. Check browser console.');
+                                    }
+                                }).finally(function () {
+                                    saveOrderInProgress = false;
+
+                                    if (button) {
+                                        button.disabled = false;
+                                    }
+                                });
+                            }
+
+                            if (orderForm) {
+                                orderForm.addEventListener('submit', function (e) {
+                                    e.preventDefault();
+                                    e.stopImmediatePropagation();
+
+                                    saveOrderAjax();
+                                }, true);
+                            }
 
                             normalizeInitialDomOrder();
                             updateOrderJson();

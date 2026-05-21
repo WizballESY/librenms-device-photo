@@ -63,12 +63,20 @@ class ActionController extends Controller
     private function saveOrder(Request $request, int $deviceId)
     {
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'reorder_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -76,6 +84,10 @@ class ActionController extends Controller
         $decoded = json_decode($orderJson, true);
 
         if (! is_array($decoded)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_order', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_order');
         }
 
@@ -148,6 +160,13 @@ class ActionController extends Controller
         }
 
         $this->order->save($safeShortName, $newOrder);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('order_updated', true, 200, [
+                'message' => 'Photo order saved.',
+                'order' => $newOrder,
+            ]);
+        }
 
         return $this->redirectAfterAction($request, $deviceId, 'order_updated');
     }
