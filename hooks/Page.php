@@ -51,6 +51,12 @@ class Page extends PageHook
             }
         }
 
+        foreach ($allowedRoles as $role) {
+            if ($user->can($role)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
