@@ -1410,7 +1410,7 @@ class ActionController extends Controller
 
         $settings = $this->settings->settings();
 
-        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('permission_denied', false, 403);
             }
@@ -1458,6 +1458,7 @@ class ActionController extends Controller
                 'filename' => $filename,
                 'target_device_id' => $targetDeviceId,
                 'target_device_name' => (string) ($targetDevice->display ?? $targetDevice->hostname ?? $targetDeviceId),
+                'can_delete' => $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles'),
             ]);
         }
 
@@ -1476,7 +1477,7 @@ class ActionController extends Controller
 
         $settings = $this->settings->settings();
 
-        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('permission_denied', false, 403);
             }

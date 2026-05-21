@@ -832,25 +832,29 @@
                                     escapeHtml(data.target_device_name || ('device-' + data.target_device_id)) +
                                     ' <span class="text-muted">(Device ID ' + escapeHtml(data.target_device_id) + ')</span>' +
                                 '</a>' +
-                            '</div>' +
-                            '<form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;"' +
-                                  ' data-device-photo-ajax="1"' +
-                                  ' data-device-photo-ajax-success="Shared photo link removed."' +
-                                  ' data-device-photo-confirm-title="Remove shared link?"' +
-                                  ' data-device-photo-confirm-ok-text="Remove link"' +
-                                  ' data-device-photo-confirm-ok-class="btn-warning"' +
-                                  ' data-device-photo-confirm-ok-icon="fa-unlink"' +
-                                  ' data-device-photo-confirm="Remove this shared photo link? The original photo will not be deleted.">' +
-                                '<input type="hidden" name="_token" value="' + escapeHtml(formData.get('_token') || '') + '">' +
-                                '<input type="hidden" name="action" value="remove_outgoing_link">' +
-                                '<input type="hidden" name="device_id" value="' + escapeHtml(formData.get('device_id') || '') + '">' +
-                                '<input type="hidden" name="target_device_id" value="' + escapeHtml(data.target_device_id) + '">' +
-                                '<input type="hidden" name="filename" value="' + escapeHtml(data.filename) + '">' +
-                                '<input type="hidden" name="return_anchor" value="' + escapeHtml(formData.get('return_anchor') || '') + '">' +
-                                '<button type="submit" class="btn btn-warning btn-xs">' +
-                                    '<i class="fa fa-unlink"></i> Remove link' +
-                                '</button>' +
-                            '</form>';
+                            '</div>';
+
+                        if (data.can_delete === true) {
+                            row.innerHTML +=
+                                '<form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;"' +
+                                      ' data-device-photo-ajax="1"' +
+                                      ' data-device-photo-ajax-success="Shared photo link removed."' +
+                                      ' data-device-photo-confirm-title="Remove shared link?"' +
+                                      ' data-device-photo-confirm-ok-text="Remove link"' +
+                                      ' data-device-photo-confirm-ok-class="btn-warning"' +
+                                      ' data-device-photo-confirm-ok-icon="fa-unlink"' +
+                                      ' data-device-photo-confirm="Remove this shared photo link? The original photo will not be deleted.">' +
+                                    '<input type="hidden" name="_token" value="' + escapeHtml(formData.get('_token') || '') + '">' +
+                                    '<input type="hidden" name="action" value="remove_outgoing_link">' +
+                                    '<input type="hidden" name="device_id" value="' + escapeHtml(formData.get('device_id') || '') + '">' +
+                                    '<input type="hidden" name="target_device_id" value="' + escapeHtml(data.target_device_id) + '">' +
+                                    '<input type="hidden" name="filename" value="' + escapeHtml(data.filename) + '">' +
+                                    '<input type="hidden" name="return_anchor" value="' + escapeHtml(formData.get('return_anchor') || '') + '">' +
+                                    '<button type="submit" class="btn btn-warning btn-xs">' +
+                                        '<i class="fa fa-unlink"></i> Remove link' +
+                                    '</button>' +
+                                '</form>';
+                        }
 
                         list.appendChild(row);
 
