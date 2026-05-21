@@ -28,7 +28,7 @@ class PhotoSettingsService
             $plugin = Plugin::where('plugin_name', self::LEGACY_PLUGIN_NAME)->first();
         }
 
-        $settings = $plugin->settings ?? [];
+        $settings = $plugin ? ($plugin->settings ?? []) : [];
 
         return is_array($settings) ? $settings : [];
     }
