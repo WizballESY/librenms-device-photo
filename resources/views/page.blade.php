@@ -4333,6 +4333,51 @@ document.addEventListener('click', function (e) {
                                 updateOrderJson();
                             });
 
+                            function closestDropTarget(x, y) {
+                                var best = null;
+                                var bestDistance = Infinity;
+
+                                cards().forEach(function (card) {
+                                    if (card === dragged) {
+                                        return;
+                                    }
+
+                                    var box = card.getBoundingClientRect();
+
+                                    /*
+                                     * Treat the whole card as a generous drop zone.
+                                     * Use distance from pointer to card center so it feels natural
+                                     * even when the pointer is between cards in the grid.
+                                     */
+                                    var centerX = box.left + (box.width / 2);
+                                    var centerY = box.top + (box.height / 2);
+                                    var dx = x - centerX;
+                                    var dy = y - centerY;
+                                    var distance = Math.sqrt((dx * dx) + (dy * dy));
+
+                                    if (distance < bestDistance) {
+                                        bestDistance = distance;
+                                        best = card;
+                                    }
+                                });
+
+                                return best;
+                            }
+
+                            function dropAfterTarget(target, x) {
+                                if (!target) {
+                                    return false;
+                                }
+
+                                var box = target.getBoundingClientRect();
+
+                                /*
+                                 * Horizontal before/after still decides final position,
+                                 * but closestDropTarget() makes it much easier to hit a card.
+                                 */
+                                return x > (box.left + (box.width / 2));
+                            }
+
                             grid.addEventListener('dragover', function (e) {
                                 e.preventDefault();
 
@@ -4340,7 +4385,7 @@ document.addEventListener('click', function (e) {
                                     return;
                                 }
 
-                                var target = e.target.closest('.device-photo-manager-card');
+                                var target = closestDropTarget(e.clientX, e.clientY);
 
                                 clearDropClasses();
 
@@ -4348,10 +4393,7 @@ document.addEventListener('click', function (e) {
                                     return;
                                 }
 
-                                var box = target.getBoundingClientRect();
-                                var isAfter = e.clientX > box.left + box.width / 2;
-
-                                if (isAfter) {
+                                if (dropAfterTarget(target, e.clientX)) {
                                     target.classList.add('drop-after');
                                 } else {
                                     target.classList.add('drop-before');
@@ -4367,7 +4409,7 @@ document.addEventListener('click', function (e) {
                                     return;
                                 }
 
-                                var target = e.target.closest('.device-photo-manager-card');
+                                var target = closestDropTarget(e.clientX, e.clientY);
 
                                 if (!target || target === dragged) {
                                     clearDropClasses();
@@ -4375,10 +4417,7 @@ document.addEventListener('click', function (e) {
                                     return;
                                 }
 
-                                var box = target.getBoundingClientRect();
-                                var isAfter = e.clientX > box.left + box.width / 2;
-
-                                if (isAfter) {
+                                if (dropAfterTarget(target, e.clientX)) {
                                     target.parentNode.insertBefore(dragged, target.nextSibling);
                                 } else {
                                     target.parentNode.insertBefore(dragged, target);
