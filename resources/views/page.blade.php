@@ -419,6 +419,24 @@
     /*
      * LibreNMS dark mode fix for linked photo cards.
      */
+    html.dark .device-photo-plugin .device-photo-owned-photo-card {
+        background: #263241 !important;
+        border-color: #3f5f82 !important;
+        border-top-color: #6aa7df !important;
+        color: #d8dee9 !important;
+        box-shadow: none !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-image,
+    html.dark .device-photo-plugin .device-photo-card-image {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-card-meta {
+        color: #cfd7e3 !important;
+    }
+
     html.dark .device-photo-plugin .device-photo-linked-photo-card {
         background: #2f3842 !important;
         border-color: #4b5563 !important;
@@ -3535,6 +3553,43 @@ document.addEventListener('click', function (e) {
                 cursor: grab;
             }
 
+            .device-photo-owned-photo-card {
+                background: #f7fbff;
+                border-color: #c9dff2;
+                border-top: 4px solid #337ab7;
+            }
+
+            .device-photo-card-image {
+                width: 100%;
+                max-height: 180px;
+                object-fit: contain;
+                background: #fff;
+                border-radius: 5px;
+                margin-bottom: 10px;
+            }
+
+            .device-photo-card-type-row {
+                margin: 6px 0 4px 0;
+            }
+
+            .device-photo-card-meta {
+                font-size: 12px;
+                margin: 6px 0 8px 0;
+                line-height: 1.35;
+                word-break: break-all;
+            }
+
+            .device-photo-card-link-box {
+                font-size: 12px;
+                padding: 6px 8px;
+                margin-bottom: 8px;
+                border-radius: 6px;
+            }
+
+            .device-photo-card-action {
+                margin-bottom: 8px;
+            }
+
             .device-photo-manager-card.dragging {
                 opacity: 0.45;
                 cursor: grabbing;
@@ -4142,8 +4197,14 @@ document.addEventListener('click', function (e) {
                                 $devicePhotoCardAnchor = 'device-photo-card-' . preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($photo['order_key'] ?? $photo['filename']));
                             @endphp
 
-                            <div id="{{ $devicePhotoCardAnchor }}" class="device-photo-manager-card" draggable="{{ $can_reorder ? 'true' : 'false' }}" data-filename="{{ $photo['filename'] }}" data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}" style="order: {{ $photo['display_order_index'] ?? 0 }};">
+                            <div id="{{ $devicePhotoCardAnchor }}"
+                                 class="device-photo-manager-card device-photo-owned-photo-card"
+                                 draggable="{{ $can_reorder ? 'true' : 'false' }}"
+                                 data-filename="{{ $photo['filename'] }}"
+                                 data-order-key="{{ $photo['order_key'] ?? $photo['filename'] }}"
+                                 style="order: {{ $photo['display_order_index'] ?? 0 }};">
                                 <img
+                                    class="device-photo-card-image"
                                     data-device-photo-gallery="device-{{ $device->device_id }}" data-device-photo-preview-src="{{ $photo['url'] }}"
                                     data-device-photo-taken="{{ $photo['photo_taken_iso'] ?? '' }}"
                                     data-device-photo-file-date="{{ $photo['file_date_iso'] ?? '' }}"
@@ -4151,14 +4212,14 @@ document.addEventListener('click', function (e) {
                                     draggable="false"
                                 >
 
-                                <div style="margin: 6px 0 4px 0;">
+                                <div class="device-photo-card-type-row">
                                     <span class="label label-primary"
                                           title="This photo is owned by this device. It can also be shared to other devices.">
                                         <i class="fa fa-home"></i> Owned
                                     </span>
                                 </div>
 
-                                <div class="text-muted" data-device-photo-meta style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
+                                <div class="text-muted device-photo-card-meta" data-device-photo-meta>
                                     @if (!empty($photo['photo_taken_display']))
                                         <div data-device-photo-taken-row>
                                             <strong>Photo taken:</strong>
@@ -4180,9 +4241,8 @@ document.addEventListener('click', function (e) {
                                 </div>
 
                                 @if (!empty($photo['linked_to']))
-                                    <div class="alert alert-warning"
-                                         data-device-photo-linked-to-box
-                                         style="font-size: 12px; padding: 6px 8px; margin-bottom: 8px;">
+                                    <div class="alert alert-warning device-photo-card-link-box"
+                                         data-device-photo-linked-to-box>
                                         <strong>
                                             <i class="fa fa-link"></i>
                                             Linked to <span data-device-photo-linked-to-count>{{ count($photo['linked_to']) }}</span> device{{ count($photo['linked_to']) === 1 ? '' : 's' }}
@@ -4232,7 +4292,7 @@ document.addEventListener('click', function (e) {
                                     </div>
                                 @endif
 
-                                <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block" style="margin-bottom: 8px;">
+                                <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
                                     <i class="fa fa-download"></i> Download
                                 </a>
 
@@ -4243,8 +4303,7 @@ document.addEventListener('click', function (e) {
                                 @if ($can_upload && $devicePhotoCanWriteExif)
                                     <button
                                         type="button"
-                                        class="btn btn-default btn-sm btn-block device-photo-set-taken-button"
-                                        style="margin-bottom: 8px;"
+                                        class="btn btn-default btn-sm btn-block device-photo-set-taken-button device-photo-card-action"
                                         data-filename="{{ $photo['filename'] }}"
                                         data-photo-taken="{{ !empty($photo['photo_taken_iso']) ? substr($photo['photo_taken_iso'], 0, 16) : '' }}"
                                         data-device-id="{{ $device->device_id }}"
