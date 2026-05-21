@@ -721,8 +721,132 @@
                         throw new Error((data && data.status) ? data.status : 'ajax_failed');
                     }
 
+                    function escapeHtml(value) {
+                        return String(value || '')
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                    }
+
+                    function findOwnedPhotoCard(filename) {
+                        var cards = document.querySelectorAll('.device-photo-manager-card[data-filename]');
+
+                        for (var i = 0; i < cards.length; i++) {
+                            if (cards[i].getAttribute('data-filename') === filename) {
+                                return cards[i];
+                            }
+                        }
+
+                        return null;
+                    }
+
+                    function updateOwnedLinkedToBox(form, data) {
+                        if (!data || !data.filename || !data.target_device_id) {
+                            return;
+                        }
+
+                        var card = findOwnedPhotoCard(data.filename);
+
+                        if (!card) {
+                            return;
+                        }
+
+                        var box = card.querySelector('[data-device-photo-linked-to-box]');
+                        var list;
+                        var count;
+
+                        if (!box) {
+                            box = document.createElement('div');
+                            box.className = 'alert alert-warning';
+                            box.setAttribute('data-device-photo-linked-to-box', '1');
+                            box.style.fontSize = '12px';
+                            box.style.padding = '6px 8px';
+                            box.style.marginBottom = '8px';
+
+                            box.innerHTML =
+                                '<strong>' +
+                                    '<i class="fa fa-link"></i> ' +
+                                    'Linked to <span data-device-photo-linked-to-count>0</span> devices' +
+                                '</strong>' +
+                                '<div style="margin-top: 8px;" data-device-photo-linked-to-list></div>';
+
+                            var downloadButton = card.querySelector('a[download]');
+
+                            if (downloadButton && downloadButton.parentNode) {
+                                downloadButton.parentNode.insertBefore(box, downloadButton);
+                            } else {
+                                card.appendChild(box);
+                            }
+                        }
+
+                        list = box.querySelector('[data-device-photo-linked-to-list]');
+
+                        if (!list) {
+                            list = box.querySelector('strong + div');
+
+                            if (list) {
+                                list.setAttribute('data-device-photo-linked-to-list', '1');
+                            }
+                        }
+
+                        if (!list) {
+                            return;
+                        }
+
+                        if (list.querySelector('[data-device-photo-target-device-id="' + String(data.target_device_id) + '"]')) {
+                            return;
+                        }
+
+                        var row = document.createElement('div');
+                        row.setAttribute('data-device-photo-ajax-row', 'outgoing-link');
+                        row.setAttribute('data-device-photo-target-device-id', String(data.target_device_id));
+                        row.style.marginBottom = '8px';
+                        row.style.paddingBottom = '8px';
+                        row.style.borderBottom = '1px solid #eadfbf';
+
+                        row.innerHTML =
+                            '<div style="word-break: break-word;">' +
+                                '<a href="{{ url('plugin/device-photo') }}?device_id=' + encodeURIComponent(String(data.target_device_id)) + '">' +
+                                    escapeHtml(data.target_device_name || ('device-' + data.target_device_id)) +
+                                    ' <span class="text-muted">(Device ID ' + escapeHtml(data.target_device_id) + ')</span>' +
+                                '</a>' +
+                            '</div>' +
+                            '<form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;"' +
+                                  ' data-device-photo-ajax="1"' +
+                                  ' data-device-photo-ajax-success="Shared photo link removed."' +
+                                  ' data-device-photo-confirm-title="Remove shared link?"' +
+                                  ' data-device-photo-confirm-ok-text="Remove link"' +
+                                  ' data-device-photo-confirm-ok-class="btn-warning"' +
+                                  ' data-device-photo-confirm-ok-icon="fa-unlink"' +
+                                  ' data-device-photo-confirm="Remove this shared photo link? The original photo will not be deleted.">' +
+                                '<input type="hidden" name="_token" value="' + escapeHtml(formData.get('_token') || '') + '">' +
+                                '<input type="hidden" name="action" value="remove_outgoing_link">' +
+                                '<input type="hidden" name="device_id" value="' + escapeHtml(formData.get('device_id') || '') + '">' +
+                                '<input type="hidden" name="target_device_id" value="' + escapeHtml(data.target_device_id) + '">' +
+                                '<input type="hidden" name="filename" value="' + escapeHtml(data.filename) + '">' +
+                                '<input type="hidden" name="return_anchor" value="' + escapeHtml(formData.get('return_anchor') || '') + '">' +
+                                '<button type="submit" class="btn btn-warning btn-xs">' +
+                                    '<i class="fa fa-unlink"></i> Remove link' +
+                                '</button>' +
+                            '</form>';
+
+                        list.appendChild(row);
+
+                        count = box.querySelector('[data-device-photo-linked-to-count]');
+
+                        if (count) {
+                            count.textContent = String(list.querySelectorAll('[data-device-photo-ajax-row="outgoing-link"]').length);
+                        }
+                    }
+
                     if (targetInput) {
                         targetInput.value = '';
+                    }
+
+                    if (!isIncoming) {
+                        updateOwnedLinkedToBox(form, data);
                     }
 
                     if (isIncoming && data.html) {

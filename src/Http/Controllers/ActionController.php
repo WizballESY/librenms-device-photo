@@ -1455,6 +1455,7 @@ class ActionController extends Controller
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('link_added', true, 200, [
+                'filename' => $filename,
                 'target_device_id' => $targetDeviceId,
                 'target_device_name' => (string) ($targetDevice->display ?? $targetDevice->hostname ?? $targetDeviceId),
             ]);
