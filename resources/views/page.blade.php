@@ -4031,11 +4031,11 @@ document.addEventListener('click', function (e) {
                                     </span>
                                 </div>
 
-                                <div class="text-muted" style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
+                                <div class="text-muted" data-device-photo-meta style="font-size: 12px; margin: 6px 0 8px 0; line-height: 1.35; word-break: break-all;">
                                     @if (!empty($photo['photo_taken_display']))
-                                        <div>
+                                        <div data-device-photo-taken-row>
                                             <strong>Photo taken:</strong>
-                                            <span class="device-photo-local-date" data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
+                                            <span class="device-photo-local-date" data-device-photo-taken-display data-device-photo-format="date" data-device-photo-date="{{ $photo['photo_taken_iso'] ?? '' }}">{{ $photo['photo_taken_display'] }}</span>
                                         </div>
                                     @endif
 
@@ -4568,7 +4568,10 @@ document.addEventListener('click', function (e) {
                 This writes the selected date/time back to the JPG/JPEG EXIF metadata in the original photo file.
             </div>
 
-            <form method="post" action="{{ url('plugin/device-photo-package/action') }}" id="device-photo-set-taken-form">
+            <form method="post"
+                  action="{{ url('plugin/device-photo-package/action') }}"
+                  id="device-photo-set-taken-form"
+                  data-device-photo-ajax-success="Photo taken updated.">
                 @csrf
                 <input type="hidden" name="action" value="set_photo_taken">
                 <input type="hidden" name="device_id" id="device-photo-set-taken-device-id" value="{{ $device ? $device->device_id : 0 }}">
@@ -4645,6 +4648,132 @@ document.addEventListener('click', function (e) {
                     dateInput.showPicker();
                 });
             }
+
+            function findPhotoCardByFilename(filename) {
+                var cards = document.querySelectorAll('.device-photo-manager-card[data-filename]');
+
+                for (var i = 0; i < cards.length; i++) {
+                    if (cards[i].getAttribute('data-filename') === filename) {
+                        return cards[i];
+                    }
+                }
+
+                return null;
+            }
+
+            function formatDateForDisplay(value) {
+                var date = new Date(value);
+
+                if (isNaN(date.getTime())) {
+                    return value || '';
+                }
+
+                return date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+            }
+
+            function updatePhotoTakenCard(data) {
+                if (!data || !data.filename) {
+                    return;
+                }
+
+                var card = findPhotoCardByFilename(data.filename);
+
+                if (!card) {
+                    return;
+                }
+
+                var image = card.querySelector('[data-device-photo-preview-src]');
+                var button = card.querySelector('.device-photo-set-taken-button');
+                var meta = card.querySelector('[data-device-photo-meta]');
+                var row = card.querySelector('[data-device-photo-taken-row]');
+                var display = card.querySelector('[data-device-photo-taken-display]');
+
+                if (image && data.photo_taken_iso) {
+                    image.setAttribute('data-device-photo-taken', data.photo_taken_iso);
+                }
+
+                if (button && data.photo_taken_input) {
+                    button.setAttribute('data-photo-taken', data.photo_taken_input);
+                }
+
+                if (!row && meta) {
+                    row = document.createElement('div');
+                    row.setAttribute('data-device-photo-taken-row', '1');
+
+                    var label = document.createElement('strong');
+                    label.textContent = 'Photo taken:';
+
+                    display = document.createElement('span');
+                    display.className = 'device-photo-local-date';
+                    display.setAttribute('data-device-photo-taken-display', '1');
+                    display.setAttribute('data-device-photo-format', 'date');
+
+                    row.appendChild(label);
+                    row.appendChild(document.createTextNode(' '));
+                    row.appendChild(display);
+                    meta.insertBefore(row, meta.firstChild);
+                }
+
+                if (display) {
+                    display.setAttribute('data-device-photo-date', data.photo_taken_iso || '');
+                    display.textContent = formatDateForDisplay(data.photo_taken_iso || data.photo_taken_display || '');
+                }
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                var formData = new FormData(form);
+                var button = form.querySelector('button[type="submit"]');
+
+                formData.set('ajax', '1');
+
+                if (button) {
+                    button.disabled = true;
+                }
+
+                fetch(form.getAttribute('action'), {
+                    method: (form.method || 'POST').toUpperCase(),
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    return response.json();
+                }).then(function (data) {
+                    if (!data || data.ok !== true) {
+                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                    }
+
+                    updatePhotoTakenCard(data);
+                    closeModal();
+
+                    if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                        window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Photo taken updated.');
+                    }
+                }).catch(function (error) {
+                    console.error('DevicePhoto set photo taken AJAX failed:', error);
+
+                    if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
+                        window.DevicePhotoAjax.toast('Could not update photo taken. Check browser console.');
+                    }
+                }).finally(function () {
+                    if (button) {
+                        button.disabled = false;
+                    }
+                });
+            }, true);
 
             if (cancelButton) {
                 cancelButton.addEventListener('click', closeModal);

@@ -1061,12 +1061,20 @@ class ActionController extends Controller
         $photoTakenInput = (string) $request->input('photo_taken', '');
 
         if ($deviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'device_not_found');
         }
 
         $settings = $this->settings->settings();
 
         if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
             return $this->redirect($deviceId, 'permission_denied');
         }
 
@@ -1074,26 +1082,46 @@ class ActionController extends Controller
         $pattern = '/^' . preg_quote($safeShortName, '/') . '-\\d+\\.(jpg|jpeg)$/i';
 
         if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
         $photoPath = $this->paths->photoPath($filename);
 
         if (! is_file($photoPath)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
             return $this->redirect($deviceId, 'not_found');
         }
 
         if (! $this->metadata->exiftoolAvailable()) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('exiftool_unavailable', false, 500);
+            }
+
             return $this->redirect($deviceId, 'exiftool_unavailable');
         }
 
         $timestamp = $this->metadata->parsePhotoTakenInput($photoTakenInput);
 
         if (! $timestamp) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_photo_taken', false, 422);
+            }
+
             return $this->redirect($deviceId, 'invalid_photo_taken');
         }
 
         if (! $this->metadata->writePhotoTakenExif($photoPath, $timestamp)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('photo_taken_failed', false, 500);
+            }
+
             return $this->redirect($deviceId, 'photo_taken_failed');
         }
 
@@ -1102,6 +1130,16 @@ class ActionController extends Controller
          * Refresh the thumbnail after writing metadata.
          */
         $this->images->createThumbnail($photoPath, $filename);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('photo_taken_updated', true, 200, [
+                'message' => 'Photo taken updated.',
+                'filename' => $filename,
+                'photo_taken_iso' => date('c', $timestamp),
+                'photo_taken_display' => date('Y-m-d H:i', $timestamp),
+                'photo_taken_input' => date('Y-m-d\\TH:i', $timestamp),
+            ]);
+        }
 
         return $this->redirectAfterAction($request, $deviceId, 'photo_taken_updated');
     }
