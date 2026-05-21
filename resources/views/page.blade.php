@@ -420,11 +420,10 @@
      * LibreNMS dark mode fix for linked photo cards.
      */
     html.dark .device-photo-plugin .device-photo-owned-photo-card {
-        background: #263241 !important;
-        border-color: #3f5f82 !important;
-        border-top-color: #6aa7df !important;
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
         color: #d8dee9 !important;
-        box-shadow: none !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.38) !important;
     }
 
     html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-image,
@@ -441,7 +440,7 @@
         background: #2f3842 !important;
         border-color: #4b5563 !important;
         color: #d8dee9 !important;
-        box-shadow: none !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.38) !important;
     }
 
     html.dark .device-photo-plugin .device-photo-linked-photo-card img {
@@ -3551,12 +3550,19 @@ document.addEventListener('click', function (e) {
                 border-radius: 8px;
                 padding: 10px;
                 cursor: grab;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+                transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
             }
 
-            .device-photo-owned-photo-card {
-                background: #f7fbff;
-                border-color: #c9dff2;
-                border-top: 4px solid #337ab7;
+            .device-photo-manager-card:hover {
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+                transform: translateY(-2px);
+            }
+
+            .device-photo-manager-card.device-photo-owned-photo-card,
+            .device-photo-manager-card.device-photo-linked-photo-card {
+                background: #f3f3f3;
+                border-color: #ddd;
             }
 
             .device-photo-card-image {
