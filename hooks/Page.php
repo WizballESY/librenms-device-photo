@@ -4,6 +4,7 @@ namespace WizballEsy\LibreNmsDevicePhoto\Hooks;
 
 use App\Models\Device;
 use App\Plugins\Hooks\PageHook;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoDateService;
 
 class Page extends PageHook
 {
@@ -548,93 +549,9 @@ class Page extends PageHook
         ];
     }
 
-    private function parseExifDate(?string $value): ?int
-    {
-        $value = trim((string) $value);
-
-        if ($value === '') {
-            return null;
-        }
-
-        $formats = [
-            'Y:m:d H:i:s',
-            'Y-m-d H:i:s',
-            'Y:m:d H:i:sP',
-            'Y-m-d H:i:sP',
-        ];
-
-        foreach ($formats as $format) {
-            $date = \DateTime::createFromFormat($format, $value);
-
-            if ($date instanceof \DateTime) {
-                return $date->getTimestamp();
-            }
-        }
-
-        $timestamp = strtotime($value);
-
-        return $timestamp === false ? null : $timestamp;
-    }
-
-    private function photoTakenTimestamp(string $path): ?int
-    {
-        if (! is_file($path)) {
-            return null;
-        }
-
-        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
-
-        if (! in_array($ext, ['jpg', 'jpeg'], true)) {
-            return null;
-        }
-
-        if (! function_exists('exif_read_data')) {
-            return null;
-        }
-
-        $exif = @exif_read_data($path, 'EXIF', true);
-
-        if (! is_array($exif)) {
-            return null;
-        }
-
-        $value = $exif['EXIF']['DateTimeOriginal']
-            ?? $exif['EXIF']['DateTimeDigitized']
-            ?? $exif['IFD0']['DateTime']
-            ?? null;
-
-        return $this->parseExifDate(is_string($value) ? $value : null);
-    }
-
-    private function photoDateDisplay(?int $timestamp): ?string
-    {
-        if (! $timestamp) {
-            return null;
-        }
-
-        return date('Y-m-d H:i', $timestamp);
-    }
-
-    private function photoDateIso(?int $timestamp): ?string
-    {
-        if (! $timestamp) {
-            return null;
-        }
-
-        return date(DATE_ATOM, $timestamp);
-    }
-
     private function photoDateData(string $path): array
     {
-        $fileDate = is_file($path) ? @filemtime($path) : null;
-        $takenDate = $this->photoTakenTimestamp($path);
-
-        return [
-            'photo_taken_display' => $this->photoDateDisplay($takenDate),
-            'photo_taken_iso' => $this->photoDateIso($takenDate),
-            'file_date_display' => $this->photoDateDisplay($fileDate ?: null),
-            'file_date_iso' => $this->photoDateIso($fileDate ?: null),
-        ];
+        return app(PhotoDateService::class)->data($path);
     }
 
     public function data(array $settings = []): array

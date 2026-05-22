@@ -1,3 +1,31 @@
+@php
+    $devicePhotoDeletedFormatDate = function ($iso, $display) {
+        $value = trim((string) ($iso ?: $display));
+
+        if ($value === '') {
+            return '';
+        }
+
+        $timestamp = strtotime($value);
+
+        if ($timestamp === false) {
+            return substr(trim((string) $display), 0, 10);
+        }
+
+        return date('d.m.Y', $timestamp);
+    };
+
+    $devicePhotoDeletedPhotoTakenDate = $devicePhotoDeletedFormatDate(
+        $photo['photo_taken_iso'] ?? '',
+        $photo['photo_taken_display'] ?? ''
+    );
+
+    $devicePhotoDeletedFileDate = $devicePhotoDeletedFormatDate(
+        $photo['file_date_iso'] ?? '',
+        $photo['file_date_display'] ?? ''
+    );
+@endphp
+
 <div class="device-photo-orphan-card"
      data-device-photo-ajax-row="deleted-photo"
      style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
@@ -8,10 +36,35 @@
          src="{{ $photo['thumb_url'] ?? $photo['url'] }}"
          style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
 
-    <div style="font-size: 12px;">
-        <strong>{{ $photo['original_filename'] }}</strong><br>
-        <span class="text-muted">{{ $photo['filename'] }}</span><br>
-        <span class="text-muted">Size: {{ round(($photo['size'] ?? 0) / 1024, 1) }} KB</span>
+    <div class="text-muted device-photo-card-meta" style="font-size: 12px;">
+        @if ($devicePhotoDeletedPhotoTakenDate !== '')
+            <div>
+                <strong>Photo taken:</strong>
+                <span>{{ $devicePhotoDeletedPhotoTakenDate }}</span>
+            </div>
+        @endif
+
+        @if ($devicePhotoDeletedFileDate !== '')
+            <div title="File timestamp on the LibreNMS server. This may change if files are copied, restored or modified.">
+                <strong>File date:</strong>
+                <span>{{ $devicePhotoDeletedFileDate }}</span>
+            </div>
+        @endif
+
+        <div title="Original filename before it was moved to deleted.">
+            <strong>Original:</strong>
+            <span>{{ $photo['original_filename'] }}</span>
+        </div>
+
+        <div title="Stored filename in the deleted folder.">
+            <strong>Deleted file:</strong>
+            <span>{{ $photo['filename'] }}</span>
+        </div>
+
+        <div>
+            <strong>Size:</strong>
+            <span>{{ round(($photo['size'] ?? 0) / 1024, 1) }} KB</span>
+        </div>
     </div>
 
     <a href="{{ $photo['url'] }}"
