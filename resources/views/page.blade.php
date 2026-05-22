@@ -1766,12 +1766,15 @@
                         </div>
 
                         <div class="device-photo-summary-panel-items">
-                            @if ($maintenanceIssueCount === 0)
-                                <span class="device-photo-maintenance-ok" title="No orphaned photos, broken links, missing thumbnails or stale thumbnails were found.">
-                                    <i class="fa fa-check-circle"></i>
-                                    No maintenance issues found
-                                </span>
-                            @else
+                            <span class="device-photo-maintenance-ok"
+                                  data-device-photo-maintenance-ok
+                                  style="{{ $maintenanceIssueCount === 0 ? '' : 'display: none;' }}"
+                                  title="No orphaned photos, broken links, missing thumbnails or stale thumbnails were found.">
+                                <i class="fa fa-check-circle"></i>
+                                No maintenance issues found
+                            </span>
+
+                            @if ($maintenanceIssueCount > 0)
                                 @if (count($overview['orphaned_photos'] ?? []) > 0)
                                     <span class="device-photo-summary-item is-problem"
                                           data-device-photo-orphaned-summary
@@ -2614,6 +2617,34 @@ document.addEventListener('click', function (e) {
                             form.submit();
                         }
 
+                        function maintenanceNumber(selector) {
+                            var el = document.querySelector(selector);
+
+                            if (!el) {
+                                return 0;
+                            }
+
+                            var value = parseInt(el.textContent || '0', 10);
+
+                            return isNaN(value) ? 0 : value;
+                        }
+
+                        function updateMaintenanceOkUi() {
+                            var ok = document.querySelector('[data-device-photo-maintenance-ok]');
+
+                            if (!ok) {
+                                return;
+                            }
+
+                            var total =
+                                maintenanceNumber('[data-device-photo-orphaned-count]') +
+                                maintenanceNumber('[data-device-photo-broken-links-count]') +
+                                maintenanceNumber('[data-device-photo-missing-thumbnails-count]') +
+                                maintenanceNumber('[data-device-photo-stale-thumbnails-count]');
+
+                            ok.style.display = total < 1 ? 'inline-flex' : 'none';
+                        }
+
                         function updateBrokenLinksUi() {
                             var rows = document.querySelectorAll('[data-device-photo-ajax-row="broken-link"]');
                             var remaining = rows.length;
@@ -2644,6 +2675,8 @@ document.addEventListener('click', function (e) {
                                     empty.style.display = 'block';
                                 }
                             }
+
+                            updateMaintenanceOkUi();
                         }
 
                         function updateOrphanedPhotosUi() {
@@ -2676,6 +2709,8 @@ document.addEventListener('click', function (e) {
                                     empty.style.display = 'block';
                                 }
                             }
+
+                            updateMaintenanceOkUi();
                         }
 
                         function updateThumbnailMaintenanceUi(data) {
@@ -2736,6 +2771,8 @@ document.addEventListener('click', function (e) {
                             if (staleForm && stale < 1) {
                                 staleForm.style.display = 'none';
                             }
+
+                            updateMaintenanceOkUi();
                         }
 
                         function submitAjax(form) {
@@ -2866,68 +2903,10 @@ document.addEventListener('click', function (e) {
                             </thead>
                             <tbody>
                                 @foreach ($overview['broken_links'] as $link)
-                                    <tr data-device-photo-ajax-row="broken-link">
-                                        <td>
-                                            <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
-                                                <code>Device ID: {{ $link['target_device_id'] }}</code>
-                                            </a>
-                                            @if (!empty($link['target_name']))
-                                                <br>
-                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['target_device_id'] }}">
-                                                    {{ $link['target_name'] }}
-                                                </a>
-                                            @endif
-                                        </td>
-
-                                        <td>
-                                            @if (!empty($link['owner_name']))
-                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['owner_device_id'] }}">
-                                                    <code>Device ID: {{ $link['owner_device_id'] }}</code>
-                                                </a>
-                                                <br>
-                                                <a href="{{ url('plugin/device-photo') }}?device_id={{ $link['owner_device_id'] }}">
-                                                    {{ $link['owner_name'] }}
-                                                </a>
-                                            @else
-                                                <code>Device ID: {{ $link['owner_device_id'] }}</code>
-                                                <br>
-                                                <span class="label label-warning">Missing device</span>
-                                            @endif
-                                        </td>
-
-                                        <td>
-                                            <code>{{ $link['filename'] }}</code>
-                                            <br>
-                                            <span class="label label-danger">Missing file</span>
-                                        </td>
-
-                                        <td>
-                                            @if ($can_delete)
-                                                <form method="post" action="{{ url('plugin/device-photo-package/action') }}"
-                                                    data-device-photo-ajax="1"
-                                                    data-device-photo-ajax-success="Broken link removed."
-                                                    data-device-photo-confirm-title="Remove broken link?"
-                                                    data-device-photo-confirm-ok-text="Remove link"
-                                                    data-device-photo-confirm-ok-class="btn-warning"
-                                                    data-device-photo-confirm-ok-icon="fa-unlink"
-                                                    data-device-photo-confirm="Remove this broken photo link? The original photo file is already missing.">
-                                                    @csrf
-                                                    <input type="hidden" name="action" value="remove_broken_link">
-                                                    <input type="hidden" name="return_to" value="overview">
-                                                    <input type="hidden" name="return_anchor" value="device-photo-broken-links">
-                                                    <input type="hidden" name="target_device_id" value="{{ $link['target_device_id'] }}">
-                                                    <input type="hidden" name="owner_device_id" value="{{ $link['owner_device_id'] }}">
-                                                    <input type="hidden" name="filename" value="{{ $link['filename'] }}">
-
-                                                    <button type="submit" class="btn btn-warning btn-xs">
-                                                        <i class="fa fa-unlink"></i> Remove broken link
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="text-muted">No permission</span>
-                                            @endif
-                                        </td>
-                                    </tr>
+                                    @include('device-photo::partials.broken-link-row', [
+                                        'link' => $link,
+                                        'can_delete' => $can_delete,
+                                    ])
                                 @endforeach
                             </tbody>
                         </table>
