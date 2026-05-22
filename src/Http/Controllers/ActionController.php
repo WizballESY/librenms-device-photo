@@ -602,15 +602,47 @@ class ActionController extends Controller
             }
         }
 
-        $targetSafeShortName = $this->photos->safeDevicePrefix($targetDeviceId);
-        $order = $this->photos->listFilenamesForDevice($targetDeviceId);
-        $this->order->save($targetSafeShortName, $order);
+        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('assigned');
         }
 
         return $this->redirect(0, 'assigned');
+    }
+
+    private function appendOwnedPhotoToOrder(int $deviceId, string $filename): void
+    {
+        if ($deviceId < 1 || $filename === '') {
+            return;
+        }
+
+        /*
+         * Preserve existing mixed order and append the new owned photo at the end.
+         *
+         * Important:
+         * Do not rebuild order from listFilenamesForDevice(), because that only
+         * contains owned photos and would drop linked:<owner>:<filename> entries.
+         */
+        $this->pruneOrderForDevice($deviceId);
+
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $order = $this->order->load($safeShortName);
+        $cleaned = [];
+
+        foreach ($order as $item) {
+            if (! is_string($item) || $item === $filename) {
+                continue;
+            }
+
+            if (! in_array($item, $cleaned, true)) {
+                $cleaned[] = $item;
+            }
+        }
+
+        $cleaned[] = $filename;
+
+        $this->order->save($safeShortName, $cleaned);
     }
 
     private function restoreDeletedPhoto(Request $request)
