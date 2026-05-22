@@ -743,12 +743,8 @@ class ActionController extends Controller
          */
         $this->images->createThumbnail($this->paths->photoPath($targetName), $targetName);
 
-        /*
-         * Do not rewrite the order file after restore.
-         * The order file may contain mixed owned/linked photo keys.
-         * The restored owned photo is appended automatically when rendering if
-         * it does not already exist in the saved order.
-         */
+        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('restored', true, 200, [
                 'deleted_stats' => $this->deletedFolderStats(),
