@@ -205,6 +205,7 @@ class ActionController extends Controller
         }
 
         $this->links->remove($deviceId, $ownerDeviceId, $filename);
+        $this->pruneOrderForDevice($deviceId);
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('link_removed');
