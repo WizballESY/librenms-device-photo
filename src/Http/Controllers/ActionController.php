@@ -6,6 +6,7 @@ use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoImageService;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoDateService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoLinkService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoListService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoMetadataService;
@@ -18,6 +19,7 @@ class ActionController extends Controller
 {
     public function __construct(
         private readonly PhotoImageService $images,
+        private readonly PhotoDateService $dates,
         private readonly PhotoListService $photos,
         private readonly PhotoLinkService $links,
         private readonly PhotoMetadataService $metadata,
@@ -1551,6 +1553,7 @@ class ActionController extends Controller
                 : $imageUrl;
 
             $fileTime = is_file($photoPath) ? (int) filemtime($photoPath) : 0;
+            $dateData = $this->dates->data($photoPath);
 
             $photo = [
                 'filename' => $filename,
@@ -1560,10 +1563,10 @@ class ActionController extends Controller
                 'thumb_url' => $thumbUrl,
                 'order_key' => 'linked:' . $ownerDeviceId . ':' . $filename,
                 'display_order_index' => 9999,
-                'photo_taken_display' => '',
-                'photo_taken_iso' => '',
-                'file_date_display' => $fileTime > 0 ? date('Y-m-d H:i', $fileTime) : '',
-                'file_date_iso' => $fileTime > 0 ? date('c', $fileTime) : '',
+                'photo_taken_display' => $dateData['photo_taken_display'] ?? null,
+                'photo_taken_iso' => $dateData['photo_taken_iso'] ?? null,
+                'file_date_display' => $dateData['file_date_display'] ?? ($fileTime > 0 ? date('Y-m-d H:i', $fileTime) : null),
+                'file_date_iso' => $dateData['file_date_iso'] ?? ($fileTime > 0 ? date('c', $fileTime) : null),
             ];
 
             return $this->jsonStatus('link_added', true, 200, [
