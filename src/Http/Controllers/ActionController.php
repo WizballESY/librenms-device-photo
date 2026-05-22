@@ -1452,6 +1452,17 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'invalid_target_device');
         }
 
+        if ($this->links->exists($targetDeviceId, $deviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('already_linked', true, 200, [
+                    'message' => 'Photo is already linked to that device.',
+                    'already_linked' => true,
+                ]);
+            }
+
+            return $this->redirect($deviceId, 'already_linked');
+        }
+
         $this->links->add($targetDeviceId, $deviceId, $filename);
 
         if ($this->wantsJsonResponse($request)) {
@@ -1518,6 +1529,17 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'not_found');
         }
 
+        if ($this->links->exists($deviceId, $ownerDeviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('already_linked', true, 200, [
+                    'message' => 'Photo is already linked.',
+                    'already_linked' => true,
+                ]);
+            }
+
+            return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'already_linked');
+        }
+
         $this->links->add($deviceId, $ownerDeviceId, $filename);
 
         if ($this->wantsJsonResponse($request)) {
@@ -1533,7 +1555,7 @@ class ActionController extends Controller
             $photo = [
                 'filename' => $filename,
                 'owner_device_id' => $ownerDeviceId,
-                'owner_name' => (string) ($ownerDevice->display ?? $ownerDevice->hostname ?? $ownerDevice->sysName ?? ''),
+                'owner_name' => $this->deviceShortLabel($ownerDevice, $ownerDeviceId),
                 'url' => $imageUrl,
                 'thumb_url' => $thumbUrl,
                 'order_key' => 'linked:' . $ownerDeviceId . ':' . $filename,
@@ -1627,6 +1649,32 @@ class ActionController extends Controller
         }
 
         return array_keys($targetDeviceIds);
+    }
+
+    private function deviceShortLabel(?Device $device, int $fallbackDeviceId): string
+    {
+        if (! $device) {
+            return 'device-' . $fallbackDeviceId;
+        }
+
+        foreach (['sysName', 'display', 'hostname'] as $field) {
+            $value = trim((string) ($device->{$field} ?? ''));
+
+            if ($value === '') {
+                continue;
+            }
+
+            /*
+             * Keep IP addresses intact, but shorten FQDN-style device names.
+             */
+            if (filter_var($value, FILTER_VALIDATE_IP)) {
+                return $value;
+            }
+
+            return preg_replace('/\..*$/', '', $value) ?: $value;
+        }
+
+        return 'device-' . $fallbackDeviceId;
     }
 
     private function findDeviceFromInput(string $targetInput): ?Device

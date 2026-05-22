@@ -44,12 +44,11 @@ class PhotoLinkService
         return $this->json->deleteIfEmptyArray($this->paths->linksFile($targetDeviceId), $cleanLinks);
     }
 
-    public function add(int $targetDeviceId, int $ownerDeviceId, string $filename): bool
+    public function exists(int $targetDeviceId, int $ownerDeviceId, string $filename): bool
     {
         $filename = basename($filename);
-        $links = $this->load($targetDeviceId);
 
-        foreach ($links as $link) {
+        foreach ($this->load($targetDeviceId) as $link) {
             if (
                 (int) ($link['owner_device_id'] ?? 0) === $ownerDeviceId
                 && basename((string) ($link['filename'] ?? '')) === $filename
@@ -57,6 +56,19 @@ class PhotoLinkService
                 return true;
             }
         }
+
+        return false;
+    }
+
+    public function add(int $targetDeviceId, int $ownerDeviceId, string $filename): bool
+    {
+        $filename = basename($filename);
+
+        if ($this->exists($targetDeviceId, $ownerDeviceId, $filename)) {
+            return true;
+        }
+
+        $links = $this->load($targetDeviceId);
 
         $links[] = [
             'owner_device_id' => $ownerDeviceId,

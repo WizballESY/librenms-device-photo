@@ -708,6 +708,85 @@
         };
     </script>
 
+    <script id="device-photo-link-ui-helper">
+        window.DevicePhotoLinkUi = window.DevicePhotoLinkUi || {};
+
+        window.DevicePhotoLinkUi.escapeHtml = function (value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        window.DevicePhotoLinkUi.findIncomingOwnerCard = function (ownerDeviceId, filename) {
+            var cards = document.querySelectorAll('.device-photo-incoming-owner-card');
+
+            for (var i = 0; i < cards.length; i++) {
+                if (
+                    cards[i].getAttribute('data-device-photo-incoming-owner-id') === String(ownerDeviceId || '') &&
+                    cards[i].getAttribute('data-device-photo-incoming-filename') === String(filename || '')
+                ) {
+                    return cards[i];
+                }
+            }
+
+            return null;
+        };
+
+        window.DevicePhotoLinkUi.restoreIncomingLinkButtonAfterRemove = function (form) {
+            var actionInput = form.querySelector('input[name="action"]');
+
+            if (!actionInput || actionInput.value !== 'remove_link') {
+                return;
+            }
+
+            var ownerInput = form.querySelector('input[name="owner_device_id"]');
+            var filenameInput = form.querySelector('input[name="filename"]');
+            var deviceInput = form.querySelector('input[name="device_id"]');
+            var tokenInput = form.querySelector('input[name="_token"]');
+
+            if (!ownerInput || !filenameInput || !deviceInput || !tokenInput) {
+                return;
+            }
+
+            var card = window.DevicePhotoLinkUi.findIncomingOwnerCard(ownerInput.value, filenameInput.value);
+
+            if (!card) {
+                return;
+            }
+
+            var existingButton = card.querySelector('button.btn-success[disabled]');
+
+            if (!existingButton) {
+                return;
+            }
+
+            var ownerQuery = card.getAttribute('data-device-photo-owner-query') || '';
+            var escapeHtml = window.DevicePhotoLinkUi.escapeHtml;
+            var linkForm = document.createElement('form');
+
+            linkForm.method = 'post';
+            linkForm.action = form.getAttribute('action');
+            linkForm.setAttribute('data-device-photo-ajax-add-incoming-link', '1');
+            linkForm.setAttribute('data-device-photo-ajax-success', 'Photo linked.');
+
+            linkForm.innerHTML =
+                '<input type="hidden" name="_token" value="' + escapeHtml(tokenInput.value) + '">' +
+                '<input type="hidden" name="action" value="add_incoming_link">' +
+                '<input type="hidden" name="device_id" value="' + escapeHtml(deviceInput.value) + '">' +
+                '<input type="hidden" name="owner_device_id" value="' + escapeHtml(ownerInput.value) + '">' +
+                '<input type="hidden" name="filename" value="' + escapeHtml(filenameInput.value) + '">' +
+                '<input type="hidden" name="owner_device_query" value="' + escapeHtml(ownerQuery) + '">' +
+                '<button type="submit" class="btn btn-default btn-sm btn-block">' +
+                    '<i class="fa fa-link"></i> Link this photo' +
+                '</button>';
+
+            existingButton.replaceWith(linkForm);
+        };
+    </script>
+
     <script id="device-photo-link-ajax-helper">
         document.addEventListener('DOMContentLoaded', function () {
             function submitPhotoLinkAjax(form) {
@@ -882,6 +961,13 @@
                         var card = template.content.firstElementChild;
 
                         if (grid && card) {
+                            /*
+                             * Server-rendered linked cards include CSS order for initial page load.
+                             * The reorder script normalizes that on DOMContentLoaded, but AJAX-added
+                             * cards are inserted after that has already happened. Clear the inline
+                             * order here so drag/drop visual order follows DOM order immediately.
+                             */
+                            card.style.order = '';
                             grid.appendChild(card);
 
                             card.querySelectorAll('.device-photo-local-date[data-device-photo-date]').forEach(function (el) {
@@ -920,11 +1006,16 @@
 
                     if (isIncoming && button) {
                         button.className = 'btn btn-success btn-sm btn-block';
-                        button.innerHTML = '<i class="fa fa-check"></i> Linked';
+
+                        if ((data && data.already_linked === true) || (data && data.status === 'already_linked')) {
+                            button.innerHTML = '<i class="fa fa-check"></i> Already linked';
+                        } else {
+                            button.innerHTML = '<i class="fa fa-check"></i> Linked';
+                        }
                     }
 
                     if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
-                        window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Photo linked.');
+                        window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Photo linked.');
                     }
                 }).catch(function (error) {
                     console.error('DevicePhoto AJAX link failed:', error);
@@ -3490,7 +3581,14 @@ document.addEventListener('click', function (e) {
                         }
                     }
 
-                    window.DevicePhotoAjax.toast(form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
+                    if (
+                        window.DevicePhotoLinkUi &&
+                        typeof window.DevicePhotoLinkUi.restoreIncomingLinkButtonAfterRemove === 'function'
+                    ) {
+                        window.DevicePhotoLinkUi.restoreIncomingLinkButtonAfterRemove(form);
+                    }
+
+                    window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                     }).catch(function (error) {
                     console.error('DevicePhoto AJAX failed:', error);
                     submitNormally(form);
@@ -4753,9 +4851,31 @@ document.addEventListener('click', function (e) {
                                 This owner device has no photos.
                             </div>
                         @else
+                            @php
+                                $devicePhotoIncomingLinkedKeys = [];
+
+                                foreach (($linked_photos ?? []) as $linkedPhoto) {
+                                    $linkedOwnerDeviceId = (int) ($linkedPhoto['owner_device_id'] ?? 0);
+                                    $linkedFilename = basename((string) ($linkedPhoto['filename'] ?? ''));
+
+                                    if ($linkedOwnerDeviceId > 0 && $linkedFilename !== '') {
+                                        $devicePhotoIncomingLinkedKeys[$linkedOwnerDeviceId . ':' . $linkedFilename] = true;
+                                    }
+                                }
+                            @endphp
+
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 230px)); gap: 14px; margin-bottom: 18px;">
                                 @foreach ($incoming_owner_photos as $ownerPhoto)
-                                    <div class="device-photo-incoming-owner-card" style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                                    @php
+                                        $devicePhotoIncomingLinkKey = (int) $incoming_owner_device->device_id . ':' . basename((string) ($ownerPhoto['filename'] ?? ''));
+                                        $devicePhotoIncomingAlreadyLinked = isset($devicePhotoIncomingLinkedKeys[$devicePhotoIncomingLinkKey]);
+                                    @endphp
+
+                                    <div class="device-photo-incoming-owner-card"
+                                         data-device-photo-incoming-owner-id="{{ $incoming_owner_device->device_id }}"
+                                         data-device-photo-incoming-filename="{{ $ownerPhoto['filename'] }}"
+                                         data-device-photo-owner-query="{{ $incoming_owner_query ?? '' }}"
+                                         style="background: #f3f3f3; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
                                         <img
                                             data-device-photo-gallery="owner-device-{{ $incoming_owner_device->device_id }}" data-device-photo-preview-src="{{ $ownerPhoto['url'] }}"
                                     data-device-photo-taken="{{ $ownerPhoto['photo_taken_iso'] ?? '' }}"
@@ -4764,21 +4884,27 @@ document.addEventListener('click', function (e) {
                                             style="width: 100%; max-height: 180px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 10px;"
                                         >
 
-                                        <form method="post"
-                                              action="{{ url('plugin/device-photo-package/action') }}"
-                                              data-device-photo-ajax-add-incoming-link="1"
-                                              data-device-photo-ajax-success="Photo linked.">
-                                            @csrf
-                                            <input type="hidden" name="action" value="add_incoming_link">
-                                            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
-                                            <input type="hidden" name="owner_device_id" value="{{ $incoming_owner_device->device_id }}">
-                                            <input type="hidden" name="filename" value="{{ $ownerPhoto['filename'] }}">
-                                            <input type="hidden" name="owner_device_query" value="{{ $incoming_owner_query ?? '' }}">
-
-                                            <button type="submit" class="btn btn-default btn-sm btn-block">
-                                                <i class="fa fa-link"></i> Link this photo
+                                        @if ($devicePhotoIncomingAlreadyLinked)
+                                            <button type="button" class="btn btn-success btn-sm btn-block" disabled>
+                                                <i class="fa fa-check"></i> Already linked
                                             </button>
-                                        </form>
+                                        @else
+                                            <form method="post"
+                                                  action="{{ url('plugin/device-photo-package/action') }}"
+                                                  data-device-photo-ajax-add-incoming-link="1"
+                                                  data-device-photo-ajax-success="Photo linked.">
+                                                @csrf
+                                                <input type="hidden" name="action" value="add_incoming_link">
+                                                <input type="hidden" name="device_id" value="{{ $device->device_id }}">
+                                                <input type="hidden" name="owner_device_id" value="{{ $incoming_owner_device->device_id }}">
+                                                <input type="hidden" name="filename" value="{{ $ownerPhoto['filename'] }}">
+                                                <input type="hidden" name="owner_device_query" value="{{ $incoming_owner_query ?? '' }}">
+
+                                                <button type="submit" class="btn btn-default btn-sm btn-block">
+                                                    <i class="fa fa-link"></i> Link this photo
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
