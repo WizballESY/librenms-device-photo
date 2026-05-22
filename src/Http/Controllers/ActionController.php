@@ -1471,7 +1471,7 @@ class ActionController extends Controller
             return $this->jsonStatus('link_added', true, 200, [
                 'filename' => $filename,
                 'target_device_id' => $targetDeviceId,
-                'target_device_name' => (string) ($targetDevice->display ?? $targetDevice->hostname ?? $targetDeviceId),
+                'target_device_name' => $this->deviceShortLabel($targetDevice, $targetDeviceId),
                 'can_delete' => $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles'),
             ]);
         }
