@@ -91,7 +91,7 @@ Recommended installation method:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.13
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.14
 sudo -u librenms php artisan optimize:clear
 ```
 
@@ -356,11 +356,11 @@ To update to a specific release:
 ```bash
 cd /opt/librenms
 
-sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.13
+sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.14
 sudo -u librenms php artisan optimize:clear
 ```
 
-Replace `v0.1.0-alpha.13` with the version you want to install.
+Replace `v0.1.0-alpha.14` with the version you want to install.
 
 LibreNMS `validate` may warn that `composer.json` and `composer.lock` are modified after installing or updating third-party plugin packages. This is expected because the plugin is installed as a Composer dependency inside the LibreNMS application directory.
 
