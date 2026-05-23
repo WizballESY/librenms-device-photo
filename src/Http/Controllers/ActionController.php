@@ -1431,7 +1431,7 @@ class ActionController extends Controller
 
     private function addLink(Request $request, int $deviceId)
     {
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('device_not_found', false, 404);
             }
@@ -1509,7 +1509,7 @@ class ActionController extends Controller
 
     private function addIncomingLink(Request $request, int $deviceId)
     {
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('device_not_found', false, 404);
             }
