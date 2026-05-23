@@ -33,6 +33,68 @@
         color: #d8dee9 !important;
     }
 
+    /*
+     * Dark mode warning buttons.
+     * Keep warning actions orange, but slightly toned down.
+     */
+    html.dark .device-photo-plugin .btn-warning {
+        background-color: #b8751a !important;
+        border-color: #c78422 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .btn-warning:hover,
+    html.dark .device-photo-plugin .btn-warning:focus {
+        background-color: #c78422 !important;
+        border-color: #d8942a !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * Dark mode polish for manager photo cards.
+     */
+    html.dark .device-photo-plugin .device-photo-manager-card .label-primary {
+        background-color: #337ab7 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .label-success {
+        background-color: #3c9b5f !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action.btn-default,
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action .btn-default {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action.btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action .btn-default:hover {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning {
+        background: #4a3518 !important;
+        border-color: #7a5520 !important;
+        color: #f4d6a0 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning a {
+        color: #ffd28a !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning .text-muted {
+        color: #d0b98f !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning [data-device-photo-ajax-row] {
+        border-bottom-color: #7a5520 !important;
+    }
+
     html.dark .device-photo-plugin .device-photo-maintenance-ok {
         background: #1f3a2a !important;
         border-color: #2f6b45 !important;
