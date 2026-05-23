@@ -560,6 +560,7 @@ class Page extends PageHook
             'invalid_image' => 'The uploaded file does not look like a valid image.',
             'image_too_large_pixels' => 'The uploaded image dimensions are too large. Maximum is 40 megapixels.',
             'invalid_filename' => 'Invalid filename.',
+            'no_filename' => 'Could not find an available filename for this device.',
             'invalid_order' => 'Invalid photo order.',
             'invalid_target_device' => 'Invalid target device.',
             'invalid_link' => 'Invalid photo link.',
