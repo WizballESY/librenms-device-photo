@@ -706,6 +706,37 @@
                 }, 400);
             }, 5000);
         };
+
+        window.DevicePhotoAjax.submitForm = function (form) {
+            var formData = new FormData(form);
+
+            formData.set('ajax', '1');
+
+            return fetch(form.getAttribute('action'), {
+                method: (form.method || 'POST').toUpperCase(),
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                return response.json();
+            }).then(function (data) {
+                if (!data || data.ok !== true) {
+                    throw new Error((data && data.status) ? data.status : 'ajax_failed');
+                }
+
+                return {
+                    data: data,
+                    formData: formData
+                };
+            });
+        };
     </script>
 
     <script id="device-photo-link-ui-helper">
@@ -790,35 +821,17 @@
     <script id="device-photo-link-ajax-helper">
         document.addEventListener('DOMContentLoaded', function () {
             function submitPhotoLinkAjax(form) {
-                var formData = new FormData(form);
                 var button = form.querySelector('button[type="submit"]');
                 var targetInput = form.querySelector('input[name="target_device_query"]');
                 var isIncoming = form.getAttribute('data-device-photo-ajax-add-incoming-link') === '1';
-
-                formData.set('ajax', '1');
 
                 if (button) {
                     button.disabled = true;
                 }
 
-                fetch(form.getAttribute('action'), {
-                    method: (form.method || 'POST').toUpperCase(),
-                    body: formData,
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                }).then(function (response) {
-                    if (!response.ok) {
-                        throw new Error('HTTP ' + response.status);
-                    }
-
-                    return response.json();
-                }).then(function (data) {
-                    if (!data || data.ok !== true) {
-                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
-                    }
+                window.DevicePhotoAjax.submitForm(form).then(function (result) {
+                    var data = result.data;
+                    var formData = result.formData;
 
                     function escapeHtml(value) {
                         return String(value || '')
