@@ -1091,7 +1091,7 @@ class ActionController extends Controller
         $filename = basename((string) $request->input('filename', ''));
         $photoTakenInput = (string) $request->input('photo_taken', '');
 
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('device_not_found', false, 404);
             }
