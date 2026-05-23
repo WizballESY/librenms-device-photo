@@ -36,7 +36,7 @@ class PhotoImageService
             return false;
         }
 
-        $output = (string) @shell_exec(escapeshellcmd($magick) . ' -list format 2>/dev/null');
+        $output = (string) @shell_exec(escapeshellarg($magick) . ' -list format 2>/dev/null');
 
         if ($output === '') {
             return false;

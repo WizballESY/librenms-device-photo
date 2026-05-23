@@ -510,7 +510,7 @@ class Page extends PageHook
             return false;
         }
 
-        $output = (string) @shell_exec(escapeshellcmd($magick) . ' -list format 2>/dev/null');
+        $output = (string) @shell_exec(escapeshellarg($magick) . ' -list format 2>/dev/null');
 
         foreach (preg_split('/\R/', $output) ?: [] as $line) {
             if (preg_match('/^\s*(HEIC|HEIF)\s+HEIC\s+.*r/i', $line)) {
