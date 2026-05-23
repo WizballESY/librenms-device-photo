@@ -147,8 +147,8 @@ Default paths:
 ```text
 storage/app/device-photos
 storage/app/device-photos/thumbs
-storage/app/device-photos/deleted
-storage/app/device-photos/deleted/thumbs
+storage/app/device-photos-deleted
+storage/app/device-photos-deleted/thumbs
 storage/app/device-photos-order
 storage/app/device-photos-links
 ```
@@ -162,19 +162,20 @@ cd /opt/librenms
 
 mkdir -p \
   storage/app/device-photos/thumbs \
-  storage/app/device-photos/deleted/thumbs \
+  storage/app/device-photos-deleted/thumbs \
   storage/app/device-photos-order \
   storage/app/device-photos-links
 
 chown -R librenms:librenms \
   storage/app/device-photos \
+  storage/app/device-photos-deleted \
   storage/app/device-photos-order \
   storage/app/device-photos-links
 
-find storage/app/device-photos storage/app/device-photos-order storage/app/device-photos-links \
+find storage/app/device-photos storage/app/device-photos-deleted storage/app/device-photos-order storage/app/device-photos-links \
   -type d -exec chmod 2775 {} \;
 
-find storage/app/device-photos storage/app/device-photos-order storage/app/device-photos-links \
+find storage/app/device-photos storage/app/device-photos-deleted storage/app/device-photos-order storage/app/device-photos-links \
   -type f -exec chmod 664 {} \;
 ```
 
@@ -187,6 +188,7 @@ Before installing, upgrading or uninstalling the plugin, back up the plugin data
 The most important paths are:
 
     storage/app/device-photos
+    storage/app/device-photos-deleted
     storage/app/device-photos-order
     storage/app/device-photos-links
 
@@ -198,6 +200,7 @@ Example backup command:
 
     sudo tar -czf /root/librenms-device-photo-backup-$(date +%Y%m%d-%H%M).tar.gz \
       storage/app/device-photos \
+      storage/app/device-photos-deleted \
       storage/app/device-photos-order \
       storage/app/device-photos-links
 
@@ -274,11 +277,14 @@ The plugin keeps existing order where possible, removes stale order entries, and
 
 Deleted photos are moved to:
 
-    storage/app/device-photos/deleted
+    storage/app/device-photos-deleted
 
 Deleted thumbnails are moved to:
 
-    storage/app/device-photos/deleted/thumbs
+    storage/app/device-photos-deleted/thumbs
+
+Older alpha releases stored deleted photos under `storage/app/device-photos/deleted`.
+Alpha 19 and newer use `storage/app/device-photos-deleted` instead. The maintenance panel can detect and migrate the old deleted photo storage.
 
 Deleted photo filenames include the original filename plus a deletion timestamp before the file extension.
 
