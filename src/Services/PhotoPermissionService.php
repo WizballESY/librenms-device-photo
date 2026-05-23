@@ -33,6 +33,18 @@ class PhotoPermissionService
 
         $allowedRoles = $this->allowedRoles($settings, $key);
 
+        if (method_exists($user, 'getRoleNames')) {
+            $roleNames = $user->getRoleNames();
+
+            if ($roleNames instanceof \Illuminate\Support\Collection) {
+                if ($roleNames->intersect($allowedRoles)->isNotEmpty()) {
+                    return true;
+                }
+            } elseif (is_array($roleNames) && array_intersect($roleNames, $allowedRoles)) {
+                return true;
+            }
+        }
+
         if (method_exists($user, 'hasRole')) {
             foreach ($allowedRoles as $role) {
                 if ($user->hasRole($role)) {
