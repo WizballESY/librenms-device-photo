@@ -100,7 +100,7 @@ class PhotoImageService
         return $removed;
     }
 
-    public function createThumbnail(string $sourcePath, string $filename, int $maxWidth = 500, int $maxHeight = 500): bool
+    public function createThumbnail(string $sourcePath, string $filename, ?int $maxWidth = null, ?int $maxHeight = null): bool
     {
         /*
          * Thumbnails are optional. If GD is not installed, do not fail upload/delete/assign.
@@ -112,6 +112,9 @@ class PhotoImageService
         if (! is_file($sourcePath)) {
             return false;
         }
+
+        $maxWidth = max(1, (int) ($maxWidth ?? config('device-photo.thumbnail_max_width', 360)));
+        $maxHeight = max(1, (int) ($maxHeight ?? config('device-photo.thumbnail_max_height', 360)));
 
         $info = @getimagesize($sourcePath);
 
