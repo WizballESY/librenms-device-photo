@@ -5,6 +5,7 @@ namespace WizballEsy\LibreNmsDevicePhoto\Hooks;
 use App\Models\Device;
 use App\Plugins\Hooks\PageHook;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoDateService;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoPathService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoPermissionService;
 
 class Page extends PageHook
@@ -85,6 +86,16 @@ class Page extends PageHook
         return $this->photosDir() . '/thumbs';
     }
 
+    private function deletedDir(): string
+    {
+        return app(PhotoPathService::class)->deletedDir();
+    }
+
+    private function deletedThumbsDir(): string
+    {
+        return app(PhotoPathService::class)->deletedThumbsDir();
+    }
+
     private function orderDir(): string
     {
         return storage_path(config('device-photo.order_path', 'app/device-photos-order'));
@@ -100,8 +111,8 @@ class Page extends PageHook
         foreach ([
             $this->photosDir(),
             $this->thumbsDir(),
-            $this->photosDir() . '/deleted',
-            $this->photosDir() . '/deleted/thumbs',
+            $this->deletedDir(),
+            $this->deletedThumbsDir(),
             $this->orderDir(),
             $this->linksDir(),
         ] as $dir) {
@@ -195,7 +206,7 @@ class Page extends PageHook
         $deletedThumbnailCount = 0;
         $deletedThumbnailBytes = 0;
 
-        foreach (glob($photoDir . '/deleted/*') ?: [] as $deletedPath) {
+        foreach (glob($this->deletedDir() . '/*') ?: [] as $deletedPath) {
             if (! is_file($deletedPath)) {
                 continue;
             }
@@ -212,7 +223,7 @@ class Page extends PageHook
             $deletedPhotoBytes += $size;
 
             $originalFilename = preg_replace('/\.deleted-\d{8}-\d{6}\./i', '.', $filename);
-            $thumbPath = $photoDir . '/deleted/thumbs/' . $filename;
+            $thumbPath = $this->deletedThumbsDir() . '/' . $filename;
             $hasThumbnail = is_file($thumbPath);
 
             $deletedPhotos[] = [
@@ -235,7 +246,7 @@ class Page extends PageHook
             return strcmp((string) ($a['filename'] ?? ''), (string) ($b['filename'] ?? ''));
         });
 
-        foreach (glob($photoDir . '/deleted/thumbs/*') ?: [] as $deletedThumbPath) {
+        foreach (glob($this->deletedThumbsDir() . '/*') ?: [] as $deletedThumbPath) {
             if (! is_file($deletedThumbPath)) {
                 continue;
             }
