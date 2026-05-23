@@ -180,6 +180,35 @@ find storage/app/device-photos storage/app/device-photos-order storage/app/devic
 
 ---
 
+## Backup
+
+Before installing, upgrading or uninstalling the plugin, back up the plugin data stored under LibreNMS `storage/app`.
+
+The most important paths are:
+
+    storage/app/device-photos
+    storage/app/device-photos-order
+    storage/app/device-photos-links
+
+This includes uploaded photos, thumbnails, deleted photos, saved photo order and photo links.
+
+Example backup command:
+
+    cd /opt/librenms
+
+    sudo tar -czf /root/librenms-device-photo-backup-$(date +%Y%m%d-%H%M).tar.gz \
+      storage/app/device-photos \
+      storage/app/device-photos-order \
+      storage/app/device-photos-links
+
+To inspect the backup:
+
+    tar -tzf /root/librenms-device-photo-backup-YYYYMMDD-HHMM.tar.gz | head
+
+Keep this backup somewhere safe before making major changes.
+
+---
+
 ## Configuration
 
 Default configuration:
@@ -320,38 +349,6 @@ The package also uses internal authenticated endpoints:
 ```
 
 These are used for image delivery and POST actions.
-
----
-
-## Migrating from old manual/local install
-
-Older development versions used a manual local plugin layout.
-
-If you previously installed an old manual version, back it up and remove the old local plugin code:
-
-```bash
-cd /opt/librenms
-
-if [ -d app/Plugins/DevicePhoto ] || [ -d html/plugins/DevicePhoto ]; then
-  tar -czf /root/DevicePhoto-local-backup-$(date +%Y%m%d-%H%M%S).tgz \
-    app/Plugins/DevicePhoto \
-    html/plugins/DevicePhoto \
-    2>/dev/null || true
-fi
-
-rm -rf app/Plugins/DevicePhoto
-rm -rf html/plugins/DevicePhoto
-
-sudo -u librenms php artisan optimize:clear
-```
-
-Do **not** remove the storage directories unless you intentionally want to delete all photos and metadata:
-
-```text
-storage/app/device-photos
-storage/app/device-photos-order
-storage/app/device-photos-links
-```
 
 ---
 
