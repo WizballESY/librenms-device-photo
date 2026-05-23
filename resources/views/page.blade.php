@@ -4288,34 +4288,16 @@ document.addEventListener('click', function (e) {
 
                                 updateOrderJson();
 
-                                var formData = new FormData(orderForm);
                                 var button = orderForm.querySelector('button[type="submit"]');
 
-                                formData.set('ajax', '1');
                                 saveOrderInProgress = true;
 
                                 if (button) {
                                     button.disabled = true;
                                 }
 
-                                fetch(orderForm.getAttribute('action'), {
-                                    method: (orderForm.method || 'POST').toUpperCase(),
-                                    body: formData,
-                                    credentials: 'same-origin',
-                                    headers: {
-                                        'Accept': 'application/json',
-                                        'X-Requested-With': 'XMLHttpRequest'
-                                    }
-                                }).then(function (response) {
-                                    if (!response.ok) {
-                                        throw new Error('HTTP ' + response.status);
-                                    }
-
-                                    return response.json();
-                                }).then(function (data) {
-                                    if (!data || data.ok !== true) {
-                                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
-                                    }
+                                window.DevicePhotoAjax.submitForm(orderForm).then(function (result) {
+                                    var data = result.data;
 
                                     if (window.DevicePhotoAjax && typeof window.DevicePhotoAjax.toast === 'function') {
                                         window.DevicePhotoAjax.toast((data && data.message) || orderForm.getAttribute('data-device-photo-ajax-success') || 'Photo order saved.');
