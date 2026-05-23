@@ -5,6 +5,7 @@ namespace WizballEsy\LibreNmsDevicePhoto\Http\Controllers;
 use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use WizballEsy\LibreNmsDevicePhoto\Services\DeletedPhotoStorageMigrationService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoImageService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoDateService;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoLinkService;
@@ -27,6 +28,7 @@ class ActionController extends Controller
         private readonly PhotoPathService $paths,
         private readonly PhotoPermissionService $permissions,
         private readonly PhotoSettingsService $settings,
+        private readonly DeletedPhotoStorageMigrationService $deletedStorageMigration,
     ) {
     }
 
@@ -50,6 +52,7 @@ class ActionController extends Controller
             'clean_stale_thumbnails' => $this->cleanStaleThumbnails($request),
             'generate_missing_thumbnails' => $this->generateMissingThumbnails($request),
             'empty_deleted_photos' => $this->emptyDeletedPhotos($request),
+            'migrate_deleted_photos_storage' => $this->migrateDeletedPhotosStorage($request),
             'restore_deleted_photo' => $this->restoreDeletedPhoto($request),
             'delete_deleted_photo' => $this->deleteDeletedPhoto($request),
             'remove_broken_link' => $this->removeBrokenLink($request),
@@ -855,6 +858,37 @@ class ActionController extends Controller
         }
 
         return redirect(url('plugin/device-photo') . '?' . http_build_query($query));
+    }
+
+    private function migrateDeletedPhotosStorage(Request $request)
+    {
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'delete_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
+            return $this->redirect(0, 'permission_denied');
+        }
+
+        $result = $this->deletedStorageMigration->migrate();
+
+        $message = 'Deleted photo storage migration completed. Moved '
+            . (int) ($result['moved_photos'] ?? 0)
+            . ' photos and '
+            . (int) ($result['moved_thumbnails'] ?? 0)
+            . ' thumbnails.';
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('deleted_storage_migrated', true, 200, [
+                'message' => $message,
+                'migration_result' => $result,
+                'deleted_stats' => $this->deletedFolderStats(),
+            ]);
+        }
+
+        return $this->redirect(0, 'deleted_storage_migrated');
     }
 
     private function emptyDeletedPhotos(Request $request)
