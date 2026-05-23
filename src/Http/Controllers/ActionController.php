@@ -64,7 +64,7 @@ class ActionController extends Controller
 
     private function saveOrder(Request $request, int $deviceId)
     {
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('device_not_found', false, 404);
             }
@@ -1680,6 +1680,15 @@ class ActionController extends Controller
         }
 
         return array_keys($targetDeviceIds);
+    }
+
+    private function findExistingDevice(int $deviceId): ?Device
+    {
+        if ($deviceId < 1) {
+            return null;
+        }
+
+        return Device::find($deviceId);
     }
 
     private function deviceShortLabel(?Device $device, int $fallbackDeviceId): string
