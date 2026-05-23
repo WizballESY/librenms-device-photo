@@ -1706,7 +1706,8 @@
                         count($overview['orphaned_photos'] ?? []) +
                         count($overview['broken_links'] ?? []) +
                         (int) ($overview['missing_thumbnail_count'] ?? 0) +
-                        (int) ($overview['stale_thumbnail_count'] ?? 0);
+                        (int) ($overview['stale_thumbnail_count'] ?? 0) +
+                        (!empty($overview['legacy_deleted_storage_detected']) ? 1 : 0);
                 @endphp
 
                 <div class="device-photo-summary-panels">
@@ -1796,6 +1797,14 @@
                                           data-device-photo-stale-thumbnails-summary
                                           title="Thumbnail files where the original active photo no longer exists.">
                                         <span class="number" data-device-photo-stale-thumbnails-count>{{ $overview['stale_thumbnail_count'] ?? 0 }}</span><span class="label">stale thumbnails</span>
+                                    </span>
+                                @endif
+
+                                @if (!empty($overview['legacy_deleted_storage_detected']))
+                                    <span class="device-photo-summary-item is-problem"
+                                          data-device-photo-legacy-deleted-summary
+                                          title="Deleted photos were found in the old storage location and should be migrated.">
+                                        <span class="number">{{ (int) (($overview['legacy_deleted_photo_count'] ?? 0) + ($overview['legacy_deleted_thumbnail_count'] ?? 0)) }}</span><span class="label">legacy deleted files</span>
                                     </span>
                                 @endif
                             @endif

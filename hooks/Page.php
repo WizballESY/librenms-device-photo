@@ -96,6 +96,29 @@ class Page extends PageHook
         return app(PhotoPathService::class)->deletedThumbsDir();
     }
 
+    private function legacyDeletedDir(): string
+    {
+        return app(PhotoPathService::class)->legacyDeletedDir();
+    }
+
+    private function legacyDeletedThumbsDir(): string
+    {
+        return app(PhotoPathService::class)->legacyDeletedThumbsDir();
+    }
+
+    private function countLegacyDeletedFiles(string $dir): int
+    {
+        $count = 0;
+
+        foreach (glob($dir . '/*') ?: [] as $path) {
+            if (is_file($path)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     private function orderDir(): string
     {
         return storage_path(config('device-photo.order_path', 'app/device-photos-order'));
@@ -155,6 +178,8 @@ class Page extends PageHook
         $activePhotoBytes = 0;
         $deletedPhotoCount = 0;
         $deletedPhotoBytes = 0;
+        $legacyDeletedPhotoCount = $this->countLegacyDeletedFiles($this->legacyDeletedDir());
+        $legacyDeletedThumbnailCount = $this->countLegacyDeletedFiles($this->legacyDeletedThumbsDir());
 
         $thumbnailCount = 0;
         $missingThumbnailCount = 0;
@@ -427,6 +452,9 @@ class Page extends PageHook
             'deleted_thumbnail_mb' => round($deletedThumbnailBytes / 1024 / 1024, 2),
             'deleted_total_bytes' => $deletedPhotoBytes + $deletedThumbnailBytes,
             'deleted_total_mb' => round(($deletedPhotoBytes + $deletedThumbnailBytes) / 1024 / 1024, 2),
+            'legacy_deleted_photo_count' => $legacyDeletedPhotoCount,
+            'legacy_deleted_thumbnail_count' => $legacyDeletedThumbnailCount,
+            'legacy_deleted_storage_detected' => ($legacyDeletedPhotoCount + $legacyDeletedThumbnailCount) > 0,
             'gd_available' => $gdAvailable,
             'thumbnail_count' => $thumbnailCount,
             'missing_thumbnail_count' => $missingThumbnailCount,
