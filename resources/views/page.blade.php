@@ -3580,10 +3580,10 @@ document.addEventListener('click', function (e) {
 
                     <div id="device-photo-dropzone" class="device-photo-dropzone">
                         <div class="main-text">
-                            <i class="fa fa-cloud-upload"></i> Drag and drop photos here
+                            <i class="fa fa-cloud-upload"></i> Drop photos here or tap to add photos
                         </div>
                         <div class="sub-text">
-                            or click to browse for photos
+                            Choose photos from your device or take a new photo
                         </div>
 
                         <input
