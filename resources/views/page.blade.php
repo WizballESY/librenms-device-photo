@@ -3591,7 +3591,8 @@ document.addEventListener('click', function (e) {
                             type="file"
                             name="photos[]"
                             multiple
-                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
+                            capture="environment"
                             style="display: none;"
                         >
                     </div>
