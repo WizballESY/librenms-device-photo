@@ -301,6 +301,12 @@ Restoring a photo does not rewrite the saved mixed order file. Existing owned an
 
 ## Optional dependencies
 
+On Debian/Ubuntu, the recommended optional packages are:
+
+    apt install php-gd libimage-exiftool-perl imagemagick libheif1 libheif-plugin-libde265 libde265-0
+
+Package names may vary between distributions.
+
 ### PHP GD
 
 PHP GD is used for thumbnail generation.
