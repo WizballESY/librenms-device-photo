@@ -93,6 +93,7 @@ cd /opt/librenms
 
 sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.16
 sudo -u librenms php artisan optimize:clear
+sudo -u librenms php artisan view:clear
 ```
 
 This uses LibreNMS' plugin package installer and installs the package from Packagist.
@@ -117,6 +118,7 @@ cd /opt/librenms
 sudo -u librenms php /opt/librenms/composer.phar config repositories.librenms-device-photo vcs https://github.com/WizballESY/librenms-device-photo
 sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo dev-main
 sudo -u librenms php artisan optimize:clear
+sudo -u librenms php artisan view:clear
 ```
 
 For normal users, prefer the tagged Packagist install above.
@@ -362,6 +364,7 @@ cd /opt/librenms
 
 sudo -u librenms ./lnms plugin:add wizballesy/librenms-device-photo v0.1.0-alpha.16
 sudo -u librenms php artisan optimize:clear
+sudo -u librenms php artisan view:clear
 ```
 
 Replace `v0.1.0-alpha.16` with the version you want to install.
