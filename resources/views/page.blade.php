@@ -4611,33 +4611,14 @@ document.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
 
-                var formData = new FormData(form);
                 var button = form.querySelector('button[type="submit"]');
-
-                formData.set('ajax', '1');
 
                 if (button) {
                     button.disabled = true;
                 }
 
-                fetch(form.getAttribute('action'), {
-                    method: (form.method || 'POST').toUpperCase(),
-                    body: formData,
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                }).then(function (response) {
-                    if (!response.ok) {
-                        throw new Error('HTTP ' + response.status);
-                    }
-
-                    return response.json();
-                }).then(function (data) {
-                    if (!data || data.ok !== true) {
-                        throw new Error((data && data.status) ? data.status : 'ajax_failed');
-                    }
+                window.DevicePhotoAjax.submitForm(form).then(function (result) {
+                    var data = result.data;
 
                     updatePhotoTakenCard(data);
                     closeModal();
