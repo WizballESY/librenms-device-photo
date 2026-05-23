@@ -275,7 +275,7 @@ class ActionController extends Controller
          *   photo      = single upload, old field name
          *   photos[]   = multi upload, new field name
          */
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             return $this->redirect($deviceId, 'device_not_found');
         }
 
