@@ -1804,7 +1804,7 @@
                                     <span class="device-photo-summary-item is-problem"
                                           data-device-photo-legacy-deleted-summary
                                           title="Deleted photos were found in the old storage location. Migrate them to the new deleted photo storage.">
-                                        <span class="number">{{ (int) (($overview['legacy_deleted_photo_count'] ?? 0) + ($overview['legacy_deleted_thumbnail_count'] ?? 0)) }}</span><span class="label">files need migration</span>
+                                        <span class="number">{{ (int) (($overview['legacy_deleted_photo_count'] ?? 0) + ($overview['legacy_deleted_thumbnail_count'] ?? 0)) }}</span><span class="label">need migration</span>
                                     </span>
                                 @endif
                             @endif
