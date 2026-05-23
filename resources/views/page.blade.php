@@ -2705,29 +2705,8 @@ document.addEventListener('click', function (e) {
                         }
 
                         function submitAjax(form) {
-                            var formData = new FormData(form);
-
-                            formData.set('ajax', '1');
-
-                            fetch(form.getAttribute('action'), {
-                                method: (form.method || 'POST').toUpperCase(),
-                                body: formData,
-                                credentials: 'same-origin',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                }
-                            }).then(function (response) {
-                                if (!response.ok) {
-                                    throw new Error('HTTP ' + response.status);
-                                }
-
-                                return response.json();
-                            }).then(function (data) {
-                                if (!data || data.ok !== true) {
-                                    throw new Error((data && data.status) ? data.status : 'ajax_failed');
-                                }
-
+                            window.DevicePhotoAjax.submitForm(form).then(function (result) {
+                                var data = result.data;
                                 var row = form.closest('[data-device-photo-ajax-row]');
                                 var rowType = row ? row.getAttribute('data-device-photo-ajax-row') : '';
 
@@ -2749,10 +2728,10 @@ document.addEventListener('click', function (e) {
                                 updateThumbnailMaintenanceUi(data);
 
                                 window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
-                                }).catch(function (error) {
-                    console.error('DevicePhoto AJAX failed:', error);
-                    submitNormally(form);
-                });
+                            }).catch(function (error) {
+                                console.error('DevicePhoto AJAX failed:', error);
+                                submitNormally(form);
+                            });
                         }
 
                         ok.addEventListener('click', function () {
