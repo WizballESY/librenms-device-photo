@@ -137,6 +137,10 @@ class DeletedPhotoStorageMigrationService
         if (! is_dir($dir)) {
             @mkdir($dir, 02775, true);
         }
+
+        if (is_dir($dir)) {
+            @chmod($dir, 02775);
+        }
     }
 
     private function removeDirectoryIfEmpty(string $dir): bool
