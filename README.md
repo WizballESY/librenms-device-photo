@@ -103,6 +103,10 @@ After installation, open:
 /plugin/device-photo
 ```
 
+## Testing
+
+For alpha release testing, see the [alpha release test checklist](docs/testing-alpha.md).
+
 ### Development install from GitHub
 
 For development testing before a tagged release, you can install directly from the GitHub repository:
