@@ -3592,7 +3592,6 @@ document.addEventListener('click', function (e) {
                             name="photos[]"
                             multiple
                             accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                            capture="environment"
                             style="display: none;"
                         >
                     </div>
