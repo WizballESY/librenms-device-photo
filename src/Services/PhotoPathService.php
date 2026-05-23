@@ -16,12 +16,22 @@ class PhotoPathService
 
     public function deletedDir(): string
     {
-        return $this->photosDir() . '/deleted';
+        return storage_path(config('device-photo.deleted_photos_path', 'app/device-photos-deleted'));
     }
 
     public function deletedThumbsDir(): string
     {
         return $this->deletedDir() . '/thumbs';
+    }
+
+    public function legacyDeletedDir(): string
+    {
+        return $this->photosDir() . '/deleted';
+    }
+
+    public function legacyDeletedThumbsDir(): string
+    {
+        return $this->legacyDeletedDir() . '/thumbs';
     }
 
     public function orderDir(): string

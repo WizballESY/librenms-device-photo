@@ -13,6 +13,8 @@ return [
 
     'photos_path' => 'app/device-photos',
 
+    'deleted_photos_path' => 'app/device-photos-deleted',
+
     'order_path' => 'app/device-photos-order',
 
     'links_path' => 'app/device-photos-links',
