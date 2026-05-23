@@ -175,7 +175,7 @@ class ActionController extends Controller
 
     private function removeLink(Request $request, int $deviceId)
     {
-        if ($deviceId < 1) {
+        if (! $this->findExistingDevice($deviceId)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('device_not_found', false, 404);
             }
