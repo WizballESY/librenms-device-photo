@@ -5,6 +5,7 @@ namespace WizballEsy\LibreNmsDevicePhoto\Hooks;
 use App\Models\Device;
 use App\Plugins\Hooks\PageHook;
 use WizballEsy\LibreNmsDevicePhoto\Services\PhotoDateService;
+use WizballEsy\LibreNmsDevicePhoto\Services\PhotoPermissionService;
 
 class Page extends PageHook
 {
@@ -13,52 +14,9 @@ class Page extends PageHook
         return $user->can('global-read');
     }
 
-    private function allowedRoles(array $settings, string $key): array
-    {
-        $roles = $settings[$key] ?? ['admin'];
-
-        if (! is_array($roles)) {
-            $roles = ['admin'];
-        }
-
-        $roles = array_values(array_filter($roles, function ($role) {
-            return is_string($role) && trim($role) !== '';
-        }));
-
-        return empty($roles) ? ['admin'] : $roles;
-    }
-
     private function userCanAction(?\Illuminate\Contracts\Auth\Authenticatable $user, array $settings, string $key): bool
     {
-        if (! $user) {
-            return false;
-        }
-
-        if ($user->can('admin')) {
-            return true;
-        }
-
-        $allowedRoles = $this->allowedRoles($settings, $key);
-
-        if (method_exists($user, 'getRoleNames')) {
-            return $user->getRoleNames()->intersect($allowedRoles)->isNotEmpty();
-        }
-
-        if (method_exists($user, 'hasRole')) {
-            foreach ($allowedRoles as $role) {
-                if ($user->hasRole($role)) {
-                    return true;
-                }
-            }
-        }
-
-        foreach ($allowedRoles as $role) {
-            if ($user->can($role)) {
-                return true;
-            }
-        }
-
-        return false;
+        return app(PhotoPermissionService::class)->userCanAction($user, $settings, $key);
     }
 
     private function deviceLabel(?Device $device, int $deviceId): string
