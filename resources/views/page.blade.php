@@ -1815,10 +1815,33 @@
                                 ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
                                 || (count($overview['orphaned_photos'] ?? []) > 0)
                                 || (count($overview['broken_links'] ?? []) > 0)
+                                || ($can_delete && !empty($overview['legacy_deleted_storage_detected']))
                                 || ($can_upload && !empty($overview['gd_available']) && !empty($overview['thumb_dir_writable']) && (($overview['missing_thumbnail_count'] ?? 0) > 0))
                                 || ($can_upload && (($overview['stale_thumbnail_count'] ?? 0) > 0))
                             )
                                 <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                    @if ($can_delete && !empty($overview['legacy_deleted_storage_detected']))
+                                        <form method="post"
+                                              action="{{ url('plugin/device-photo-package/action') }}"
+                                              data-device-photo-confirm-title="Migrate deleted photo storage?"
+                                              data-device-photo-confirm-ok-text="Migrate storage"
+                                              data-device-photo-confirm-ok-class="btn-warning"
+                                              data-device-photo-confirm-ok-icon="fa-exchange"
+                                              data-device-photo-confirm="Move deleted photos from the old storage location to the new deleted photo storage? Existing files will not be overwritten."
+                                              style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="action" value="migrate_deleted_photos_storage">
+                                            <input type="hidden" name="device_id" value="0">
+                                            <input type="hidden" name="return_to" value="overview">
+
+                                            <button type="submit"
+                                                    class="btn btn-warning btn-xs"
+                                                    title="Move deleted photos from old storage to the new deleted photo storage">
+                                                <i class="fa fa-exchange"></i> Migrate deleted storage
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     @if ($can_delete && (($overview['deleted_photo_count'] ?? 0) > 0 || ($overview['deleted_thumbnail_count'] ?? 0) > 0))
                                         <a href="{{ url('plugin/device-photo') }}?view=restore-deleted"
                                            class="btn btn-primary btn-xs"
