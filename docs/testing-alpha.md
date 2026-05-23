@@ -23,6 +23,7 @@ Use this checklist before tagging a new alpha release.
 
 - [ ] Add incoming linked photo from another device
 - [ ] Already linked button updates correctly
+- [ ] Preview/zoom works on newly added incoming linked photo before page refresh
 - [ ] Remove incoming linked photo
 - [ ] Link owned photo to another device
 - [ ] Remove outgoing/shared link
