@@ -1285,27 +1285,7 @@ class ActionController extends Controller
             return $this->redirect(0, 'invalid_filename');
         }
 
-        $links = $this->links->load($targetDeviceId);
-        $newLinks = [];
-        $removed = false;
-
-        foreach ($links as $link) {
-            if (! is_array($link)) {
-                continue;
-            }
-
-            $linkOwnerDeviceId = (int) ($link['owner_device_id'] ?? 0);
-            $linkFilename = basename((string) ($link['filename'] ?? ''));
-
-            if ($linkOwnerDeviceId === $ownerDeviceId && $linkFilename === $filename) {
-                $removed = true;
-                continue;
-            }
-
-            $newLinks[] = $link;
-        }
-
-        if (! $removed) {
+        if (! $this->links->exists($targetDeviceId, $ownerDeviceId, $filename)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('not_found', false, 404);
             }
@@ -1313,7 +1293,13 @@ class ActionController extends Controller
             return $this->redirect(0, 'not_found');
         }
 
-        $this->links->save($targetDeviceId, $newLinks);
+        if (! $this->links->remove($targetDeviceId, $ownerDeviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('link_remove_failed', false, 500);
+            }
+
+            return $this->redirect(0, 'link_remove_failed');
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('link_removed');

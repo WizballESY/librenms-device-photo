@@ -572,6 +572,7 @@ class Page extends PageHook
             'order_updated' => 'Photo order updated.',
             'link_added' => 'Photo link added.',
             'link_removed' => 'Photo link removed.',
+            'link_remove_failed' => 'Could not remove photo link.',
             'already_linked' => 'Photo is already linked.',
             'assigned' => 'Orphaned photo assigned.',
             'thumbnails_generated' => 'Missing thumbnails were generated.',
