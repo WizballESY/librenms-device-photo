@@ -69,7 +69,7 @@
 
     <a href="{{ $photo['url'] }}"
        download="{{ $photo['filename'] }}"
-       class="btn btn-default btn-xs btn-block"
+       class="btn btn-default btn-sm btn-block device-photo-card-action"
        style="margin-top: 8px;">
         <i class="fa fa-download"></i> Download
     </a>
@@ -93,14 +93,14 @@
             <input
                 type="text"
                 name="target_device_query"
-                class="form-control device-photo-orphan-target-input"
+                class="form-control device-photo-orphan-target-input device-photo-restore-target-input"
                 placeholder="Search Device ID or name"
                 autocomplete="off"
                 required
             >
             <span class="input-group-btn">
-                <button type="submit" class="btn btn-primary">
-                    Restore
+                <button type="submit" class="btn btn-default device-photo-card-action">
+                    <i class="fa fa-undo"></i> Restore
                 </button>
             </span>
         </div>
@@ -122,7 +122,7 @@
             <input type="hidden" name="device_id" value="0">
             <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
 
-            <button type="submit" class="btn btn-danger btn-xs btn-block">
+            <button type="submit" class="btn btn-danger btn-sm btn-block">
                 <i class="fa fa-trash"></i> Permanently delete
             </button>
         </form>

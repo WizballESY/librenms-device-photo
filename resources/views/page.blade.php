@@ -77,6 +77,10 @@
         color: #ffffff !important;
     }
 
+    .device-photo-plugin .device-photo-orphan-card .device-photo-restore-target-input {
+        font-size: 12px;
+    }
+
     html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning,
     html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning {
         background: #4a3518 !important;
@@ -334,15 +338,18 @@
 
     html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn,
     html.dark .device-photo-plugin .device-photo-orphan-card .btn-default {
-        background: #26303a !important;
-        border-color: #4b5563 !important;
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
         color: #f3f4f6 !important;
     }
 
     html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn:hover,
-    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default:hover {
-        background: #35414d !important;
-        border-color: #64748b !important;
+    html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn:focus,
+    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default:focus {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
     }
 </style>
 
