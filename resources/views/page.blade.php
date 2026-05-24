@@ -257,7 +257,8 @@
      * LibreNMS dark mode fix for DevicePhoto device search suggestion lists.
      */
     html.dark .device-photo-plugin .device-photo-target-suggestions,
-    html.dark .device-photo-plugin .device-photo-orphan-suggestions {
+    html.dark .device-photo-plugin .device-photo-orphan-suggestions,
+    html.dark .device-photo-plugin .device-photo-restore-suggestions {
         background: #26303a !important;
         border-color: #4b5563 !important;
         color: #d8dee9 !important;
@@ -265,25 +266,29 @@
     }
 
     html.dark .device-photo-plugin .device-photo-target-suggestion,
-    html.dark .device-photo-plugin .device-photo-orphan-suggestion {
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion {
         background: #26303a !important;
         border-color: #3f4a56 !important;
         color: #d8dee9 !important;
     }
 
     html.dark .device-photo-plugin .device-photo-target-suggestion:hover,
-    html.dark .device-photo-plugin .device-photo-orphan-suggestion:hover {
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion:hover,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion:hover {
         background: #35414d !important;
         color: #ffffff !important;
     }
 
     html.dark .device-photo-plugin .device-photo-target-suggestion .device-id,
-    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-id {
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-id,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion .device-id {
         color: #ff7aa8 !important;
     }
 
     html.dark .device-photo-plugin .device-photo-target-suggestion .device-name,
-    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-name {
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-name,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion .device-name {
         color: #cbd5e1 !important;
     }
 </style>
