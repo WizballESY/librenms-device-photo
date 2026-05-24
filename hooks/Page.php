@@ -595,7 +595,7 @@ class Page extends PageHook
             'device_not_found' => 'Device not found.',
             'no_file' => 'No file selected.',
             'upload_failed' => 'Upload failed.',
-            'invalid_type' => 'Only jpg, jpeg, png, webp, heic and heif are allowed.',
+            'invalid_type' => 'No photos were uploaded. Only jpg, jpeg, png, webp, heic and heif are allowed.',
             'heic_unavailable' => 'HEIC/HEIF conversion is not available on this server. Install ImageMagick with HEIC support.',
             'heic_convert_failed' => 'HEIC/HEIF conversion failed.',
             'too_large' => 'Maximum file size is 10 MB.',
