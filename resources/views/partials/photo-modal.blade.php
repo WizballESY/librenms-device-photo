@@ -152,6 +152,69 @@
         display: none;
     }
 
+    html.dark .device-photo-shared-close {
+        background: rgba(47, 56, 66, 0.96) !important;
+        border: 1px solid #4b5563 !important;
+        color: #f3f4f6 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.45) !important;
+    }
+
+    html.dark .device-photo-shared-close:hover,
+    html.dark .device-photo-shared-close:focus {
+        background: rgba(70, 85, 100, 0.98) !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-shared-toolbar {
+        background: rgba(31, 37, 44, 0.96) !important;
+        border: 1px solid #4b5563 !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.55) !important;
+    }
+
+    html.dark .device-photo-shared-toolbar button {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-shared-toolbar button:hover,
+    html.dark .device-photo-shared-toolbar button:focus {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-shared-toolbar span {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-shared-nav {
+        background: rgba(47, 56, 66, 0.92) !important;
+        border: 1px solid #4b5563 !important;
+        color: #f3f4f6 !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.55) !important;
+    }
+
+    html.dark .device-photo-shared-nav:hover,
+    html.dark .device-photo-shared-nav:focus {
+        background: rgba(70, 85, 100, 0.98) !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-shared-meta,
+    html.dark .device-photo-shared-counter {
+        background: rgba(47, 56, 66, 0.94) !important;
+        border: 1px solid #4b5563 !important;
+        color: #f3f4f6 !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.45) !important;
+    }
+
+    html.dark .device-photo-shared-meta strong {
+        color: #ffffff !important;
+    }
+
     [data-device-photo-preview-src] {
         cursor: zoom-in;
     }
