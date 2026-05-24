@@ -1216,7 +1216,7 @@
                                 class="btn btn-danger btn-sm"
                                 id="device-photo-empty-deleted-open-manage"
                                 title="Permanently remove all files from the deleted folder">
-                            <i class="fa fa-trash" style="color: #fff;"></i> Empty deleted photos
+                            <i class="fa fa-trash" style="color: #fff;"></i> Empty all deleted photos
                         </button>
                     @endif
                 </div>
@@ -1227,7 +1227,7 @@
                          id="device-photo-empty-deleted-backdrop-manage"
                          style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 20000; align-items: center; justify-content: center;">
                         <div class="device-photo-confirm-modal" style="background: #fff; border-radius: 8px; padding: 18px; max-width: 520px; width: calc(100% - 32px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);">
-                            <h4 style="margin-top: 0;">Permanently delete deleted photos?</h4>
+                            <h4 style="margin-top: 0;">Permanently delete all deleted photos?</h4>
 
                             <p>
                                 This will permanently remove all photos and thumbnails from the deleted folder.
@@ -1267,7 +1267,7 @@
                                     </button>
 
                                     <button type="submit" class="btn btn-danger btn-sm" id="device-photo-empty-deleted-submit-manage" disabled>
-                                        <i class="fa fa-trash"></i> Empty deleted photos
+                                        <i class="fa fa-trash"></i> Empty all deleted photos
                                     </button>
                                 </div>
                             </form>
