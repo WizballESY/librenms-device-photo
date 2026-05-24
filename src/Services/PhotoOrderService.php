@@ -61,13 +61,34 @@ class PhotoOrderService
 
     public function remove(string $safeShortName, string $filename): bool
     {
-        $order = $this->load($safeShortName);
+        $filename = trim($filename);
 
-        $order = array_values(array_filter($order, function ($item) use ($filename) {
-            return $item !== $filename;
-        }));
+        if ($safeShortName === '' || $filename === '') {
+            return false;
+        }
 
-        return $this->save($safeShortName, $order);
+        return $this->json->mutateArrayWithLock(
+            $this->paths->orderFile($safeShortName),
+            function (array $order) use ($filename): array {
+                $cleaned = [];
+
+                foreach ($order as $item) {
+                    if (! is_string($item)) {
+                        continue;
+                    }
+
+                    if ($item === $filename) {
+                        continue;
+                    }
+
+                    if (! in_array($item, $cleaned, true)) {
+                        $cleaned[] = $item;
+                    }
+                }
+
+                return $cleaned;
+            }
+        );
     }
 
     public function prune(string $safeShortName, array $validOrderKeys): bool
@@ -96,25 +117,25 @@ class PhotoOrderService
             }
         }
 
-        $order = $this->load($safeShortName);
-        $cleaned = [];
+        return $this->json->mutateArrayWithLock(
+            $this->paths->orderFile($safeShortName),
+            function (array $order) use ($valid, $validKeys): array {
+                $cleaned = [];
 
-        foreach ($order as $item) {
-            if (isset($valid[$item]) && ! in_array($item, $cleaned, true)) {
-                $cleaned[] = $item;
+                foreach ($order as $item) {
+                    if (is_string($item) && isset($valid[$item]) && ! in_array($item, $cleaned, true)) {
+                        $cleaned[] = $item;
+                    }
+                }
+
+                foreach ($validKeys as $item) {
+                    if (! in_array($item, $cleaned, true)) {
+                        $cleaned[] = $item;
+                    }
+                }
+
+                return $cleaned;
             }
-        }
-
-        foreach ($validKeys as $item) {
-            if (! in_array($item, $cleaned, true)) {
-                $cleaned[] = $item;
-            }
-        }
-
-        if ($cleaned === $order) {
-            return true;
-        }
-
-        return $this->save($safeShortName, $cleaned);
+        );
     }
 }
