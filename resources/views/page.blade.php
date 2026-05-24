@@ -545,6 +545,19 @@
         border-color: #64748b !important;
         color: #ffffff !important;
     }
+
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default:focus {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
 </style>
 
 <div class="container-fluid device-photo-plugin">
@@ -554,7 +567,13 @@
             @include('device-photo::partials.version-badge')
         </h2>
 
-        @if (! ($global_overview ?? false))
+        @if ($global_overview ?? false)
+            <a href="{{ url('plugin/settings/device-photo') }}"
+               class="btn btn-default btn-sm device-photo-header-action"
+               title="Plugin settings">
+                <i class="fa fa-cog"></i> Plugin settings
+            </a>
+        @else
             <a href="{{ url('plugin/device-photo') }}"
                class="btn btn-primary btn-sm"
                title="Device Photos overview">
