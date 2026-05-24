@@ -1,4 +1,26 @@
-<div style="margin: 15px;">
+<style>
+    html.dark .device-photo-plugin .device-photo-alpha-notice.alert-warning {
+        background: #3b3124 !important;
+        border-color: #5f4728 !important;
+        color: #ead6b8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-alpha-notice.alert-warning strong {
+        color: #f4c77c !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-alpha-notice.alert-warning a {
+        color: #8ecbff !important;
+        font-weight: 600;
+    }
+
+    html.dark .device-photo-plugin .device-photo-alpha-notice.alert-warning a:hover,
+    html.dark .device-photo-plugin .device-photo-alpha-notice.alert-warning a:focus {
+        color: #b7ddff !important;
+    }
+</style>
+
+<div class="device-photo-plugin" style="margin: 15px;">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
         <h2 style="margin: 0;">
             Device Photos Settings
