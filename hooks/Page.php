@@ -251,6 +251,25 @@ class Page extends PageHook
             $thumbPath = $this->deletedThumbsDir() . '/' . $filename;
             $hasThumbnail = is_file($thumbPath);
 
+            $deletedAtTimestamp = 0;
+            $deletedAtIso = null;
+            $deletedAtDisplay = null;
+
+            if (preg_match('/\.deleted-(\d{8})-(\d{6})\./', $filename, $deletedMatches)) {
+                $deletedAt = \DateTime::createFromFormat(
+                    'Ymd His',
+                    $deletedMatches[1] . ' ' . $deletedMatches[2]
+                );
+
+                if ($deletedAt instanceof \DateTime) {
+                    $deletedAtTimestamp = $deletedAt->getTimestamp();
+                    $deletedAtIso = $deletedAt->format('c');
+                    $deletedAtDisplay = $deletedAt->format('Y-m-d H:i');
+                }
+            }
+
+            $dateData = $this->photoDateData($deletedPath);
+
             $deletedPhotos[] = [
                 'filename' => $filename,
                 'original_filename' => $originalFilename,
@@ -258,17 +277,27 @@ class Page extends PageHook
                 'thumb_url' => $hasThumbnail
                     ? url('plugin/device-photo-package/image') . '?action=deleted_thumb&filename=' . rawurlencode($filename)
                     : url('plugin/device-photo-package/image') . '?action=deleted_photo&filename=' . rawurlencode($filename),
-                'photo_taken_display' => $this->photoDateData($deletedPath)['photo_taken_display'],
-                'photo_taken_iso' => $this->photoDateData($deletedPath)['photo_taken_iso'],
-                'file_date_display' => $this->photoDateData($deletedPath)['file_date_display'],
-                'file_date_iso' => $this->photoDateData($deletedPath)['file_date_iso'],
+                'deleted_at_ts' => $deletedAtTimestamp,
+                'deleted_at_iso' => $deletedAtIso,
+                'deleted_at_display' => $deletedAtDisplay,
+                'photo_taken_display' => $dateData['photo_taken_display'],
+                'photo_taken_iso' => $dateData['photo_taken_iso'],
+                'file_date_display' => $dateData['file_date_display'],
+                'file_date_iso' => $dateData['file_date_iso'],
                 'size' => $size,
                 'has_thumbnail' => $hasThumbnail,
             ];
         }
 
         usort($deletedPhotos, function ($a, $b) {
-            return strcmp((string) ($a['filename'] ?? ''), (string) ($b['filename'] ?? ''));
+            $aDeleted = (int) ($a['deleted_at_ts'] ?? 0);
+            $bDeleted = (int) ($b['deleted_at_ts'] ?? 0);
+
+            if ($aDeleted !== $bDeleted) {
+                return $bDeleted <=> $aDeleted;
+            }
+
+            return strcmp((string) ($b['filename'] ?? ''), (string) ($a['filename'] ?? ''));
         });
 
         foreach (glob($this->deletedThumbsDir() . '/*') ?: [] as $deletedThumbPath) {

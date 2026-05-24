@@ -24,6 +24,16 @@
         $photo['file_date_iso'] ?? '',
         $photo['file_date_display'] ?? ''
     );
+
+    $devicePhotoDeletedAt = trim((string) ($photo['deleted_at_display'] ?? ''));
+
+    if ($devicePhotoDeletedAt !== '') {
+        $devicePhotoDeletedAtTimestamp = strtotime($devicePhotoDeletedAt);
+
+        if ($devicePhotoDeletedAtTimestamp !== false) {
+            $devicePhotoDeletedAt = date('d.m.Y H:i', $devicePhotoDeletedAtTimestamp);
+        }
+    }
 @endphp
 
 <div class="device-photo-orphan-card"
@@ -37,6 +47,13 @@
          style="width: 100%; max-height: 160px; object-fit: contain; background: #fff; border-radius: 5px; margin-bottom: 8px;">
 
     <div class="text-muted device-photo-card-meta" style="font-size: 12px;">
+        @if ($devicePhotoDeletedAt !== '')
+            <div title="Stored deleted filename: {{ $photo['filename'] }}">
+                <strong>Deleted:</strong>
+                <span>{{ $devicePhotoDeletedAt }}</span>
+            </div>
+        @endif
+
         @if ($devicePhotoDeletedPhotoTakenDate !== '')
             <div>
                 <strong>Photo taken:</strong>
@@ -54,11 +71,6 @@
         <div title="Original filename before it was moved to deleted.">
             <strong>Original:</strong>
             <span>{{ $photo['original_filename'] }}</span>
-        </div>
-
-        <div title="Stored filename in the deleted folder.">
-            <strong>Deleted file:</strong>
-            <span>{{ $photo['filename'] }}</span>
         </div>
 
         <div>
