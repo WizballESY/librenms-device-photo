@@ -77,21 +77,25 @@
         color: #ffffff !important;
     }
 
-    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning {
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning {
         background: #4a3518 !important;
         border-color: #7a5520 !important;
         color: #f4d6a0 !important;
     }
 
-    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning a {
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning a,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning a {
         color: #ffd28a !important;
     }
 
-    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning .text-muted {
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning .text-muted,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning .text-muted {
         color: #d0b98f !important;
     }
 
-    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning [data-device-photo-ajax-row] {
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning [data-device-photo-ajax-row],
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning [data-device-photo-ajax-row] {
         border-bottom-color: #7a5520 !important;
     }
 
@@ -933,7 +937,7 @@
 
                         if (!box) {
                             box = document.createElement('div');
-                            box.className = 'alert alert-warning';
+                            box.className = 'alert alert-warning device-photo-card-link-box';
                             box.setAttribute('data-device-photo-linked-to-box', '1');
                             box.style.fontSize = '12px';
                             box.style.padding = '6px 8px';
