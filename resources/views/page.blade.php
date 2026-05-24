@@ -3544,6 +3544,18 @@ document.addEventListener('click', function (e) {
                 box-shadow: inset -10px 0 0 #337ab7;
             }
 
+            html.dark .device-photo-plugin .device-photo-manager-card.drop-before {
+                box-shadow:
+                    inset 10px 0 0 #5dade2,
+                    0 0 0 1px rgba(93, 173, 226, 0.35) !important;
+            }
+
+            html.dark .device-photo-plugin .device-photo-manager-card.drop-after {
+                box-shadow:
+                    inset -10px 0 0 #5dade2,
+                    0 0 0 1px rgba(93, 173, 226, 0.35) !important;
+            }
+
             .device-photo-manager-card img {
                 width: 100%;
                 max-height: 180px;
