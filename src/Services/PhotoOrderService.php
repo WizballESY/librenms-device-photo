@@ -91,6 +91,36 @@ class PhotoOrderService
         );
     }
 
+    public function appendOwnedPhoto(string $safeShortName, string $filename): bool
+    {
+        $filename = trim($filename);
+
+        if ($safeShortName === '' || $filename === '') {
+            return false;
+        }
+
+        return $this->json->mutateArrayWithLock(
+            $this->paths->orderFile($safeShortName),
+            function (array $order) use ($filename): array {
+                $cleaned = [];
+
+                foreach ($order as $item) {
+                    if (! is_string($item) || $item === $filename) {
+                        continue;
+                    }
+
+                    if (! in_array($item, $cleaned, true)) {
+                        $cleaned[] = $item;
+                    }
+                }
+
+                $cleaned[] = $filename;
+
+                return $cleaned;
+            }
+        );
+    }
+
     public function prune(string $safeShortName, array $validOrderKeys): bool
     {
         /*

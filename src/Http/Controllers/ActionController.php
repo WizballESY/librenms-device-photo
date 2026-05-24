@@ -632,22 +632,8 @@ class ActionController extends Controller
         $this->pruneOrderForDevice($deviceId);
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
-        $order = $this->order->load($safeShortName);
-        $cleaned = [];
 
-        foreach ($order as $item) {
-            if (! is_string($item) || $item === $filename) {
-                continue;
-            }
-
-            if (! in_array($item, $cleaned, true)) {
-                $cleaned[] = $item;
-            }
-        }
-
-        $cleaned[] = $filename;
-
-        $this->order->save($safeShortName, $cleaned);
+        $this->order->appendOwnedPhoto($safeShortName, $filename);
     }
 
     private function restoreDeletedPhoto(Request $request)
