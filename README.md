@@ -410,6 +410,7 @@ To remove stored plugin data manually:
 cd /opt/librenms
 
 rm -rf storage/app/device-photos
+rm -rf storage/app/device-photos-deleted
 rm -rf storage/app/device-photos-order
 rm -rf storage/app/device-photos-links
 ```

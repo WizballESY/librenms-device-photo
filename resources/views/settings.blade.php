@@ -20,7 +20,9 @@
     <div class="alert alert-warning" style="font-size: 12px; max-width: 720px;">
         <strong>Notice:</strong>
         This plugin is currently an alpha release. Use at your own risk.
-        Make sure you have tested it before using it in production.
+        Make sure you have tested it before using it in production.<br>
+        Feedback and bug reports are welcome on
+        <a href="https://github.com/WizballESY/librenms-device-photo/issues" target="_blank" rel="noopener noreferrer">GitHub</a>.
     </div>
 
     <form method="post" style="margin-top: 15px;">
