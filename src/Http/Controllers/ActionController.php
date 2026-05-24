@@ -874,21 +874,35 @@ class ActionController extends Controller
 
         $result = $this->deletedStorageMigration->migrate();
 
+        $status = 'deleted_storage_migrated';
+
+        if (((int) ($result['failed'] ?? 0)) > 0 || ! empty($result['legacy_deleted_storage_detected_after'])) {
+            $status = 'deleted_storage_migration_manual_check';
+        } elseif (((int) ($result['skipped_existing'] ?? 0)) > 0) {
+            $status = 'deleted_storage_migrated_with_skips';
+        }
+
         $message = 'Deleted photo storage migration completed. Moved '
             . (int) ($result['moved_photos'] ?? 0)
             . ' photos and '
             . (int) ($result['moved_thumbnails'] ?? 0)
             . ' thumbnails.';
 
+        if ($status === 'deleted_storage_migration_manual_check') {
+            $message .= ' Some files could not be moved or were left in the old storage location. Please check the old deleted photo storage manually.';
+        } elseif ($status === 'deleted_storage_migrated_with_skips') {
+            $message .= ' Some files already existed in the new storage location and were skipped.';
+        }
+
         if ($this->wantsJsonResponse($request)) {
-            return $this->jsonStatus('deleted_storage_migrated', true, 200, [
+            return $this->jsonStatus($status, true, 200, [
                 'message' => $message,
                 'migration_result' => $result,
                 'deleted_stats' => $this->deletedFolderStats(),
             ]);
         }
 
-        return $this->redirect(0, 'deleted_storage_migrated');
+        return $this->redirect(0, $status);
     }
 
     private function emptyDeletedPhotos(Request $request)
