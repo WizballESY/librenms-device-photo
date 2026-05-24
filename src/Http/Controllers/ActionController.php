@@ -315,7 +315,7 @@ class ActionController extends Controller
         $maxPixels = (int) config('device-photo.max_pixels', 40000000);
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
-        $uploadedCount = 0;
+        $validatedUploads = [];
 
         foreach ($uploadedFiles as $file) {
             if (! $file || ! $file->isValid()) {
@@ -367,7 +367,32 @@ class ActionController extends Controller
                 return $this->redirect($deviceId, 'heic_unavailable');
             }
 
+            $validatedUploads[] = [
+                'file' => $file,
+                'ext' => $ext,
+                'is_heic_upload' => $isHeicUpload,
+            ];
+        }
+
+        if (empty($validatedUploads)) {
+            return $this->redirect($deviceId, 'no_file');
+        }
+
+        $usedNumbers = [];
+
+        foreach ($allowedExt as $checkExt) {
+            foreach (glob($this->paths->photosDir() . '/' . $safeShortName . '-*.' . $checkExt) ?: [] as $existingPhotoPath) {
+                $existingFilename = basename($existingPhotoPath);
+
+                if (preg_match('/^' . preg_quote($safeShortName, '/') . '-(\d+)\./i', $existingFilename, $matches)) {
+                    $usedNumbers[(int) $matches[1]] = true;
+                }
+            }
+        }
+
+        foreach ($validatedUploads as $index => $upload) {
             $targetName = null;
+            $targetExt = ! empty($upload['is_heic_upload']) ? 'jpg' : (string) $upload['ext'];
 
             /*
              * Always use numbered filenames:
@@ -378,17 +403,8 @@ class ActionController extends Controller
              * Numbering is global per device, regardless of file extension.
              */
             for ($i = 1; $i <= 999; $i++) {
-                $numberInUse = false;
-
-                foreach ($allowedExt as $checkExt) {
-                    if (file_exists($this->paths->photosDir() . '/' . $safeShortName . '-' . $i . '.' . $checkExt)) {
-                        $numberInUse = true;
-                        break;
-                    }
-                }
-
-                if (! $numberInUse) {
-                    $targetExt = $isHeicUpload ? 'jpg' : $ext;
+                if (! isset($usedNumbers[$i])) {
+                    $usedNumbers[$i] = true;
                     $targetName = $safeShortName . '-' . $i . '.' . $targetExt;
                     break;
                 }
@@ -398,13 +414,23 @@ class ActionController extends Controller
                 return $this->redirect($deviceId, 'no_filename');
             }
 
+            $validatedUploads[$index]['target_name'] = $targetName;
+            $validatedUploads[$index]['target_path'] = $this->paths->photoPath($targetName);
+        }
+
+        $uploadedCount = 0;
+
+        foreach ($validatedUploads as $upload) {
+            $file = $upload['file'];
+            $targetName = (string) $upload['target_name'];
+            $targetPath = (string) $upload['target_path'];
+            $isHeicUpload = ! empty($upload['is_heic_upload']);
+
             /*
              * If this filename has been used before, remove stale links before storing
              * the new file. Otherwise a newly uploaded photo could inherit old links.
              */
             $this->links->removeAllForFilename($targetName);
-
-            $targetPath = $this->paths->photoPath($targetName);
 
             if ($isHeicUpload) {
                 if (! $this->images->convertHeicToJpeg($file->getRealPath(), $targetPath)) {
