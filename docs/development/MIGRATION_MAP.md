@@ -141,8 +141,8 @@ Current storage paths:
 
 - `storage/app/device-photos`
 - `storage/app/device-photos/thumbs`
-- `storage/app/device-photos/deleted`
-- `storage/app/device-photos/deleted/thumbs`
+- `storage/app/device-photos-deleted`
+- `storage/app/device-photos-deleted/thumbs`
 - `storage/app/device-photos-order`
 - `storage/app/device-photos-links`
 
