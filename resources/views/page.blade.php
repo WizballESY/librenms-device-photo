@@ -4116,7 +4116,7 @@ document.addEventListener('click', function (e) {
                     @if ((count($photos) + count($linked_photos)) > 0)
                     @if ($can_reorder)
                     <div class="device-photo-drag-hint">
-                        Drag and drop photos to change the order.
+                        Drag and drop photos to change the order. Changes are saved automatically.
                     </div>
 
                     <form method="post"
@@ -4129,10 +4129,6 @@ document.addEventListener('click', function (e) {
                         <input type="hidden" name="device_id" value="{{ $device->device_id }}">
                         <input type="hidden" name="order_json" id="device-photo-order-json" value="[]">
                         <input type="hidden" name="return_anchor" value="device-photo-manager-grid">
-
-                        <button type="submit" class="btn btn-success btn-sm" style="display: none;">
-                            <i class="fa fa-save"></i> Save order
-                        </button>
                     </form>
 
                     @else

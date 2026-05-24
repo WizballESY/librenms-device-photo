@@ -34,7 +34,7 @@ Use this checklist before tagging a new alpha release.
 - [ ] Drag/drop owned photos
 - [ ] Drag/drop linked photos
 - [ ] Drag/drop mixed owned + linked photos
-- [ ] Save order
+- [ ] Drag/drop reorder auto-save
 - [ ] Refresh page and verify order is preserved
 - [ ] Assign orphaned photo and verify existing mixed order is preserved
 - [ ] Restore deleted photo and verify existing mixed order is preserved
