@@ -31,6 +31,7 @@ class DeletedPhotoStorageMigrationService
             'moved_photos' => 0,
             'moved_thumbnails' => 0,
             'skipped_existing' => 0,
+            'skipped_unexpected' => 0,
             'failed' => 0,
             'removed_legacy_dirs' => [],
             'legacy_deleted_photo_count_before' => $this->countFiles($this->paths->legacyDeletedDir()),
@@ -53,6 +54,7 @@ class DeletedPhotoStorageMigrationService
         $result['moved_photos'] = $photoResult['moved'];
         $result['moved_thumbnails'] = $thumbResult['moved'];
         $result['skipped_existing'] = $photoResult['skipped_existing'] + $thumbResult['skipped_existing'];
+        $result['skipped_unexpected'] = $photoResult['skipped_unexpected'] + $thumbResult['skipped_unexpected'];
         $result['failed'] = $photoResult['failed'] + $thumbResult['failed'];
 
         /*
@@ -81,6 +83,7 @@ class DeletedPhotoStorageMigrationService
         $result = [
             'moved' => 0,
             'skipped_existing' => 0,
+            'skipped_unexpected' => 0,
             'failed' => 0,
         ];
 
@@ -96,6 +99,12 @@ class DeletedPhotoStorageMigrationService
             }
 
             $filename = basename($sourcePath);
+
+            if (! $this->isExpectedDeletedFilename($filename)) {
+                $result['skipped_unexpected']++;
+                continue;
+            }
+
             $targetPath = $targetDir . '/' . $filename;
 
             if (is_file($targetPath)) {
@@ -113,6 +122,11 @@ class DeletedPhotoStorageMigrationService
         }
 
         return $result;
+    }
+
+    private function isExpectedDeletedFilename(string $filename): bool
+    {
+        return (bool) preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename);
     }
 
     private function countFiles(string $dir): int
