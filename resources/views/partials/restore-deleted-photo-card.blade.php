@@ -48,9 +48,12 @@
 
     <div class="text-muted device-photo-card-meta" style="font-size: 12px;">
         @if ($devicePhotoDeletedAt !== '')
-            <div title="Stored deleted filename: {{ $photo['filename'] }}">
+            <div title="Stored deleted filename: {{ $photo['filename'] }}" style="cursor: help;">
                 <strong>Deleted:</strong>
                 <span>{{ $devicePhotoDeletedAt }}</span>
+                <i class="fa fa-info-circle text-muted"
+                   aria-hidden="true"
+                   style="margin-left: 4px;"></i>
             </div>
         @endif
 
