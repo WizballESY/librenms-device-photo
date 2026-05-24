@@ -286,7 +286,7 @@ Controller:
 Working:
 
 - photo order can be changed from `/plugin/device-photo?device_id=<id>`
-- save order redirects back to `/plugin/device-photo`
+- drag/drop order auto-save posts `save_order` and falls back to redirecting back to `/plugin/device-photo` for non-AJAX requests
 - order persists after refresh
 - only the `save_order` form has been moved to the package action route
 
