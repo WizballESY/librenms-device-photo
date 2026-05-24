@@ -154,6 +154,10 @@ class PhotoLinkService
     {
         $filename = basename($filename);
 
+        if ($filename === '') {
+            return;
+        }
+
         foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
             $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
 
@@ -161,11 +165,37 @@ class PhotoLinkService
                 continue;
             }
 
-            $links = array_values(array_filter($this->load($targetDeviceId), function ($link) use ($filename) {
-                return basename((string) ($link['filename'] ?? '')) !== $filename;
-            }));
+            $this->json->mutateArrayWithLock(
+                $this->paths->linksFile($targetDeviceId),
+                function (array $links) use ($filename): array {
+                    $cleanLinks = [];
 
-            $this->save($targetDeviceId, $links);
+                    foreach ($links as $link) {
+                        if (! is_array($link)) {
+                            continue;
+                        }
+
+                        $ownerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+                        $existingFilename = basename((string) ($link['filename'] ?? ''));
+
+                        if ($ownerDeviceId < 1 || $existingFilename === '') {
+                            continue;
+                        }
+
+                        if ($existingFilename === $filename) {
+                            continue;
+                        }
+
+                        $cleanLinks[] = [
+                            'owner_device_id' => $ownerDeviceId,
+                            'filename' => $existingFilename,
+                        ];
+                    }
+
+                    return $cleanLinks;
+                },
+                true
+            );
         }
     }
 
@@ -174,6 +204,10 @@ class PhotoLinkService
         $oldFilename = basename($oldFilename);
         $newFilename = basename($newFilename);
 
+        if ($oldFilename === '' || $newOwnerDeviceId < 1 || $newFilename === '') {
+            return;
+        }
+
         foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
             $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
 
@@ -181,20 +215,38 @@ class PhotoLinkService
                 continue;
             }
 
-            $links = $this->load($targetDeviceId);
-            $changed = false;
+            $this->json->mutateArrayWithLock(
+                $this->paths->linksFile($targetDeviceId),
+                function (array $links) use ($oldFilename, $newOwnerDeviceId, $newFilename): array {
+                    $cleanLinks = [];
 
-            foreach ($links as $index => $link) {
-                if (basename((string) ($link['filename'] ?? '')) === $oldFilename) {
-                    $links[$index]['owner_device_id'] = $newOwnerDeviceId;
-                    $links[$index]['filename'] = $newFilename;
-                    $changed = true;
-                }
-            }
+                    foreach ($links as $link) {
+                        if (! is_array($link)) {
+                            continue;
+                        }
 
-            if ($changed) {
-                $this->save($targetDeviceId, $links);
-            }
+                        $ownerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+                        $existingFilename = basename((string) ($link['filename'] ?? ''));
+
+                        if ($ownerDeviceId < 1 || $existingFilename === '') {
+                            continue;
+                        }
+
+                        if ($existingFilename === $oldFilename) {
+                            $ownerDeviceId = $newOwnerDeviceId;
+                            $existingFilename = $newFilename;
+                        }
+
+                        $cleanLinks[] = [
+                            'owner_device_id' => $ownerDeviceId,
+                            'filename' => $existingFilename,
+                        ];
+                    }
+
+                    return $cleanLinks;
+                },
+                true
+            );
         }
     }
 }
