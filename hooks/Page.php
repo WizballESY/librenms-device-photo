@@ -584,6 +584,9 @@ class Page extends PageHook
             'deleted_photos_emptied' => 'Deleted photos were permanently removed.',
             'deleted_photos_empty' => 'No deleted photos were found.',
             'deleted_photo_permanently_deleted' => 'Deleted photo was permanently removed.',
+            'deleted_storage_migrated' => 'Deleted photo storage was migrated.',
+            'deleted_storage_migrated_with_skips' => 'Deleted photo storage was migrated, but some files already existed in the new storage location.',
+            'deleted_storage_migration_manual_check' => 'Deleted photo storage migration completed, but some files could not be moved. Please check the old deleted photo storage manually.',
             'restored' => 'Photo restored.',
             'restore_failed' => 'Could not restore photo.',
         ];
