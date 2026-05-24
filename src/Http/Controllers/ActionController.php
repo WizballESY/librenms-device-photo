@@ -603,33 +603,9 @@ class ActionController extends Controller
 
         /*
          * Update existing linked-photo JSON entries that pointed to the old orphaned filename.
+         * PhotoLinkService performs this as a locked read-modify-write operation.
          */
-        foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
-            $jsonTargetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
-
-            if ($jsonTargetDeviceId < 1) {
-                continue;
-            }
-
-            $links = $this->links->load($jsonTargetDeviceId);
-            $changed = false;
-
-            foreach ($links as $index => $link) {
-                if (! is_array($link)) {
-                    continue;
-                }
-
-                if (basename((string) ($link['filename'] ?? '')) === $filename) {
-                    $links[$index]['owner_device_id'] = $targetDeviceId;
-                    $links[$index]['filename'] = $targetName;
-                    $changed = true;
-                }
-            }
-
-            if ($changed) {
-                $this->links->save($jsonTargetDeviceId, $links);
-            }
-        }
+        $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
 
         $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
 
