@@ -64,32 +64,90 @@ class PhotoLinkService
     {
         $filename = basename($filename);
 
-        if ($this->exists($targetDeviceId, $ownerDeviceId, $filename)) {
-            return true;
+        if ($targetDeviceId < 1 || $ownerDeviceId < 1 || $filename === '') {
+            return false;
         }
 
-        $links = $this->load($targetDeviceId);
+        return $this->json->mutateArrayWithLock(
+            $this->paths->linksFile($targetDeviceId),
+            function (array $links) use ($ownerDeviceId, $filename): array {
+                $cleanLinks = [];
+                $exists = false;
 
-        $links[] = [
-            'owner_device_id' => $ownerDeviceId,
-            'filename' => $filename,
-        ];
+                foreach ($links as $link) {
+                    if (! is_array($link)) {
+                        continue;
+                    }
 
-        return $this->save($targetDeviceId, $links);
+                    $existingOwnerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+                    $existingFilename = basename((string) ($link['filename'] ?? ''));
+
+                    if ($existingOwnerDeviceId < 1 || $existingFilename === '') {
+                        continue;
+                    }
+
+                    if ($existingOwnerDeviceId === $ownerDeviceId && $existingFilename === $filename) {
+                        $exists = true;
+                    }
+
+                    $cleanLinks[] = [
+                        'owner_device_id' => $existingOwnerDeviceId,
+                        'filename' => $existingFilename,
+                    ];
+                }
+
+                if (! $exists) {
+                    $cleanLinks[] = [
+                        'owner_device_id' => $ownerDeviceId,
+                        'filename' => $filename,
+                    ];
+                }
+
+                return $cleanLinks;
+            },
+            true
+        );
     }
 
     public function remove(int $targetDeviceId, int $ownerDeviceId, string $filename): bool
     {
         $filename = basename($filename);
 
-        $links = array_values(array_filter($this->load($targetDeviceId), function ($link) use ($ownerDeviceId, $filename) {
-            return ! (
-                (int) ($link['owner_device_id'] ?? 0) === $ownerDeviceId
-                && basename((string) ($link['filename'] ?? '')) === $filename
-            );
-        }));
+        if ($targetDeviceId < 1 || $ownerDeviceId < 1 || $filename === '') {
+            return false;
+        }
 
-        return $this->save($targetDeviceId, $links);
+        return $this->json->mutateArrayWithLock(
+            $this->paths->linksFile($targetDeviceId),
+            function (array $links) use ($ownerDeviceId, $filename): array {
+                $cleanLinks = [];
+
+                foreach ($links as $link) {
+                    if (! is_array($link)) {
+                        continue;
+                    }
+
+                    $existingOwnerDeviceId = (int) ($link['owner_device_id'] ?? 0);
+                    $existingFilename = basename((string) ($link['filename'] ?? ''));
+
+                    if ($existingOwnerDeviceId < 1 || $existingFilename === '') {
+                        continue;
+                    }
+
+                    if ($existingOwnerDeviceId === $ownerDeviceId && $existingFilename === $filename) {
+                        continue;
+                    }
+
+                    $cleanLinks[] = [
+                        'owner_device_id' => $existingOwnerDeviceId,
+                        'filename' => $existingFilename,
+                    ];
+                }
+
+                return $cleanLinks;
+            },
+            true
+        );
     }
 
     public function removeAllForFilename(string $filename): void
