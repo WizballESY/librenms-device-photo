@@ -17,7 +17,7 @@
         Administrators are always allowed.
     </p>
 
-    <div class="alert alert-warning" style="font-size: 12px; max-width: 720px;">
+    <div class="alert alert-warning device-photo-alpha-notice" style="font-size: 12px; max-width: 720px;">
         <strong>Notice:</strong>
         This plugin is currently an alpha release. Use at your own risk.
         Make sure you have tested it before using it in production.<br>
