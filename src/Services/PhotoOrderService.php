@@ -21,7 +21,10 @@ class PhotoOrderService
     {
         $order = array_values(array_unique(array_filter($order, 'is_string')));
 
-        return $this->json->writeArray($this->paths->orderFile($safeShortName), $order);
+        return $this->json->mutateArrayWithLock(
+            $this->paths->orderFile($safeShortName),
+            fn (array $_currentOrder): array => $order
+        );
     }
 
     public function apply(array $photos, string $safeShortName): array
