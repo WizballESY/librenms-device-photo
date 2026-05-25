@@ -1280,4 +1280,88 @@
         text-decoration: none;
     }
 
+
+    /*
+     * Scoped device target autocomplete suggestions.
+     */
+    /*
+     * Device Photos Overview target suggestions.
+     */
+    .device-photo-overview-page .device-photo-target-suggestions {
+        display: none;
+        position: absolute;
+        z-index: 9999;
+        left: 0;
+        top: 100%;
+        margin-top: 4px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        max-height: 320px;
+        overflow-y: auto;
+        min-width: 260px;
+        width: 100%;
+        font-size: 12px;
+    }
+
+    .device-photo-overview-page .device-photo-target-suggestion {
+        padding: 6px 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+
+    .device-photo-overview-page .device-photo-target-suggestion:hover {
+        background: #f3f7fb;
+    }
+
+    .device-photo-overview-page .device-photo-target-suggestion .device-id {
+        font-family: monospace;
+        color: #b00040;
+    }
+
+    .device-photo-overview-page .device-photo-target-suggestion .device-name {
+        margin-left: 6px;
+    }
+
+    /*
+     * Manage Device Photos target suggestions.
+     */
+    .device-photo-manage-page .device-photo-target-suggestions {
+        display: none;
+        position: absolute;
+        z-index: 9999;
+        left: 0;
+        bottom: 100%;
+        margin-bottom: 4px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        max-height: 320px;
+        overflow-y: auto;
+        min-width: 260px;
+        width: 100%;
+        font-size: 12px;
+    }
+
+    .device-photo-manage-page .device-photo-target-suggestion {
+        padding: 6px 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+
+    .device-photo-manage-page .device-photo-target-suggestion:hover {
+        background: #f3f7fb;
+    }
+
+    .device-photo-manage-page .device-photo-target-suggestion .device-id {
+        font-family: monospace;
+        color: #b00040;
+    }
+
+    .device-photo-manage-page .device-photo-target-suggestion .device-name {
+        margin-left: 6px;
+    }
+
 </style>
