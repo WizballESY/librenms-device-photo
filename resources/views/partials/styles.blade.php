@@ -453,6 +453,19 @@
      * Page dark mode detail fixes.
      */
     /*
+     * Dark mode labels for expanded overview linked-photo rows.
+     */
+    html.dark .device-photo-plugin .device-photo-links-row .label-primary {
+        background-color: #337ab7 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row .label-success {
+        background-color: #3c9b5f !important;
+        color: #ffffff !important;
+    }
+
+    /*
      * LibreNMS dark mode fix for expanded linked-photo rows.
      */
     html.dark .device-photo-plugin .device-photo-links-row,
