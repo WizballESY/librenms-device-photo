@@ -1,3 +1,4 @@
+@include('device-photo::partials.styles')
 
 
 
