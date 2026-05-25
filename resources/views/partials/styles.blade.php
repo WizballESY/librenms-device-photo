@@ -448,4 +448,250 @@
         color: #8793a0 !important;
     }
 
+
+    /*
+     * Page dark mode detail fixes.
+     */
+    /*
+     * LibreNMS dark mode fix for expanded linked-photo rows.
+     */
+    html.dark .device-photo-plugin .device-photo-links-row,
+    html.dark .device-photo-plugin .device-photo-links-row td,
+    html.dark .device-photo-plugin tr.device-photo-links-row,
+    html.dark .device-photo-plugin tr.device-photo-links-row > td {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row a {
+        color: #8ecbff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row code {
+        background: rgba(255,255,255,0.08) !important;
+        color: #ffb4c8 !important;
+        border-color: rgba(255,255,255,0.08) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row .text-muted {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row .btn-warning {
+        background: #8a5a16 !important;
+        border-color: #a66b18 !important;
+        color: #fff !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for expanded linked-photo row inner content.
+     */
+    html.dark .device-photo-plugin .device-photo-links-row td > div,
+    html.dark .device-photo-plugin .device-photo-links-row td > div *,
+    html.dark .device-photo-plugin .device-photo-links-row td div {
+        background-color: #26303a !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row td > div,
+    html.dark .device-photo-plugin .device-photo-links-row td div,
+    html.dark .device-photo-plugin .device-photo-links-row td span,
+    html.dark .device-photo-plugin .device-photo-links-row td strong {
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-links-row td code {
+        background: rgba(255,255,255,0.08) !important;
+        color: #ffb4c8 !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for DevicePhoto device search suggestion lists.
+     */
+    html.dark .device-photo-plugin .device-photo-target-suggestions,
+    html.dark .device-photo-plugin .device-photo-orphan-suggestions,
+    html.dark .device-photo-plugin .device-photo-restore-suggestions {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-target-suggestion,
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion {
+        background: #26303a !important;
+        border-color: #3f4a56 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-target-suggestion:hover,
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion:hover,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion:hover {
+        background: #35414d !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-target-suggestion .device-id,
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-id,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion .device-id {
+        color: #ff7aa8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-target-suggestion .device-name,
+    html.dark .device-photo-plugin .device-photo-orphan-suggestion .device-name,
+    html.dark .device-photo-plugin .device-photo-restore-suggestion .device-name {
+        color: #cbd5e1 !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for orphaned photo cards.
+     */
+    html.dark .device-photo-plugin .device-photo-orphan-card {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: none !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card img {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card strong,
+    html.dark .device-photo-plugin .device-photo-orphan-card .device-photo-orphan-filename {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card .text-muted,
+    html.dark .device-photo-plugin .device-photo-orphan-card .device-photo-orphan-meta,
+    html.dark .device-photo-plugin .device-photo-orphan-card div {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card input,
+    html.dark .device-photo-plugin .device-photo-orphan-card .form-control {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+        color: #e5e7eb !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card input::placeholder {
+        color: #98a3ad !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn,
+    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn:hover,
+    html.dark .device-photo-plugin .device-photo-orphan-card .input-group-btn .btn:focus,
+    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-orphan-card .btn-default:focus {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for DevicePhoto confirmation dialogs.
+     */
+    html.dark .device-photo-plugin .device-photo-confirm-box,
+    html.dark .device-photo-confirm-box {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-title,
+    html.dark .device-photo-confirm-title {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-message,
+    html.dark .device-photo-confirm-message {
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-backdrop,
+    html.dark .device-photo-confirm-backdrop {
+        background: rgba(0, 0, 0, 0.65) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-actions .btn-default,
+    html.dark .device-photo-confirm-actions .btn-default {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-actions .btn-default:hover,
+    html.dark .device-photo-confirm-actions .btn-default:hover {
+        background: #35414d !important;
+        border-color: #64748b !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for problem/warning counters.
+     */
+    html.dark .device-photo-plugin .device-photo-summary-item.is-problem {
+        background: #3a1f24 !important;
+        border-color: #7f2d3a !important;
+        color: #ffb4c8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-item.is-problem .number,
+    html.dark .device-photo-plugin .device-photo-summary-item.is-problem .label {
+        color: #ffb4c8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-item.is-warning {
+        background: #3b2f18 !important;
+        border-color: #7a5a1d !important;
+        color: #f6d38b !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-item.is-warning .number,
+    html.dark .device-photo-plugin .device-photo-summary-item.is-warning .label {
+        color: #f6d38b !important;
+    }
+
+    html.dark .device-photo-plugin .label-danger {
+        background-color: #7f2d3a !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .label-warning {
+        background-color: #8a5a16 !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * LibreNMS dark mode custom visible icon for datetime-local fields.
+     * Some browsers do not allow reliable styling of the native calendar icon,
+     * so we visually hide it and draw a light icon as an input background.
+     */
+    html.dark .device-photo-plugin input[type="datetime-local"],
+    html.dark .device-photo-plugin #device-photo-set-taken-input {
+        color-scheme: dark;
+        padding-right: 34px !important;
+        background-color: #1f252c !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23e5e7eb' d='M3 1h1v2h8V1h1v2h1.5A1.5 1.5 0 0 1 16 4.5v9A1.5 1.5 0 0 1 14.5 15h-13A1.5 1.5 0 0 1 0 13.5v-9A1.5 1.5 0 0 1 1.5 3H3V1zm11.5 5h-13v7.5a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5V6zM2 4a.5.5 0 0 0-.5.5V5h13v-.5A.5.5 0 0 0 14 4H2z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 10px center !important;
+        background-size: 14px 14px !important;
+    }
+
+    html.dark .device-photo-plugin input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+    html.dark .device-photo-plugin #device-photo-set-taken-input::-webkit-calendar-picker-indicator {
+        opacity: 0 !important;
+        cursor: pointer;
+    }
+
 </style>
