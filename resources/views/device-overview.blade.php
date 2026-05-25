@@ -273,7 +273,6 @@
     $photos = $mixedOrderedPhotos;
 
     $photoCount = count($photos);
-    $modalId = 'device-photo-modal-' . $device->device_id;
 @endphp
 
 @include('device-photo::partials.photo-modal')
