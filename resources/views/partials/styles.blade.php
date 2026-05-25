@@ -975,6 +975,11 @@
         background: #f5f5f5;
     }
 
+    html.dark .device-photo-plugin .device-photo-sort-header:hover {
+        background: #35414d !important;
+        color: #f3f4f6 !important;
+    }
+
     .device-photo-sort-header .device-photo-sort-label {
         display: inline-flex;
         align-items: center;
