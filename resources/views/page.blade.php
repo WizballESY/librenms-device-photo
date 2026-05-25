@@ -1,7 +1,17 @@
 @include('device-photo::partials.styles')
 
 
-<div class="container-fluid device-photo-plugin">
+@php
+    $devicePhotoPageClass = 'device-photo-manage-page';
+
+    if ($global_overview ?? false) {
+        $devicePhotoPageClass = 'device-photo-overview-page';
+    } elseif ($restore_deleted ?? false) {
+        $devicePhotoPageClass = 'device-photo-deleted-page';
+    }
+@endphp
+
+<div class="container-fluid device-photo-plugin {{ $devicePhotoPageClass }}">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
         <h2 style="margin: 0;">
             {{ ($global_overview ?? false) ? 'Device Photos Overview' : 'Manage Device Photos' }}
