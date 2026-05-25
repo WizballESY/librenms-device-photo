@@ -1627,45 +1627,6 @@ document.addEventListener('click', function (e) {
 
                 <hr>
 
-                <style>
-                    .device-photo-orphan-suggestions {
-                        display: none;
-                        position: absolute;
-                        z-index: 99999;
-                        left: 0;
-                        bottom: 100%;
-                        margin-bottom: 4px;
-                        background: #fff;
-                        border: 1px solid #ccc;
-                        border-radius: 4px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.20);
-                        max-height: 320px;
-                        overflow-y: auto;
-                        min-width: 260px;
-                        width: 100%;
-                        font-size: 12px;
-                    }
-
-                    .device-photo-orphan-suggestion {
-                        padding: 6px 8px;
-                        cursor: pointer;
-                        border-bottom: 1px solid #eee;
-                    }
-
-                    .device-photo-orphan-suggestion:hover {
-                        background: #f3f7fb;
-                    }
-
-                    .device-photo-orphan-suggestion .device-id {
-                        font-family: monospace;
-                        color: #b00040;
-                    }
-
-                    .device-photo-orphan-suggestion .device-name {
-                        margin-left: 6px;
-                    }
-                </style>
-
                 <script>
                     document.addEventListener('DOMContentLoaded', function () {
                         var orphanDevices = @json(collect($link_target_devices ?? [])->values());
