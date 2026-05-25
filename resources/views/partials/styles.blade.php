@@ -1426,4 +1426,138 @@
         color: #d8dee9 !important;
     }
 
+
+    /*
+     * LibreNMS Device Overview widget base styles.
+     */
+    .device-photo-wrapper {
+        background: #f3f3f3;
+        border: 1px solid #dedede;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 22px;
+    }
+
+    .device-photo-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e1e1e1;
+    }
+
+    .device-photo-title {
+        font-weight: bold;
+        font-size: 15px;
+        color: #333;
+    }
+
+    .device-photo-title i {
+        margin-right: 6px;
+    }
+
+    .device-photo-options {
+        border: 1px solid #ccc;
+        background: #fff;
+        border-radius: 6px;
+        padding: 2px 9px;
+        cursor: pointer;
+        font-weight: bold;
+        line-height: 20px;
+    }
+
+    .device-photo-options:hover {
+        background: #f7f7f7;
+    }
+
+    .device-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 190px));
+        gap: 14px;
+        align-items: start;
+    }
+
+    .device-photo-linked-tooltip {
+        display: none;
+        position: absolute;
+        top: 34px;
+        right: 6px;
+        max-width: 220px;
+        background: rgba(0, 0, 0, 0.82);
+        color: #fff;
+        font-size: 11px;
+        line-height: 1.35;
+        padding: 6px 8px;
+        border-radius: 6px;
+        z-index: 3;
+        pointer-events: none;
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .device-photo-card:hover .device-photo-linked-tooltip {
+        display: block;
+    }
+
+    .device-photo-linked-tooltip code {
+        color: #fff;
+        background: transparent;
+        padding: 0;
+    }
+
+    .device-photo-linked-icon {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        text-align: center;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        font-size: 11px;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .device-photo-card {
+        position: relative;
+        background: #fff;
+        border: 1px solid #d7d7d7;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .device-photo-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    }
+
+    .device-photo-card img {
+        display: block;
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        border-radius: 5px;
+    }
+
+    .device-photo-empty {
+        padding: 12px 14px;
+        background: #eef7fb;
+        border: 1px solid #c7e5f2;
+        border-radius: 6px;
+        color: #31708f;
+    }
+
+    .device-photo-count {
+        margin-bottom: 10px;
+        color: #777;
+        font-size: 12px;
+    }
+
 </style>
