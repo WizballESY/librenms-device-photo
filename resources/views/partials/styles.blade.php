@@ -707,4 +707,112 @@
         cursor: pointer;
     }
 
+
+    /*
+     * Manage photo card dark mode fixes.
+     */
+    /*
+     * LibreNMS dark mode fix for incoming owner photo cards.
+     */
+    html.dark .device-photo-plugin .device-photo-incoming-owner-card {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: none !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-incoming-owner-card img {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-incoming-owner-card .btn-default {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-incoming-owner-card .btn-default:hover {
+        background: #35414d !important;
+        border-color: #64748b !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * LibreNMS dark mode fix for linked photo cards.
+     */
+    html.dark .device-photo-plugin .device-photo-owned-photo-card {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.38) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-image,
+    html.dark .device-photo-plugin .device-photo-card-image {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-card-meta {
+        color: #cfd7e3 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.38) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card img {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card .device-photo-linked-owner-box {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card strong {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card a {
+        color: #8ecbff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card code {
+        background: rgba(255,255,255,0.08) !important;
+        color: #ffb4c8 !important;
+        border-color: rgba(255,255,255,0.08) !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card .btn-default {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-photo-card .btn-default:hover {
+        background: #35414d !important;
+        border-color: #64748b !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-header-action.btn-default:focus {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
 </style>
