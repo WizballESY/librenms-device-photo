@@ -255,4 +255,197 @@
         cursor: zoom-in;
     }
 
+
+    /*
+     * Base plugin dark mode compatibility.
+     * LibreNMS sets dark mode on html.dark.
+     */
+    html.dark .device-photo-plugin .device-photo-summary-panel,
+    html.dark .device-photo-plugin .device-photo-overview-toolbar,
+    html.dark .device-photo-plugin .device-photo-manager-card,
+    html.dark .device-photo-plugin .device-photo-orphan-card,
+    html.dark .device-photo-plugin .device-photo-confirm-box {
+        background: #2f3842 !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-panel-header,
+    html.dark .device-photo-plugin .device-photo-summary-item .number,
+    html.dark .device-photo-plugin h3,
+    html.dark .device-photo-plugin h4 {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-panel-description,
+    html.dark .device-photo-plugin .device-photo-summary-item .label,
+    html.dark .device-photo-plugin .text-muted {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-summary-item {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    /*
+     * Dark mode warning buttons.
+     * Keep warning actions orange, but slightly toned down.
+     */
+    html.dark .device-photo-plugin .btn-warning {
+        background-color: #b8751a !important;
+        border-color: #c78422 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .btn-warning:hover,
+    html.dark .device-photo-plugin .btn-warning:focus {
+        background-color: #c78422 !important;
+        border-color: #d8942a !important;
+        color: #ffffff !important;
+    }
+
+    /*
+     * Dark mode polish for manager photo cards.
+     */
+    html.dark .device-photo-plugin .device-photo-manager-card .label-primary {
+        background-color: #337ab7 !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .label-success {
+        background-color: #3c9b5f !important;
+        color: #ffffff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action.btn-default,
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action .btn-default {
+        background: #3a4652 !important;
+        border-color: #5b6875 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action.btn-default:hover,
+    html.dark .device-photo-plugin .device-photo-manager-card .device-photo-card-action .btn-default:hover {
+        background: #465564 !important;
+        border-color: #718193 !important;
+        color: #ffffff !important;
+    }
+
+    .device-photo-plugin .device-photo-orphan-card .device-photo-restore-target-input {
+        font-size: 12px;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning {
+        background: #4a3518 !important;
+        border-color: #7a5520 !important;
+        color: #f4d6a0 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning a,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning a {
+        color: #ffd28a !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning .text-muted,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning .text-muted {
+        color: #d0b98f !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card .device-photo-card-link-box.alert-warning [data-device-photo-ajax-row],
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-warning [data-device-photo-ajax-row] {
+        border-bottom-color: #7a5520 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-maintenance-ok {
+        background: #1f3a2a !important;
+        border-color: #2f6b45 !important;
+        color: #9fe0b4 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-dropzone {
+        background: #26303a !important;
+        border-color: #6b7280 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-dropzone .main-text {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-dropzone .sub-text,
+    html.dark .device-photo-plugin .device-photo-selected-files {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-file-list {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin input,
+    html.dark .device-photo-plugin select,
+    html.dark .device-photo-plugin textarea,
+    html.dark .device-photo-plugin .form-control {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+        color: #e5e7eb !important;
+    }
+
+    html.dark .device-photo-plugin input::placeholder,
+    html.dark .device-photo-plugin textarea::placeholder {
+        color: #98a3ad !important;
+    }
+
+    html.dark .device-photo-plugin .alert-info {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin code {
+        background: rgba(255,255,255,0.08);
+        color: #ffb4c8;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    /*
+     * LibreNMS dark mode fix for confirmation modals.
+     */
+    html.dark .device-photo-plugin .device-photo-confirm-modal {
+        background: #2f3842 !important;
+        border: 1px solid #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal h4,
+    html.dark .device-photo-plugin .device-photo-confirm-modal strong,
+    html.dark .device-photo-plugin .device-photo-confirm-modal label {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .text-muted,
+    html.dark .device-photo-plugin .device-photo-confirm-modal p {
+        color: #aeb8c2 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal code {
+        background: #1f252c !important;
+        border: 1px solid #4b5563 !important;
+        color: #ffb4c8 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .form-control {
+        background: #1f252c !important;
+        border-color: #4b5563 !important;
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-confirm-modal .form-control::placeholder {
+        color: #8793a0 !important;
+    }
+
 </style>
