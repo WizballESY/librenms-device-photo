@@ -465,6 +465,13 @@
         color: #ffffff !important;
     }
 
+    html.dark .device-photo-plugin .device-photo-links-row .label .fa {
+        background: transparent !important;
+        color: inherit !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
     /*
      * LibreNMS dark mode fix for expanded linked-photo rows.
      */
