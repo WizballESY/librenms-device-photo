@@ -1044,4 +1044,49 @@
         margin-left: 6px;
     }
 
+
+    /*
+     * Confirm dialog base styles.
+     */
+    .device-photo-confirm-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 20000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .device-photo-confirm-box {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        width: 420px;
+        max-width: calc(100vw - 40px);
+        padding: 18px 20px;
+        border-top: 5px solid #337ab7;
+    }
+
+    .device-photo-confirm-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .device-photo-confirm-message {
+        font-size: 14px;
+        line-height: 1.45;
+        margin-bottom: 18px;
+        color: #333;
+    }
+
+    .device-photo-confirm-actions {
+        text-align: right;
+    }
+
+    .device-photo-confirm-actions .btn {
+        margin-left: 6px;
+    }
+
 </style>
