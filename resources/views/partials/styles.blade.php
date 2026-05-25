@@ -1193,4 +1193,91 @@
         font-size: 13px;
     }
 
+
+    /*
+     * Upload dropzone and selected file list.
+     */
+    .device-photo-dropzone {
+        border: 2px dashed #b8b8b8;
+        border-radius: 10px;
+        background: #f7f7f7;
+        padding: 34px 20px;
+        text-align: center;
+        color: #555;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .device-photo-dropzone.drag-active {
+        background: #eaf4ff;
+        border-color: #337ab7;
+    }
+
+    .device-photo-dropzone .main-text {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .device-photo-dropzone .sub-text {
+        font-size: 13px;
+        color: #777;
+    }
+
+    .device-photo-selected-files {
+        margin-top: 10px;
+        color: #555;
+        font-size: 13px;
+    }
+
+    .device-photo-file-list {
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        display: none;
+    }
+
+    .device-photo-file-list ul {
+        margin: 6px 0 0 18px;
+        padding: 0;
+    }
+
+    .device-photo-file-list li {
+        margin-bottom: 3px;
+    }
+
+    .device-photo-file-list-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 3px 0;
+    }
+
+    .device-photo-file-list-name {
+        overflow-wrap: anywhere;
+    }
+
+    .device-photo-file-remove {
+        border: 0;
+        background: #d9534f;
+        color: #fff;
+        cursor: pointer;
+        font-weight: bold;
+        line-height: 1;
+        padding: 2px 7px;
+        border-radius: 4px;
+        min-width: 22px;
+        height: 22px;
+        text-align: center;
+    }
+
+    .device-photo-file-remove:hover {
+        background: #c9302c;
+        color: #fff;
+        text-decoration: none;
+    }
+
 </style>
