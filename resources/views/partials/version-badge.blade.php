@@ -19,20 +19,6 @@
     $releaseUrl = 'https://github.com/WizballESY/librenms-device-photo/releases';
 @endphp
 
-<style>
-    html.dark .device-photo-version-badge.label-warning {
-        background: #8a6428 !important;
-        border-color: #a77a32 !important;
-        color: #fff3d6 !important;
-    }
-
-    html.dark .device-photo-version-badge.label-warning:hover,
-    html.dark .device-photo-version-badge.label-warning:focus {
-        background: #9a7330 !important;
-        border-color: #bd8b3b !important;
-        color: #ffffff !important;
-    }
-</style>
 
 <a href="{{ $releaseUrl }}"
    target="_blank"
