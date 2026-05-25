@@ -1488,41 +1488,6 @@ document.addEventListener('click', function (e) {
                 @endif
 
 
-                <style>
-                    .device-photo-sort-header {
-                        cursor: pointer;
-                        user-select: none;
-                        white-space: nowrap;
-                    }
-
-                    .device-photo-sort-header:hover {
-                        background: #f5f5f5;
-                    }
-
-                    .device-photo-sort-header .device-photo-sort-label {
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 4px;
-                    }
-
-                    .device-photo-sort-header .device-photo-sort-indicator {
-                        display: inline-block;
-                        min-width: 10px;
-                        color: #999;
-                        font-size: 10px;
-                    }
-
-                    .device-photo-sort-header.is-active .device-photo-sort-indicator {
-                        color: #333;
-                    }
-
-                    .device-photo-sort-header:not(.is-active) .device-photo-sort-indicator::before {
-                        content: "\f0dc";
-                        font-family: FontAwesome;
-                        color: #bbb;
-                    }
-                </style>
-
                 <div class="device-photo-overview-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 16px 0; padding: 10px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 8px;">
                     <div style="display: flex; flex: 1 1 420px; gap: 8px; align-items: center; min-width: 260px;">
                         <span class="text-muted" style="font-size: 13px; white-space: nowrap;">

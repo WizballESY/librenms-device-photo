@@ -961,4 +961,41 @@
         font-weight: bold;
     }
 
+
+    /*
+     * Overview table sorting controls.
+     */
+    .device-photo-sort-header {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    .device-photo-sort-header:hover {
+        background: #f5f5f5;
+    }
+
+    .device-photo-sort-header .device-photo-sort-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .device-photo-sort-header .device-photo-sort-indicator {
+        display: inline-block;
+        min-width: 10px;
+        color: #999;
+        font-size: 10px;
+    }
+
+    .device-photo-sort-header.is-active .device-photo-sort-indicator {
+        color: #333;
+    }
+
+    .device-photo-sort-header:not(.is-active) .device-photo-sort-indicator::before {
+        content: "\f0dc";
+        font-family: FontAwesome;
+        color: #bbb;
+    }
+
 </style>
