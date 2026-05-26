@@ -1309,6 +1309,20 @@ class ActionController extends Controller
             }
         }
 
+        foreach (glob($this->paths->deletedThumbsDir() . '/device-*.*') ?: [] as $thumbPath) {
+            if (! is_file($thumbPath)) {
+                continue;
+            }
+
+            $filename = basename($thumbPath);
+
+            $thumbnailBytes += filesize($thumbPath) ?: 0;
+
+            if (! is_file($this->paths->deletedPath($filename))) {
+                $stale++;
+            }
+        }
+
         return [
             'missing_thumbnail_count' => $missing,
             'stale_thumbnail_count' => $stale,
@@ -1331,6 +1345,7 @@ class ActionController extends Controller
         }
 
         $this->images->cleanupStaleThumbnails($this->paths->photosDir());
+        $this->images->cleanupStaleThumbnails($this->paths->deletedDir(), $this->paths->deletedThumbsDir());
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('thumbnails_cleaned', true, 200, [

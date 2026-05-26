@@ -487,7 +487,8 @@ class Page extends PageHook
             'gd_available' => $gdAvailable,
             'thumbnail_count' => $thumbnailCount,
             'missing_thumbnail_count' => $missingThumbnailCount,
-            'stale_thumbnail_count' => $this->countStaleThumbnails($photoDir),
+            'stale_thumbnail_count' => $this->countStaleThumbnails($photoDir)
+                + $this->countStaleThumbnails($this->deletedDir()),
             'thumbnail_bytes' => $thumbnailBytes,
             'thumbnail_mb' => round($thumbnailBytes / 1024 / 1024, 2),
             'thumb_dir_writable' => $thumbDirWritable,

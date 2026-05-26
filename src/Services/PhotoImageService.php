@@ -78,9 +78,9 @@ class PhotoImageService
         return $exitCode === 0 && is_file($targetPath) && filesize($targetPath) > 0;
     }
 
-    public function cleanupStaleThumbnails(string $photoDir): int
+    public function cleanupStaleThumbnails(string $photoDir, ?string $thumbDir = null): int
     {
-        $thumbDir = $this->paths->thumbsDir();
+        $thumbDir ??= $this->paths->thumbsDir();
         $removed = 0;
 
         if (! is_dir($thumbDir) || ! is_dir($photoDir)) {
