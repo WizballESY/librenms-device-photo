@@ -1560,4 +1560,54 @@
         font-size: 12px;
     }
 
+
+    .device-photo-maintenance-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10550;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(1px);
+    }
+
+    .device-photo-maintenance-overlay-box {
+        width: min(360px, 92vw);
+        padding: 26px 30px;
+        border-radius: 14px;
+        background: #fff;
+        color: #333;
+        text-align: center;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    }
+
+    .device-photo-maintenance-overlay-spinner {
+        margin-bottom: 12px;
+        font-size: 42px;
+        line-height: 1;
+    }
+
+    .device-photo-maintenance-overlay-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .device-photo-maintenance-overlay-help {
+        color: #666;
+        font-size: 13px;
+    }
+
+    html.dark .device-photo-maintenance-overlay-box {
+        background: #1f2933;
+        color: #f5f5f5;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+    }
+
+    html.dark .device-photo-maintenance-overlay-help {
+        color: #c7d0d9;
+    }
+
 </style>

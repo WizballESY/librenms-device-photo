@@ -1272,7 +1272,7 @@
                                               data-device-photo-confirm-ok-text="Generate"
                                               data-device-photo-confirm-ok-class="btn-warning"
                                               data-device-photo-confirm-ok-icon="fa-magic"
-                                              data-device-photo-confirm="Generate missing thumbnails for active photos? Existing thumbnails will not be overwritten."
+                                              data-device-photo-confirm="Generate missing thumbnails for active and deleted photos? Existing thumbnails will not be overwritten."
                                               style="display: inline;">
                                             @csrf
                                             <input type="hidden" name="action" value="generate_missing_thumbnails">
@@ -1281,7 +1281,7 @@
 
                                             <button type="submit"
                                                     class="btn btn-warning btn-xs"
-                                                    title="Generate thumbnails for active photos that are missing thumbnails">
+                                                    title="Generate thumbnails for active and deleted photos that are missing thumbnails">
                                                 <i class="fa fa-magic"></i> Generate missing thumbnails
                                             </button>
                                         </form>
@@ -1297,7 +1297,7 @@
                                               data-device-photo-confirm-ok-text="Clean stale thumbnails"
                                               data-device-photo-confirm-ok-class="btn-warning"
                                               data-device-photo-confirm-ok-icon="fa-trash"
-                                              data-device-photo-confirm="Remove stale thumbnails that no longer have a matching original photo?"
+                                              data-device-photo-confirm="Remove stale thumbnails that no longer have a matching active or deleted original photo?"
                                               style="display: inline;">
                                             @csrf
                                             <input type="hidden" name="action" value="clean_stale_thumbnails">
@@ -1306,7 +1306,7 @@
 
                                             <button type="submit"
                                                     class="btn btn-warning btn-xs"
-                                                    title="Remove thumbnail files where the original active photo no longer exists">
+                                                    title="Remove thumbnail files where the matching active or deleted original photo no longer exists">
                                                 <i class="fa fa-trash"></i> Clean stale thumbnails
                                             </button>
                                         </form>
@@ -1975,7 +1975,97 @@ document.addEventListener('click', function (e) {
                             updateMaintenanceOkUi();
                         }
 
+                        function getMaintenanceLoadingText(form) {
+                            if (form && form.getAttribute('data-device-photo-maintenance-form') === 'missing-thumbnails') {
+                                return 'Generating thumbnails...';
+                            }
+
+                            if (form && form.getAttribute('data-device-photo-maintenance-form') === 'stale-thumbnails') {
+                                return 'Cleaning thumbnails...';
+                            }
+
+                            return 'Working...';
+                        }
+
+                        function setMaintenanceOverlay(form, loading) {
+                            var overlayId = 'device-photo-maintenance-overlay';
+                            var existing = document.getElementById(overlayId);
+
+                            if (!loading) {
+                                if (existing && existing.parentNode) {
+                                    existing.parentNode.removeChild(existing);
+                                }
+
+                                return;
+                            }
+
+                            if (existing) {
+                                var existingText = existing.querySelector('[data-device-photo-maintenance-overlay-text]');
+
+                                if (existingText) {
+                                    existingText.textContent = getMaintenanceLoadingText(form);
+                                }
+
+                                return;
+                            }
+
+                            var overlay = document.createElement('div');
+                            overlay.id = overlayId;
+                            overlay.className = 'device-photo-maintenance-overlay';
+                            overlay.setAttribute('role', 'status');
+                            overlay.setAttribute('aria-live', 'polite');
+
+                            overlay.innerHTML =
+                                '<div class="device-photo-maintenance-overlay-box">' +
+                                    '<div class="device-photo-maintenance-overlay-spinner">' +
+                                        '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>' +
+                                    '</div>' +
+                                    '<div class="device-photo-maintenance-overlay-title" data-device-photo-maintenance-overlay-text>' +
+                                        getMaintenanceLoadingText(form) +
+                                    '</div>' +
+                                    '<div class="device-photo-maintenance-overlay-help">' +
+                                        'Please wait while thumbnail maintenance is running.' +
+                                    '</div>' +
+                                '</div>';
+
+                            document.body.appendChild(overlay);
+                        }
+
+                        function setMaintenanceLoading(form, loading) {
+                            if (!form || !form.getAttribute('data-device-photo-maintenance-form')) {
+                                return;
+                            }
+
+                            var button = form.querySelector('button[type="submit"]');
+
+                            if (!button) {
+                                return;
+                            }
+
+                            if (loading) {
+                                if (!button.getAttribute('data-device-photo-original-html')) {
+                                    button.setAttribute('data-device-photo-original-html', button.innerHTML);
+                                }
+
+                                button.disabled = true;
+
+                                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + getMaintenanceLoadingText(form);
+                                setMaintenanceOverlay(form, true);
+
+                                return;
+                            }
+
+                            setMaintenanceOverlay(form, false);
+                            button.disabled = false;
+
+                            if (button.getAttribute('data-device-photo-original-html')) {
+                                button.innerHTML = button.getAttribute('data-device-photo-original-html');
+                            }
+                        }
+
                         function submitAjax(form) {
+                            setMaintenanceLoading(form, true);
+
                             window.DevicePhotoAjax.submitForm(form).then(function (result) {
                                 var data = result.data;
                                 var row = form.closest('[data-device-photo-ajax-row]');
@@ -1997,10 +2087,12 @@ document.addEventListener('click', function (e) {
                                 }
 
                                 updateThumbnailMaintenanceUi(data);
+                                setMaintenanceLoading(form, false);
 
                                 window.DevicePhotoAjax.toast((data && data.message) || form.getAttribute('data-device-photo-ajax-success') || 'Action completed.');
                             }).catch(function (error) {
                                 console.error('DevicePhoto AJAX failed:', error);
+                                setMaintenanceLoading(form, false);
                                 submitNormally(form);
                             });
                         }
