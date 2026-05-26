@@ -230,6 +230,7 @@ class Page extends PageHook
          */
         $deletedThumbnailCount = 0;
         $deletedThumbnailBytes = 0;
+        $missingDeletedThumbnailCount = 0;
 
         foreach (glob($this->deletedDir() . '/*') ?: [] as $deletedPath) {
             if (! is_file($deletedPath)) {
@@ -250,6 +251,10 @@ class Page extends PageHook
             $originalFilename = preg_replace('/\.deleted-\d{8}-\d{6}\./i', '.', $filename);
             $thumbPath = $this->deletedThumbsDir() . '/' . $filename;
             $hasThumbnail = is_file($thumbPath);
+
+            if (! $hasThumbnail) {
+                $missingDeletedThumbnailCount++;
+            }
 
             $deletedAtTimestamp = 0;
             $deletedAtIso = null;
@@ -486,7 +491,7 @@ class Page extends PageHook
             'legacy_deleted_storage_detected' => ($legacyDeletedPhotoCount + $legacyDeletedThumbnailCount) > 0,
             'gd_available' => $gdAvailable,
             'thumbnail_count' => $thumbnailCount,
-            'missing_thumbnail_count' => $missingThumbnailCount,
+            'missing_thumbnail_count' => $missingThumbnailCount + $missingDeletedThumbnailCount,
             'stale_thumbnail_count' => $this->countStaleThumbnails($photoDir)
                 + $this->countStaleThumbnails($this->deletedDir()),
             'thumbnail_bytes' => $thumbnailBytes,

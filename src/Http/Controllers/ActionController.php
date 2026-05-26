@@ -1295,6 +1295,24 @@ class ActionController extends Controller
             }
         }
 
+        foreach (glob($this->paths->deletedDir() . '/device-*.*') ?: [] as $sourcePath) {
+            if (! is_file($sourcePath)) {
+                continue;
+            }
+
+            $filename = basename($sourcePath);
+
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            $activeBytes += filesize($sourcePath) ?: 0;
+
+            if (! is_file($this->paths->deletedThumbPath($filename))) {
+                $missing++;
+            }
+        }
+
         foreach (glob($this->paths->thumbsDir() . '/device-*.*') ?: [] as $thumbPath) {
             if (! is_file($thumbPath)) {
                 continue;
@@ -1411,6 +1429,41 @@ class ActionController extends Controller
             if ($this->images->createThumbnail($sourcePath, $filename)) {
                 $generated++;
             } else {
+                $failed++;
+            }
+        }
+
+        if (! is_dir($this->paths->deletedThumbsDir())) {
+            @mkdir($this->paths->deletedThumbsDir(), 02775, true);
+        }
+
+        foreach (glob($this->paths->deletedDir() . '/device-*.*') ?: [] as $sourcePath) {
+            if (! is_file($sourcePath)) {
+                continue;
+            }
+
+            $filename = basename($sourcePath);
+
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+                continue;
+            }
+
+            $thumbPath = $this->paths->deletedThumbPath($filename);
+
+            if (is_file($thumbPath)) {
+                continue;
+            }
+
+            $created = $this->images->createThumbnail($sourcePath, $filename);
+            $generatedThumbPath = $this->paths->thumbPath($filename);
+
+            if ($created && is_file($generatedThumbPath) && @rename($generatedThumbPath, $thumbPath) && is_file($thumbPath)) {
+                $generated++;
+            } else {
+                if (is_file($generatedThumbPath)) {
+                    @unlink($generatedThumbPath);
+                }
+
                 $failed++;
             }
         }
