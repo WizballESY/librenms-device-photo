@@ -124,6 +124,52 @@ class PhotoOrderService
         );
     }
 
+    public function replaceKey(string $safeShortName, string $oldKey, string $newKey): bool
+    {
+        $oldKey = trim($oldKey);
+        $newKey = trim($newKey);
+
+        if ($safeShortName === '' || $oldKey === '' || $newKey === '' || $oldKey === $newKey) {
+            return false;
+        }
+
+        $replaced = false;
+
+        $this->json->mutateArrayWithLock(
+            $this->paths->orderFile($safeShortName),
+            function (array $order) use ($oldKey, $newKey, &$replaced): array {
+                $cleaned = [];
+
+                foreach ($order as $item) {
+                    if (! is_string($item)) {
+                        continue;
+                    }
+
+                    if ($item === $oldKey) {
+                        if (! in_array($newKey, $cleaned, true)) {
+                            $cleaned[] = $newKey;
+                        }
+
+                        $replaced = true;
+                        continue;
+                    }
+
+                    if ($item === $newKey) {
+                        continue;
+                    }
+
+                    if (! in_array($item, $cleaned, true)) {
+                        $cleaned[] = $item;
+                    }
+                }
+
+                return $cleaned;
+            }
+        );
+
+        return $replaced;
+    }
+
     public function prune(string $safeShortName, array $validOrderKeys): bool
     {
         /*
