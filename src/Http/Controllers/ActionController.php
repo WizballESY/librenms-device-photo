@@ -616,6 +616,35 @@ class ActionController extends Controller
         return $this->redirect(0, 'assigned');
     }
 
+    private function nextAvailablePhotoFilename(int $deviceId, string $ext): string
+    {
+        $ext = strtolower(trim($ext));
+
+        if ($deviceId < 1 || ! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return '';
+        }
+
+        $targetPrefix = 'device-' . $deviceId;
+        $nextNumber = 1;
+
+        foreach (glob($this->paths->photosDir() . '/' . $targetPrefix . '-*.*') ?: [] as $existingPath) {
+            $existingName = basename($existingPath);
+
+            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d+)\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
+                $nextNumber = max($nextNumber, ((int) $numberMatches[1]) + 1);
+            }
+        }
+
+        $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+
+        while (is_file($this->paths->photoPath($targetName))) {
+            $nextNumber++;
+            $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+        }
+
+        return $targetName;
+    }
+
     private function appendOwnedPhotoToOrder(int $deviceId, string $filename): void
     {
         if ($deviceId < 1 || $filename === '') {
