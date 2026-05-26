@@ -57,6 +57,7 @@ class ActionController extends Controller
             'delete_deleted_photo' => $this->deleteDeletedPhoto($request),
             'remove_broken_link' => $this->removeBrokenLink($request),
             'set_photo_taken' => $this->setPhotoTaken($request, $deviceId),
+            'change_photo_owner' => $this->changePhotoOwner($request, $deviceId),
             'delete' => $this->deletePhoto($request, $deviceId),
             'assign_orphan_photo' => $this->assignOrphanPhoto($request),
             'delete_orphan_photo' => $this->deleteOrphanPhoto($request),
@@ -1037,6 +1038,78 @@ class ActionController extends Controller
         }
 
         return $this->redirect(0, 'delete_failed');
+    }
+
+    private function changePhotoOwner(Request $request, int $deviceId)
+    {
+        $filename = basename((string) $request->input('filename', ''));
+        $targetInput = trim((string) $request->input('target_device_query', $request->input('target_device_id', '')));
+
+        if (! $this->findExistingDevice($deviceId)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('device_not_found', false, 404);
+            }
+
+            return $this->redirect($deviceId, 'device_not_found');
+        }
+
+        $settings = $this->settings->settings();
+
+        if (! $this->permissions->userCanAction(auth()->user(), $settings, 'upload_roles')) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('permission_denied', false, 403);
+            }
+
+            return $this->redirect($deviceId, 'permission_denied');
+        }
+
+        $safeShortName = $this->photos->safeDevicePrefix($deviceId);
+        $pattern = '/^' . preg_quote($safeShortName, '/') . '-[0-9]{1,3}\.(jpg|jpeg|png|webp)$/i';
+
+        if (! preg_match($pattern, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_filename', false, 422);
+            }
+
+            return $this->redirect($deviceId, 'invalid_filename');
+        }
+
+        if (! is_file($this->paths->photoPath($filename))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('not_found', false, 404);
+            }
+
+            return $this->redirect($deviceId, 'not_found');
+        }
+
+        $targetDevice = $this->findDeviceFromInput($targetInput);
+        $targetDeviceId = $targetDevice ? (int) $targetDevice->device_id : 0;
+
+        if (! $targetDevice || $targetDeviceId < 1) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('invalid_target_device', false, 422);
+            }
+
+            return $this->redirect($deviceId, 'invalid_target_device');
+        }
+
+        if ($targetDeviceId === $deviceId) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('same_target_device', false, 409);
+            }
+
+            return $this->redirect($deviceId, 'same_target_device');
+        }
+
+        /*
+         * Backend skeleton only. The actual owner-change rename/link/order update
+         * will be added in the next small step.
+         */
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('owner_change_failed', false, 501);
+        }
+
+        return $this->redirect($deviceId, 'owner_change_failed');
     }
 
     private function deletePhoto(Request $request, int $deviceId)
