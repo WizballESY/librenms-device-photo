@@ -623,6 +623,7 @@ class Page extends PageHook
             'deleted_storage_migrated_with_skips' => 'Deleted photo storage was migrated, but some files already existed in the new storage location.',
             'deleted_storage_migration_manual_check' => 'Deleted photo storage migration completed, but some files could not be moved. Please check the old deleted photo storage manually.',
             'restored' => 'Photo restored.',
+            'photo_owner_changed' => 'Photo moved to another device.',
             'restore_failed' => 'Could not restore photo.',
         ];
 
@@ -645,6 +646,8 @@ class Page extends PageHook
             'not_orphaned' => 'Photo is no longer orphaned.',
             'not_found' => 'Photo not found.',
             'assign_failed' => 'Could not assign orphaned photo.',
+            'owner_change_failed' => 'Could not move photo to another device.',
+            'same_target_device' => 'Photo is already owned by that device.',
             'delete_failed' => 'Could not delete photo.',
             'permission_denied' => 'You do not have permission to perform that action.',
             'exiftool_unavailable' => 'ExifTool is not available on this server.',
