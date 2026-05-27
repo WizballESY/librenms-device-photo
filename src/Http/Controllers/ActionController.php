@@ -1101,15 +1101,90 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'same_target_device');
         }
 
-        /*
-         * Backend skeleton only. The actual owner-change rename/link/order update
-         * will be added in the next small step.
-         */
-        if ($this->wantsJsonResponse($request)) {
-            return $this->jsonStatus('owner_change_failed', false, 501);
+        $linkedTargetDeviceIds = $this->linkedTargetDeviceIdsForPhoto($deviceId, $filename);
+
+        $pathInfo = pathinfo($filename);
+        $ext = strtolower((string) ($pathInfo['extension'] ?? ''));
+        $targetName = $this->nextAvailablePhotoFilename($targetDeviceId, $ext);
+
+        if ($targetName === '' || is_file($this->paths->photoPath($targetName))) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('owner_change_failed', false, 500);
+            }
+
+            return $this->redirect($deviceId, 'owner_change_failed');
         }
 
-        return $this->redirect($deviceId, 'owner_change_failed');
+        $sourcePath = $this->paths->photoPath($filename);
+        $targetPath = $this->paths->photoPath($targetName);
+
+        if (! @rename($sourcePath, $targetPath) || ! is_file($targetPath)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('owner_change_failed', false, 500);
+            }
+
+            return $this->redirect($deviceId, 'owner_change_failed');
+        }
+
+        @chmod($targetPath, 0664);
+
+        $oldThumbPath = $this->paths->thumbPath($filename);
+        $newThumbPath = $this->paths->thumbPath($targetName);
+
+        if (is_file($oldThumbPath)) {
+            @rename($oldThumbPath, $newThumbPath);
+            @chmod($newThumbPath, 0664);
+        }
+
+        /*
+         * Create or refresh the thumbnail for the new owner filename if possible.
+         */
+        $this->images->createThumbnail($targetPath, $targetName);
+
+        /*
+         * After the original file has been renamed successfully, update all
+         * references that pointed to the old owner filename.
+         */
+        $oldLinkedKey = 'linked:' . $deviceId . ':' . $filename;
+        $newLinkedKey = 'linked:' . $targetDeviceId . ':' . $targetName;
+        $targetOrderReplaced = false;
+
+        $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
+
+        /*
+         * If the target device previously linked to this photo, the link would
+         * now point to a photo owned by the same device. Remove that self-link.
+         */
+        $this->links->remove($targetDeviceId, $targetDeviceId, $targetName);
+
+        $this->order->remove($safeShortName, $filename);
+
+        foreach ($linkedTargetDeviceIds as $linkedTargetDeviceId) {
+            $linkedTargetDeviceId = (int) $linkedTargetDeviceId;
+            $linkedSafeShortName = $this->photos->safeDevicePrefix($linkedTargetDeviceId);
+
+            if ($linkedTargetDeviceId === $targetDeviceId) {
+                $targetOrderReplaced = $this->order->replaceKey($linkedSafeShortName, $oldLinkedKey, $targetName) || $targetOrderReplaced;
+            } else {
+                $this->order->replaceKey($linkedSafeShortName, $oldLinkedKey, $newLinkedKey);
+            }
+
+            $this->pruneOrderForDevice($linkedTargetDeviceId);
+        }
+
+        if (! $targetOrderReplaced) {
+            $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+        } else {
+            $this->pruneOrderForDevice($targetDeviceId);
+        }
+
+        $this->pruneOrderForDevice($deviceId);
+
+        if ($this->wantsJsonResponse($request)) {
+            return $this->jsonStatus('photo_owner_changed');
+        }
+
+        return $this->redirectAfterAction($request, $targetDeviceId, 'photo_owner_changed');
     }
 
     private function deletePhoto(Request $request, int $deviceId)
