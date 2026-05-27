@@ -1040,6 +1040,32 @@ class ActionController extends Controller
         return $this->redirect(0, 'delete_failed');
     }
 
+    private function moveFileWithoutOverwrite(string $sourcePath, string $targetPath): bool
+    {
+        if (! is_file($sourcePath) || $targetPath === '' || is_file($targetPath)) {
+            return false;
+        }
+
+        /*
+         * Use link()+unlink() instead of rename() so an unexpected target file
+         * can never be overwritten. link() fails if the target already exists.
+         */
+        if (! @link($sourcePath, $targetPath)) {
+            return false;
+        }
+
+        if (! is_file($targetPath)) {
+            return false;
+        }
+
+        if (! @unlink($sourcePath)) {
+            @unlink($targetPath);
+            return false;
+        }
+
+        return true;
+    }
+
     private function changePhotoOwner(Request $request, int $deviceId)
     {
         $filename = basename((string) $request->input('filename', ''));
@@ -1118,7 +1144,7 @@ class ActionController extends Controller
         $sourcePath = $this->paths->photoPath($filename);
         $targetPath = $this->paths->photoPath($targetName);
 
-        if (! @rename($sourcePath, $targetPath) || ! is_file($targetPath)) {
+        if (! $this->moveFileWithoutOverwrite($sourcePath, $targetPath)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('owner_change_failed', false, 500);
             }
