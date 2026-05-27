@@ -3524,6 +3524,121 @@ document.addEventListener('click', function (e) {
     @endif
 
     @if (request()->query('view') !== 'restore-deleted')
+    <div id="device-photo-owner-change-modal" class="device-photo-confirm-backdrop">
+        <div class="device-photo-confirm-box device-photo-confirm-modal device-photo-owner-change-modal-box">
+            <div class="device-photo-confirm-title">
+                <i class="fa fa-exchange"></i> Move photo to another device
+            </div>
+
+            <form method="post"
+                  action="{{ url('plugin/device-photo-package/action') }}"
+                  id="device-photo-owner-change-form">
+                @csrf
+                <input type="hidden" name="action" value="change_photo_owner">
+                <input type="hidden" name="device_id" id="device-photo-owner-change-device-id" value="{{ $device ? $device->device_id : 0 }}">
+                <input type="hidden" name="filename" id="device-photo-owner-change-filename" value="">
+                <input type="hidden" name="return_anchor" id="device-photo-owner-change-return-anchor" value="device-photo-manager-grid">
+
+                <p class="text-muted">
+                    The original file will be renamed to the new device ID.
+                    Existing links from other devices will be updated.
+                    The current device will no longer display this photo unless you add a new link.
+                </p>
+
+                <div class="form-group">
+                    <label for="device-photo-owner-change-target" class="device-photo-owner-change-label">Target device</label>
+                    <div class="device-photo-owner-change-target-wrap">
+                        <div class="input-group input-group-sm">
+                            <input
+                                type="text"
+                                name="target_device_query"
+                                id="device-photo-owner-change-target"
+                                class="form-control device-photo-target-input"
+                                placeholder="Search target device ID or name"
+                                autocomplete="off"
+                                required
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-muted device-photo-owner-change-current-file">
+                    <strong>Current file:</strong>
+                    <code id="device-photo-owner-change-filename-display"></code>
+                </div>
+
+                <div class="device-photo-confirm-actions device-photo-owner-change-actions">
+                    <button type="button" class="btn btn-default btn-sm" id="device-photo-owner-change-cancel">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="fa fa-exchange"></i> Move photo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('device-photo-owner-change-modal');
+            var form = document.getElementById('device-photo-owner-change-form');
+            var filenameInput = document.getElementById('device-photo-owner-change-filename');
+            var filenameDisplay = document.getElementById('device-photo-owner-change-filename-display');
+            var deviceInput = document.getElementById('device-photo-owner-change-device-id');
+            var returnAnchorInput = document.getElementById('device-photo-owner-change-return-anchor');
+            var targetInput = document.getElementById('device-photo-owner-change-target');
+            var cancelButton = document.getElementById('device-photo-owner-change-cancel');
+
+            if (!modal || !form || !filenameInput || !deviceInput || !returnAnchorInput || !targetInput || !cancelButton) {
+                return;
+            }
+
+            function hideModal() {
+                modal.style.display = 'none';
+                form.removeAttribute('data-device-photo-confirmed');
+                targetInput.value = '';
+            }
+
+            function showModal(button) {
+                filenameInput.value = button.getAttribute('data-filename') || '';
+                deviceInput.value = button.getAttribute('data-device-id') || '';
+                returnAnchorInput.value = button.getAttribute('data-return-anchor') || 'device-photo-manager-grid';
+
+                if (filenameDisplay) {
+                    filenameDisplay.textContent = filenameInput.value;
+                }
+
+                targetInput.value = '';
+                modal.style.display = 'flex';
+
+                setTimeout(function () {
+                    targetInput.focus();
+                }, 50);
+            }
+
+            document.querySelectorAll('.device-photo-owner-change-button').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    showModal(button);
+                });
+            });
+
+            cancelButton.addEventListener('click', hideModal);
+
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    hideModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.style.display === 'flex') {
+                    hideModal();
+                }
+            });
+        })();
+    </script>
+
     <div id="device-photo-set-taken-modal" class="device-photo-confirm-backdrop">
         <div class="device-photo-confirm-box" style="max-width: 460px; padding-bottom: 18px;">
             <h4 style="margin-top: 0;">

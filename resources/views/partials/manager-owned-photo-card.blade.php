@@ -130,6 +130,17 @@
     @endif
 
     @if ($can_upload)
+        <button
+            type="button"
+            class="btn btn-default btn-sm btn-block device-photo-owner-change-button device-photo-card-action"
+            data-filename="{{ $photo['filename'] }}"
+            data-device-id="{{ $device->device_id }}"
+            data-return-anchor="{{ $devicePhotoCardAnchor }}"
+            title="Move this owned photo to another device"
+        >
+            <i class="fa fa-exchange"></i> Move to another device
+        </button>
+
         <div class="text-muted" style="font-size: 12px; margin-bottom: 4px;">
             <i class="fa fa-link"></i> Link this photo to another device
         </div>

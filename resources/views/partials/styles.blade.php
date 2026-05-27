@@ -1610,4 +1610,26 @@
         color: #c7d0d9;
     }
 
+
+    .device-photo-owner-change-modal-box {
+        max-width: 520px;
+        padding-bottom: 18px;
+    }
+
+    .device-photo-owner-change-label {
+        font-size: 12px;
+    }
+
+    .device-photo-owner-change-target-wrap {
+        position: relative;
+    }
+
+    .device-photo-owner-change-current-file {
+        font-size: 12px;
+    }
+
+    .device-photo-owner-change-actions {
+        margin-top: 16px;
+    }
+
 </style>
