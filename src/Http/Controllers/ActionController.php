@@ -1128,19 +1128,6 @@ class ActionController extends Controller
 
         @chmod($targetPath, 0664);
 
-        $oldThumbPath = $this->paths->thumbPath($filename);
-        $newThumbPath = $this->paths->thumbPath($targetName);
-
-        if (is_file($oldThumbPath)) {
-            @rename($oldThumbPath, $newThumbPath);
-            @chmod($newThumbPath, 0664);
-        }
-
-        /*
-         * Create or refresh the thumbnail for the new owner filename if possible.
-         */
-        $this->images->createThumbnail($targetPath, $targetName);
-
         /*
          * After the original file has been renamed successfully, update all
          * references that pointed to the old owner filename.
@@ -1179,6 +1166,28 @@ class ActionController extends Controller
         }
 
         $this->pruneOrderForDevice($deviceId);
+
+        /*
+         * Thumbnails are cache only. Run thumbnail work after link/order state has
+         * been updated, and never let thumbnail failures break a completed owner
+         * change after the original photo has already been moved.
+         */
+        try {
+            $oldThumbPath = $this->paths->thumbPath($filename);
+            $newThumbPath = $this->paths->thumbPath($targetName);
+
+            if (is_file($oldThumbPath)) {
+                @rename($oldThumbPath, $newThumbPath);
+                @chmod($newThumbPath, 0664);
+            }
+
+            $this->images->createThumbnail($targetPath, $targetName);
+        } catch (\Throwable $e) {
+            /*
+             * Ignore thumbnail failures here. Missing thumbnails can be regenerated
+             * by thumbnail maintenance, and the original photo is the source of truth.
+             */
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('photo_owner_changed');
