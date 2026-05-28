@@ -746,20 +746,29 @@ class ActionController extends Controller
 
         @chmod($targetPath, 0664);
 
-        $oldThumbPath = $this->paths->deletedThumbPath($filename);
-        $newThumbPath = $this->paths->thumbPath($targetName);
-
-        if (is_file($oldThumbPath)) {
-            @rename($oldThumbPath, $newThumbPath);
-            @chmod($newThumbPath, 0664);
-        }
+        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
 
         /*
-         * Create or refresh thumbnail for restored photo if possible.
+         * Thumbnails are cache only. Run thumbnail work after active photo/order
+         * state has been updated, and never let thumbnail failures break a
+         * completed restore after the deleted original has already been moved.
          */
-        $this->images->createThumbnail($this->paths->photoPath($targetName), $targetName);
+        try {
+            $oldThumbPath = $this->paths->deletedThumbPath($filename);
+            $newThumbPath = $this->paths->thumbPath($targetName);
 
-        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+            if (is_file($oldThumbPath)) {
+                @rename($oldThumbPath, $newThumbPath);
+                @chmod($newThumbPath, 0664);
+            }
+
+            $this->images->createThumbnail($targetPath, $targetName);
+        } catch (\Throwable $e) {
+            /*
+             * Ignore thumbnail failures here. Missing thumbnails can be regenerated
+             * by thumbnail maintenance, and the original photo is the source of truth.
+             */
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('restored', true, 200, [
