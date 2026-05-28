@@ -557,25 +557,9 @@ class ActionController extends Controller
             return $this->redirect(0, 'invalid_type');
         }
 
-        $targetPrefix = 'device-' . $targetDeviceId;
-        $nextNumber = 1;
+        $targetName = $this->nextAvailablePhotoFilename($targetDeviceId, $ext);
 
-        foreach (glob($this->paths->photosDir() . '/' . $targetPrefix . '-*.*') ?: [] as $existingPath) {
-            $existingName = basename($existingPath);
-
-            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d+)\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
-                $nextNumber = max($nextNumber, ((int) $numberMatches[1]) + 1);
-            }
-        }
-
-        $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
-
-        while (is_file($this->paths->photoPath($targetName))) {
-            $nextNumber++;
-            $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
-        }
-
-        if (! @rename($this->paths->photoPath($filename), $this->paths->photoPath($targetName))) {
+        if ($targetName === '' || is_file($this->paths->photoPath($targetName))) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('assign_failed', false, 500);
             }
@@ -583,7 +567,18 @@ class ActionController extends Controller
             return $this->redirect(0, 'assign_failed');
         }
 
-        @chmod($this->paths->photoPath($targetName), 0664);
+        $sourcePath = $this->paths->photoPath($filename);
+        $targetPath = $this->paths->photoPath($targetName);
+
+        if (! $this->moveFileWithoutOverwrite($sourcePath, $targetPath)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('assign_failed', false, 500);
+            }
+
+            return $this->redirect(0, 'assign_failed');
+        }
+
+        @chmod($targetPath, 0664);
 
         /*
          * Keep the orphaned thumbnail with the photo when assigning it to a device.
