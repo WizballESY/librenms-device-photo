@@ -581,29 +581,34 @@ class ActionController extends Controller
         @chmod($targetPath, 0664);
 
         /*
-         * Keep the orphaned thumbnail with the photo when assigning it to a device.
-         * If no orphaned thumbnail exists, thumbnail generation below will create one.
-         */
-        $oldThumbPath = $this->paths->thumbPath($filename);
-        $newThumbPath = $this->paths->thumbPath($targetName);
-
-        if (is_file($oldThumbPath)) {
-            @rename($oldThumbPath, $newThumbPath);
-            @chmod($newThumbPath, 0664);
-        }
-
-        /*
-         * Create or refresh thumbnail for assigned orphaned photo if possible.
-         */
-        $this->images->createThumbnail($this->paths->photoPath($targetName), $targetName);
-
-        /*
          * Update existing linked-photo JSON entries that pointed to the old orphaned filename.
          * PhotoLinkService performs this as a locked read-modify-write operation.
          */
         $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
 
         $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+
+        /*
+         * Thumbnails are cache only. Run thumbnail work after link/order state has
+         * been updated, and never let thumbnail failures break a completed orphan
+         * assignment after the original photo has already been moved.
+         */
+        try {
+            $oldThumbPath = $this->paths->thumbPath($filename);
+            $newThumbPath = $this->paths->thumbPath($targetName);
+
+            if (is_file($oldThumbPath)) {
+                @rename($oldThumbPath, $newThumbPath);
+                @chmod($newThumbPath, 0664);
+            }
+
+            $this->images->createThumbnail($targetPath, $targetName);
+        } catch (\Throwable $e) {
+            /*
+             * Ignore thumbnail failures here. Missing thumbnails can be regenerated
+             * by thumbnail maintenance, and the original photo is the source of truth.
+             */
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('assigned');
