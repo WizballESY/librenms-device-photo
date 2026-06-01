@@ -62,7 +62,7 @@
             <div class="device-photo-linked-to-summary">
                 <div class="device-photo-linked-to-header">
                     <div class="device-photo-linked-to-title">
-                        <strong><i class="fa fa-link"></i> Links</strong>
+                        <strong><i class="fa fa-link"></i> Sharing</strong>
                     </div>
 
                     <div class="device-photo-linked-to-toggle-row">
@@ -79,10 +79,10 @@
 
                 <div class="device-photo-linked-to-status-line">
                     <span data-device-photo-linked-to-empty
-                          class="{{ $linkedToCount > 0 ? 'device-photo-linked-to-hidden' : '' }}">Link to devices</span>
+                          class="text-muted {{ $linkedToCount > 0 ? 'device-photo-linked-to-hidden' : '' }}">Not shared</span>
                     <span data-device-photo-linked-to-status
-                          class="{{ $linkedToCount > 0 ? '' : 'device-photo-linked-to-hidden' }}">
-                        Linked to <span data-device-photo-linked-to-count>{{ $linkedToCount }}</span>
+                          class="device-photo-sharing-badge {{ $linkedToCount > 0 ? '' : 'device-photo-linked-to-hidden' }}">
+                        Shared to <span data-device-photo-linked-to-count>{{ $linkedToCount }}</span>
                         <span data-device-photo-linked-to-label>device{{ $linkedToCount === 1 ? '' : 's' }}</span>
                     </span>
                 </div>

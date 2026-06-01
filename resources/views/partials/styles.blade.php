@@ -1666,6 +1666,36 @@
         display: none !important;
     }
 
+    .device-photo-sharing-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border: 1px solid #9acfea;
+        border-radius: 3px;
+        background: #d9edf7;
+        color: #245269;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    html.dark .device-photo-plugin .device-photo-sharing-badge {
+        border-color: #2f6f9f;
+        background: #17384f;
+        color: #c7e8ff;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-to-toggle {
+        border-color: #9ca3af;
+        background: #374151;
+        color: #f3f4f6;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-to-toggle:hover,
+    html.dark .device-photo-plugin .device-photo-linked-to-toggle:focus {
+        border-color: #d1d5db;
+        background: #4b5563;
+        color: #ffffff;
+    }
+
     .device-photo-linked-to-toggle {
         flex: 0 0 auto;
     }

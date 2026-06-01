@@ -443,19 +443,28 @@
 
                             box.innerHTML =
                                 '<div class="device-photo-linked-to-summary">' +
-                                    '<strong>' +
-                                        '<i class="fa fa-link"></i> ' +
-                                        'Linked to <span data-device-photo-linked-to-count>0</span> ' +
-                                        '<span data-device-photo-linked-to-label>devices</span>' +
-                                    '</strong>' +
-                                    '<button type="button"' +
-                                            ' class="btn btn-default btn-xs device-photo-linked-to-toggle"' +
-                                            ' data-toggle="collapse"' +
-                                            ' data-target="#' + collapseId + '"' +
-                                            ' aria-expanded="false"' +
-                                            ' aria-controls="' + collapseId + '">' +
-                                        '<i class="fa fa-list"></i> Show' +
-                                    '</button>' +
+                                    '<div class="device-photo-linked-to-header">' +
+                                        '<div class="device-photo-linked-to-title">' +
+                                            '<strong><i class="fa fa-link"></i> Sharing</strong>' +
+                                        '</div>' +
+                                        '<div class="device-photo-linked-to-toggle-row">' +
+                                            '<button type="button"' +
+                                                    ' class="btn btn-default btn-xs device-photo-linked-to-toggle"' +
+                                                    ' data-toggle="collapse"' +
+                                                    ' data-target="#' + collapseId + '"' +
+                                                    ' aria-expanded="false"' +
+                                                    ' aria-controls="' + collapseId + '">' +
+                                                '<i class="fa fa-list"></i> Show' +
+                                            '</button>' +
+                                        '</div>' +
+                                    '</div>' +
+                                    '<div class="device-photo-linked-to-status-line">' +
+                                        '<span data-device-photo-linked-to-empty class="text-muted device-photo-linked-to-hidden">Not shared</span>' +
+                                        '<span data-device-photo-linked-to-status class="device-photo-sharing-badge">' +
+                                            'Shared to <span data-device-photo-linked-to-count>0</span> ' +
+                                            '<span data-device-photo-linked-to-label>devices</span>' +
+                                        '</span>' +
+                                    '</div>' +
                                 '</div>' +
                                 '<div id="' + collapseId + '" class="collapse device-photo-linked-to-list" data-device-photo-linked-to-list></div>';
 
