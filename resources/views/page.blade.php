@@ -536,6 +536,14 @@
                         if (label) {
                             label.textContent = linkedToCount === 1 ? 'device' : 'devices';
                         }
+
+                        var emptyStatus = box.querySelector('[data-device-photo-linked-to-empty]');
+                        var linkedStatus = box.querySelector('[data-device-photo-linked-to-status]');
+
+                        if (emptyStatus && linkedStatus) {
+                            emptyStatus.classList.toggle('device-photo-linked-to-hidden', linkedToCount > 0);
+                            linkedStatus.classList.toggle('device-photo-linked-to-hidden', linkedToCount < 1);
+                        }
                     }
 
                     if (targetInput) {
@@ -2671,7 +2679,17 @@ document.addEventListener('click', function (e) {
                                 label.textContent = remaining === 1 ? 'device' : 'devices';
                             }
 
-                            if (remaining < 1 && linkedToBox.parentNode) {
+                            var emptyStatus = linkedToBox.querySelector('[data-device-photo-linked-to-empty]');
+                            var linkedStatus = linkedToBox.querySelector('[data-device-photo-linked-to-status]');
+
+                            if (emptyStatus && linkedStatus) {
+                                emptyStatus.classList.toggle('device-photo-linked-to-hidden', remaining > 0);
+                                linkedStatus.classList.toggle('device-photo-linked-to-hidden', remaining < 1);
+                            }
+
+                            var hasAddLinkForm = linkedToBox.querySelector('form[data-device-photo-ajax-add-link="1"]');
+
+                            if (remaining < 1 && !hasAddLinkForm && linkedToBox.parentNode) {
                                 linkedToBox.parentNode.removeChild(linkedToBox);
                             }
                         }

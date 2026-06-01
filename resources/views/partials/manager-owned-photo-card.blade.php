@@ -51,33 +51,81 @@
         </div>
     </div>
 
-    @if (!empty($photo['linked_to']))
+    @if ($can_upload || !empty($photo['linked_to']))
         @php
             $linkedToCollapseId = $devicePhotoCardAnchor . '-linked-to';
+            $linkedToCount = count($photo['linked_to'] ?? []);
         @endphp
 
         <div class="alert alert-warning device-photo-card-link-box"
              data-device-photo-linked-to-box>
             <div class="device-photo-linked-to-summary">
-                <strong>
-                    <i class="fa fa-link"></i>
-                    Linked to <span data-device-photo-linked-to-count>{{ count($photo['linked_to']) }}</span>
-                    <span data-device-photo-linked-to-label>device{{ count($photo['linked_to']) === 1 ? '' : 's' }}</span>
-                </strong>
+                <div class="device-photo-linked-to-header">
+                    <div class="device-photo-linked-to-title">
+                        <strong><i class="fa fa-link"></i> Links</strong>
+                    </div>
 
-                <button type="button"
-                        class="btn btn-default btn-xs device-photo-linked-to-toggle"
-                        data-toggle="collapse"
-                        data-target="#{{ $linkedToCollapseId }}"
-                        aria-expanded="false"
-                        aria-controls="{{ $linkedToCollapseId }}">
-                    <i class="fa fa-list"></i> Show
-                </button>
+                    <div class="device-photo-linked-to-toggle-row">
+                        <button type="button"
+                                class="btn btn-default btn-xs device-photo-linked-to-toggle"
+                                data-toggle="collapse"
+                                data-target="#{{ $linkedToCollapseId }}"
+                                aria-expanded="false"
+                                aria-controls="{{ $linkedToCollapseId }}">
+                            <i class="fa fa-list"></i> Show
+                        </button>
+                    </div>
+                </div>
+
+                <div class="device-photo-linked-to-status-line">
+                    <span data-device-photo-linked-to-empty
+                          class="{{ $linkedToCount > 0 ? 'device-photo-linked-to-hidden' : '' }}">Link to devices</span>
+                    <span data-device-photo-linked-to-status
+                          class="{{ $linkedToCount > 0 ? '' : 'device-photo-linked-to-hidden' }}">
+                        Linked to <span data-device-photo-linked-to-count>{{ $linkedToCount }}</span>
+                        <span data-device-photo-linked-to-label>device{{ $linkedToCount === 1 ? '' : 's' }}</span>
+                    </span>
+                </div>
             </div>
 
             <div id="{{ $linkedToCollapseId }}" class="collapse device-photo-linked-to-list" data-device-photo-linked-to-list>
-                @foreach ($photo['linked_to'] as $linkedDevice)
+                @if ($can_upload)
+                    <div class="text-muted device-photo-card-action-note">
+                        <i class="fa fa-link"></i> Link this photo to another device
+                    </div>
+
+                    <form method="post"
+                          action="{{ url('plugin/device-photo-package/action') }}"
+                          class="device-photo-add-link-form"
+                          data-device-photo-ajax-add-link="1"
+                          data-device-photo-ajax-success="Photo linked.">
+                        @csrf
+                        <input type="hidden" name="action" value="add_link">
+                        <input type="hidden" name="device_id" value="{{ $device->device_id }}">
+                        <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+                        <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
+
+                        <div class="input-group input-group-sm">
+                            <input
+                                type="text"
+                                name="target_device_query"
+                                class="form-control device-photo-target-input"
+                                placeholder="Search device ID or name"
+                                autocomplete="off"
+                                required
+                            >
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-default" title="Add link">
+                                    <i class="fa fa-link"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </form>
+                @endif
+
+                @foreach ($photo['linked_to'] ?? [] as $linkedDevice)
                     <div data-device-photo-ajax-row="outgoing-link"
+                         data-device-photo-target-device-id="{{ $linkedDevice['device_id'] }}"
                          class="device-photo-linked-to-row">
                         <div class="device-photo-linked-to-device-name">
                             <a href="{{ url('plugin/device-photo') }}?device_id={{ $linkedDevice['device_id'] }}">
@@ -119,40 +167,6 @@
         </div>
     @endif
 
-    @if ($can_upload)
-        <div class="text-muted" style="font-size: 12px; margin-bottom: 4px;">
-            <i class="fa fa-link"></i> Link this photo to another device
-        </div>
-
-        <form method="post"
-              action="{{ url('plugin/device-photo-package/action') }}"
-              style="margin-bottom: 8px; position: relative;"
-              data-device-photo-ajax-add-link="1"
-              data-device-photo-ajax-success="Photo linked.">
-            @csrf
-            <input type="hidden" name="action" value="add_link">
-            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
-            <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
-            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
-
-            <div class="input-group input-group-sm">
-                <input
-                    type="text"
-                    name="target_device_query"
-                    class="form-control device-photo-target-input"
-                    placeholder="Search device ID or name"
-                    autocomplete="off"
-                    required
-                >
-                <span class="input-group-btn">
-                    <button type="submit" class="btn btn-default" title="Add link">
-                        <i class="fa fa-link"></i>
-                    </button>
-                </span>
-            </div>
-        </form>
-    @endif
-
     @php
         $devicePhotoCanWriteExif = !empty($exiftool_available) && preg_match('/\\.(jpe?g)$/i', $photo['filename']);
     @endphp
@@ -170,7 +184,7 @@
             <i class="fa fa-clock-o"></i> Set photo taken
         </button>
     @elseif ($can_upload && empty($exiftool_available) && preg_match('/\\.(jpe?g)$/i', $photo['filename']))
-        <div class="text-muted" style="font-size: 12px; margin-bottom: 8px;">
+        <div class="text-muted device-photo-card-action-note device-photo-card-action-note-spaced">
             <i class="fa fa-clock-o"></i> Photo taken editing requires ExifTool.
         </div>
     @endif

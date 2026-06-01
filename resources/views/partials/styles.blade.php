@@ -1634,10 +1634,36 @@
 
 
     .device-photo-linked-to-summary {
+        display: block;
+    }
+
+    .device-photo-linked-to-header {
         display: flex;
-        gap: 8px;
         align-items: center;
         justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    .device-photo-linked-to-title {
+        margin-bottom: 0;
+    }
+
+    .device-photo-linked-to-status-line {
+        margin-bottom: 2px;
+    }
+
+    .device-photo-card-link-box .device-photo-linked-to-summary {
+        margin-bottom: -2px;
+    }
+
+    .device-photo-linked-to-toggle-row {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .device-photo-linked-to-hidden {
+        display: none !important;
     }
 
     .device-photo-linked-to-toggle {
@@ -1668,6 +1694,21 @@
 
     html.dark .device-photo-plugin .device-photo-linked-to-row {
         border-bottom-color: #7a5520;
+    }
+
+
+    .device-photo-card-action-note {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .device-photo-card-action-note-spaced {
+        margin-bottom: 8px;
+    }
+
+    .device-photo-add-link-form {
+        margin-bottom: 8px;
+        position: relative;
     }
 
 </style>
