@@ -119,9 +119,39 @@
         </div>
     @endif
 
-    <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
-        <i class="fa fa-download"></i> Download
-    </a>
+    @if ($can_upload)
+        <div class="text-muted" style="font-size: 12px; margin-bottom: 4px;">
+            <i class="fa fa-link"></i> Link this photo to another device
+        </div>
+
+        <form method="post"
+              action="{{ url('plugin/device-photo-package/action') }}"
+              style="margin-bottom: 8px; position: relative;"
+              data-device-photo-ajax-add-link="1"
+              data-device-photo-ajax-success="Photo linked.">
+            @csrf
+            <input type="hidden" name="action" value="add_link">
+            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
+            <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
+            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
+
+            <div class="input-group input-group-sm">
+                <input
+                    type="text"
+                    name="target_device_query"
+                    class="form-control device-photo-target-input"
+                    placeholder="Search device ID or name"
+                    autocomplete="off"
+                    required
+                >
+                <span class="input-group-btn">
+                    <button type="submit" class="btn btn-default" title="Add link">
+                        <i class="fa fa-link"></i>
+                    </button>
+                </span>
+            </div>
+        </form>
+    @endif
 
     @php
         $devicePhotoCanWriteExif = !empty($exiftool_available) && preg_match('/\\.(jpe?g)$/i', $photo['filename']);
@@ -156,39 +186,11 @@
         >
             <i class="fa fa-exchange"></i> Move to another device
         </button>
-
-        <div class="text-muted" style="font-size: 12px; margin-bottom: 4px;">
-            <i class="fa fa-link"></i> Link this photo to another device
-        </div>
-
-        <form method="post"
-              action="{{ url('plugin/device-photo-package/action') }}"
-              style="margin-bottom: 8px; position: relative;"
-              data-device-photo-ajax-add-link="1"
-              data-device-photo-ajax-success="Photo linked.">
-            @csrf
-            <input type="hidden" name="action" value="add_link">
-            <input type="hidden" name="device_id" value="{{ $device->device_id }}">
-            <input type="hidden" name="filename" value="{{ $photo['filename'] }}">
-            <input type="hidden" name="return_anchor" value="{{ $devicePhotoCardAnchor }}">
-
-            <div class="input-group input-group-sm">
-                <input
-                    type="text"
-                    name="target_device_query"
-                    class="form-control device-photo-target-input"
-                    placeholder="Search device ID or name"
-                    autocomplete="off"
-                    required
-                >
-                <span class="input-group-btn">
-                    <button type="submit" class="btn btn-default" title="Add link">
-                        <i class="fa fa-link"></i>
-                    </button>
-                </span>
-            </div>
-        </form>
     @endif
+
+    <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
+        <i class="fa fa-download"></i> Download
+    </a>
 
     @if ($can_delete)
         @php
