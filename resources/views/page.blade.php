@@ -277,6 +277,34 @@
         };
     </script>
 
+    <script id="device-photo-linked-to-collapse-toggle">
+        document.addEventListener('DOMContentLoaded', function () {
+            function setLinkedToToggleState(target, isOpen) {
+                var box = target.closest('[data-device-photo-linked-to-box]');
+                var button = box ? box.querySelector('.device-photo-linked-to-toggle') : null;
+
+                if (!button) {
+                    return;
+                }
+
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                button.innerHTML = isOpen
+                    ? '<i class="fa fa-list"></i> Hide'
+                    : '<i class="fa fa-list"></i> Show';
+            }
+
+            if (window.jQuery) {
+                window.jQuery(document).on('shown.bs.collapse', '.device-photo-linked-to-list', function () {
+                    setLinkedToToggleState(this, true);
+                });
+
+                window.jQuery(document).on('hidden.bs.collapse', '.device-photo-linked-to-list', function () {
+                    setLinkedToToggleState(this, false);
+                });
+            }
+        });
+    </script>
+
     <script id="device-photo-link-ui-helper">
         window.DevicePhotoLinkUi = window.DevicePhotoLinkUi || {};
 
@@ -411,16 +439,25 @@
                             box = document.createElement('div');
                             box.className = 'alert alert-warning device-photo-card-link-box';
                             box.setAttribute('data-device-photo-linked-to-box', '1');
-                            box.style.fontSize = '12px';
-                            box.style.padding = '6px 8px';
-                            box.style.marginBottom = '8px';
+                            var collapseId = 'device-photo-linked-to-' + Math.random().toString(36).slice(2);
 
                             box.innerHTML =
-                                '<strong>' +
-                                    '<i class="fa fa-link"></i> ' +
-                                    'Linked to <span data-device-photo-linked-to-count>0</span> devices' +
-                                '</strong>' +
-                                '<div style="margin-top: 8px;" data-device-photo-linked-to-list></div>';
+                                '<div class="device-photo-linked-to-summary">' +
+                                    '<strong>' +
+                                        '<i class="fa fa-link"></i> ' +
+                                        'Linked to <span data-device-photo-linked-to-count>0</span> ' +
+                                        '<span data-device-photo-linked-to-label>devices</span>' +
+                                    '</strong>' +
+                                    '<button type="button"' +
+                                            ' class="btn btn-default btn-xs device-photo-linked-to-toggle"' +
+                                            ' data-toggle="collapse"' +
+                                            ' data-target="#' + collapseId + '"' +
+                                            ' aria-expanded="false"' +
+                                            ' aria-controls="' + collapseId + '">' +
+                                        '<i class="fa fa-list"></i> Show' +
+                                    '</button>' +
+                                '</div>' +
+                                '<div id="' + collapseId + '" class="collapse device-photo-linked-to-list" data-device-photo-linked-to-list></div>';
 
                             var downloadButton = card.querySelector('a[download]');
 
@@ -452,12 +489,10 @@
                         var row = document.createElement('div');
                         row.setAttribute('data-device-photo-ajax-row', 'outgoing-link');
                         row.setAttribute('data-device-photo-target-device-id', String(data.target_device_id));
-                        row.style.marginBottom = '8px';
-                        row.style.paddingBottom = '8px';
-                        row.style.borderBottom = '1px solid #eadfbf';
+                        row.className = 'device-photo-linked-to-row';
 
                         row.innerHTML =
-                            '<div style="word-break: break-word;">' +
+                            '<div class="device-photo-linked-to-device-name">' +
                                 '<a href="{{ url('plugin/device-photo') }}?device_id=' + encodeURIComponent(String(data.target_device_id)) + '">' +
                                     escapeHtml(data.target_device_name || ('device-' + data.target_device_id)) +
                                     ' <span class="text-muted">(Device ID ' + escapeHtml(data.target_device_id) + ')</span>' +
@@ -466,7 +501,7 @@
 
                         if (data.can_delete === true) {
                             row.innerHTML +=
-                                '<form method="post" action="{{ url('plugin/device-photo-package/action') }}" style="margin-top: 6px;"' +
+                                '<form method="post" action="{{ url('plugin/device-photo-package/action') }}" class="device-photo-linked-to-remove-form"' +
                                       ' data-device-photo-ajax="1"' +
                                       ' data-device-photo-ajax-success="Shared photo link removed."' +
                                       ' data-device-photo-confirm-title="Remove shared link?"' +
@@ -490,8 +525,16 @@
 
                         count = box.querySelector('[data-device-photo-linked-to-count]');
 
+                        var linkedToCount = list.querySelectorAll('[data-device-photo-ajax-row="outgoing-link"]').length;
+
                         if (count) {
-                            count.textContent = String(list.querySelectorAll('[data-device-photo-ajax-row="outgoing-link"]').length);
+                            count.textContent = String(linkedToCount);
+                        }
+
+                        var label = box.querySelector('[data-device-photo-linked-to-label]');
+
+                        if (label) {
+                            label.textContent = linkedToCount === 1 ? 'device' : 'devices';
                         }
                     }
 
@@ -2620,6 +2663,12 @@ document.addEventListener('click', function (e) {
 
                             if (count) {
                                 count.textContent = String(remaining);
+                            }
+
+                            var label = linkedToBox.querySelector('[data-device-photo-linked-to-label]');
+
+                            if (label) {
+                                label.textContent = remaining === 1 ? 'device' : 'devices';
                             }
 
                             if (remaining < 1 && linkedToBox.parentNode) {

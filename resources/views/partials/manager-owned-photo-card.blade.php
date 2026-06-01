@@ -52,18 +52,34 @@
     </div>
 
     @if (!empty($photo['linked_to']))
+        @php
+            $linkedToCollapseId = $devicePhotoCardAnchor . '-linked-to';
+        @endphp
+
         <div class="alert alert-warning device-photo-card-link-box"
              data-device-photo-linked-to-box>
-            <strong>
-                <i class="fa fa-link"></i>
-                Linked to <span data-device-photo-linked-to-count>{{ count($photo['linked_to']) }}</span> device{{ count($photo['linked_to']) === 1 ? '' : 's' }}
-            </strong>
+            <div class="device-photo-linked-to-summary">
+                <strong>
+                    <i class="fa fa-link"></i>
+                    Linked to <span data-device-photo-linked-to-count>{{ count($photo['linked_to']) }}</span>
+                    <span data-device-photo-linked-to-label>device{{ count($photo['linked_to']) === 1 ? '' : 's' }}</span>
+                </strong>
 
-            <div style="margin-top: 8px;">
+                <button type="button"
+                        class="btn btn-default btn-xs device-photo-linked-to-toggle"
+                        data-toggle="collapse"
+                        data-target="#{{ $linkedToCollapseId }}"
+                        aria-expanded="false"
+                        aria-controls="{{ $linkedToCollapseId }}">
+                    <i class="fa fa-list"></i> Show
+                </button>
+            </div>
+
+            <div id="{{ $linkedToCollapseId }}" class="collapse device-photo-linked-to-list" data-device-photo-linked-to-list>
                 @foreach ($photo['linked_to'] as $linkedDevice)
                     <div data-device-photo-ajax-row="outgoing-link"
-                         style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eadfbf;">
-                        <div style="word-break: break-word;">
+                         class="device-photo-linked-to-row">
+                        <div class="device-photo-linked-to-device-name">
                             <a href="{{ url('plugin/device-photo') }}?device_id={{ $linkedDevice['device_id'] }}">
                                 @if (!empty($linkedDevice['name']))
                                     {{ $linkedDevice['name'] }}
@@ -77,7 +93,7 @@
                         @if ($can_delete)
                             <form method="post"
                                   action="{{ url('plugin/device-photo-package/action') }}"
-                                  style="margin-top: 6px;"
+                                  class="device-photo-linked-to-remove-form"
                                   data-device-photo-ajax="1"
                                   data-device-photo-ajax-success="Shared photo link removed."
                                   data-device-photo-confirm-title="Remove shared link?"

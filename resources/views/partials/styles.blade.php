@@ -1632,4 +1632,42 @@
         margin-top: 16px;
     }
 
+
+    .device-photo-linked-to-summary {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .device-photo-linked-to-toggle {
+        flex: 0 0 auto;
+    }
+
+    .device-photo-linked-to-list {
+        margin-top: 8px;
+    }
+
+    .device-photo-linked-to-row {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eadfbf;
+    }
+
+    .device-photo-linked-to-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .device-photo-linked-to-device-name {
+        word-break: break-word;
+    }
+
+    .device-photo-linked-to-remove-form {
+        margin-top: 6px;
+    }
+
+    html.dark .device-photo-plugin .device-photo-linked-to-row {
+        border-bottom-color: #7a5520;
+    }
+
 </style>
