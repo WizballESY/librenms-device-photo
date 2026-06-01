@@ -17,6 +17,11 @@
         draggable="false"
     >
 
+    <span class="device-photo-linked-icon"
+          title="This photo is linked from another device.">
+        <i class="fa fa-link"></i>
+    </span>
+
     <div class="device-photo-card-type-row">
         <span class="label label-success"
               title="This photo is linked from another device. The owner device listed below has the original photo.">
@@ -62,12 +67,12 @@
         </div>
     </div>
 
-    <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
-        <i class="fa fa-download"></i> Download
-    </a>
-
     <a href="{{ url('plugin/device-photo') }}?device_id={{ $photo['owner_device_id'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
         <i class="fa fa-camera"></i> Manage owner photos
+    </a>
+
+    <a href="{{ $photo['url'] }}" download="{{ $photo['filename'] }}" class="btn btn-default btn-sm btn-block device-photo-card-action">
+        <i class="fa fa-download"></i> Download
     </a>
 
     @if ($can_delete)

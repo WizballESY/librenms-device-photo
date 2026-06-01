@@ -1762,4 +1762,17 @@
         position: relative;
     }
 
+
+    .device-photo-linked-photo-card {
+        position: relative;
+    }
+
+    .device-photo-linked-photo-card .device-photo-linked-icon {
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: none;
+        z-index: 4;
+    }
+
 </style>
