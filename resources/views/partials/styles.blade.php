@@ -783,6 +783,16 @@
         color: #d8dee9 !important;
     }
 
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-info {
+        background: #26303a !important;
+        border-color: #4b5563 !important;
+        color: #d8dee9 !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-info.device-photo-sharing-active {
+        border-left-color: #5dade2 !important;
+    }
+
     html.dark .device-photo-plugin .device-photo-linked-photo-card strong {
         color: #f3f4f6 !important;
     }
@@ -1666,21 +1676,32 @@
         display: none !important;
     }
 
-    .device-photo-sharing-badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border: 1px solid #9acfea;
-        border-radius: 3px;
-        background: #d9edf7;
-        color: #245269;
-        font-weight: 600;
-        line-height: 1.3;
+    .device-photo-card-link-box.device-photo-sharing-active {
+        border-left: 4px solid #337ab7;
     }
 
-    html.dark .device-photo-plugin .device-photo-sharing-badge {
-        border-color: #2f6f9f;
-        background: #17384f;
-        color: #c7e8ff;
+    .device-photo-sharing-status {
+        display: inline-block;
+        color: #245269;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .device-photo-sharing-status-icon {
+        margin-right: 5px;
+        opacity: 0.85;
+    }
+
+    html.dark .device-photo-plugin .device-photo-card-link-box.device-photo-sharing-active {
+        border-left-color: #5dade2;
+    }
+
+    html.dark .device-photo-plugin .device-photo-sharing-status {
+        color: #b7d7ef;
+    }
+
+    html.dark .device-photo-plugin .device-photo-sharing-status-icon {
+        color: #9fc5df;
     }
 
     html.dark .device-photo-plugin .device-photo-linked-to-toggle {
@@ -1723,7 +1744,7 @@
     }
 
     html.dark .device-photo-plugin .device-photo-linked-to-row {
-        border-bottom-color: #7a5520;
+        border-bottom-color: #4b5563;
     }
 
 

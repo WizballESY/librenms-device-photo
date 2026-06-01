@@ -437,7 +437,7 @@
 
                         if (!box) {
                             box = document.createElement('div');
-                            box.className = 'alert alert-warning device-photo-card-link-box';
+                            box.className = 'alert alert-info device-photo-card-link-box device-photo-sharing-active';
                             box.setAttribute('data-device-photo-linked-to-box', '1');
                             var collapseId = 'device-photo-linked-to-' + Math.random().toString(36).slice(2);
 
@@ -445,7 +445,7 @@
                                 '<div class="device-photo-linked-to-summary">' +
                                     '<div class="device-photo-linked-to-header">' +
                                         '<div class="device-photo-linked-to-title">' +
-                                            '<strong><i class="fa fa-link"></i> Sharing</strong>' +
+                                            '<strong><i class="fa fa-link"></i> <span data-device-photo-sharing-title>Sharing</span></strong>' +
                                         '</div>' +
                                         '<div class="device-photo-linked-to-toggle-row">' +
                                             '<button type="button"' +
@@ -458,9 +458,9 @@
                                             '</button>' +
                                         '</div>' +
                                     '</div>' +
-                                    '<div class="device-photo-linked-to-status-line">' +
-                                        '<span data-device-photo-linked-to-empty class="text-muted device-photo-linked-to-hidden">Not shared</span>' +
-                                        '<span data-device-photo-linked-to-status class="device-photo-sharing-badge">' +
+                                    '<div class="device-photo-linked-to-status-line" data-device-photo-linked-to-status-line>' +
+                                        '<span data-device-photo-linked-to-status class="device-photo-sharing-status">' +
+                                            '<i class="fa fa-share-alt device-photo-sharing-status-icon"></i> ' +
                                             'Shared to <span data-device-photo-linked-to-count>0</span> ' +
                                             '<span data-device-photo-linked-to-label>devices</span>' +
                                         '</span>' +
@@ -546,13 +546,18 @@
                             label.textContent = linkedToCount === 1 ? 'device' : 'devices';
                         }
 
-                        var emptyStatus = box.querySelector('[data-device-photo-linked-to-empty]');
-                        var linkedStatus = box.querySelector('[data-device-photo-linked-to-status]');
+                        var sharingTitle = box.querySelector('[data-device-photo-sharing-title]');
+                        var statusLine = box.querySelector('[data-device-photo-linked-to-status-line]');
 
-                        if (emptyStatus && linkedStatus) {
-                            emptyStatus.classList.toggle('device-photo-linked-to-hidden', linkedToCount > 0);
-                            linkedStatus.classList.toggle('device-photo-linked-to-hidden', linkedToCount < 1);
+                        if (sharingTitle) {
+                            sharingTitle.textContent = linkedToCount > 0 ? 'Sharing' : 'Share';
                         }
+
+                        if (statusLine) {
+                            statusLine.classList.toggle('device-photo-linked-to-hidden', linkedToCount < 1);
+                        }
+
+                        box.classList.toggle('device-photo-sharing-active', linkedToCount > 0);
                     }
 
                     if (targetInput) {
@@ -2688,13 +2693,18 @@ document.addEventListener('click', function (e) {
                                 label.textContent = remaining === 1 ? 'device' : 'devices';
                             }
 
-                            var emptyStatus = linkedToBox.querySelector('[data-device-photo-linked-to-empty]');
-                            var linkedStatus = linkedToBox.querySelector('[data-device-photo-linked-to-status]');
+                            var sharingTitle = linkedToBox.querySelector('[data-device-photo-sharing-title]');
+                            var statusLine = linkedToBox.querySelector('[data-device-photo-linked-to-status-line]');
 
-                            if (emptyStatus && linkedStatus) {
-                                emptyStatus.classList.toggle('device-photo-linked-to-hidden', remaining > 0);
-                                linkedStatus.classList.toggle('device-photo-linked-to-hidden', remaining < 1);
+                            if (sharingTitle) {
+                                sharingTitle.textContent = remaining > 0 ? 'Sharing' : 'Share';
                             }
+
+                            if (statusLine) {
+                                statusLine.classList.toggle('device-photo-linked-to-hidden', remaining < 1);
+                            }
+
+                            linkedToBox.classList.toggle('device-photo-sharing-active', remaining > 0);
 
                             var hasAddLinkForm = linkedToBox.querySelector('form[data-device-photo-ajax-add-link="1"]');
 

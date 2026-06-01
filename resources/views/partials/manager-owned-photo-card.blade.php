@@ -57,12 +57,12 @@
             $linkedToCount = count($photo['linked_to'] ?? []);
         @endphp
 
-        <div class="alert alert-warning device-photo-card-link-box"
+        <div class="alert alert-info device-photo-card-link-box {{ $linkedToCount > 0 ? 'device-photo-sharing-active' : '' }}"
              data-device-photo-linked-to-box>
             <div class="device-photo-linked-to-summary">
                 <div class="device-photo-linked-to-header">
                     <div class="device-photo-linked-to-title">
-                        <strong><i class="fa fa-link"></i> Sharing</strong>
+                        <strong><i class="fa fa-link"></i> <span data-device-photo-sharing-title>{{ $linkedToCount > 0 ? 'Sharing' : 'Share' }}</span></strong>
                     </div>
 
                     <div class="device-photo-linked-to-toggle-row">
@@ -77,11 +77,11 @@
                     </div>
                 </div>
 
-                <div class="device-photo-linked-to-status-line">
-                    <span data-device-photo-linked-to-empty
-                          class="text-muted {{ $linkedToCount > 0 ? 'device-photo-linked-to-hidden' : '' }}">Not shared</span>
+                <div class="device-photo-linked-to-status-line {{ $linkedToCount > 0 ? '' : 'device-photo-linked-to-hidden' }}"
+                     data-device-photo-linked-to-status-line>
                     <span data-device-photo-linked-to-status
-                          class="device-photo-sharing-badge {{ $linkedToCount > 0 ? '' : 'device-photo-linked-to-hidden' }}">
+                          class="device-photo-sharing-status">
+                        <i class="fa fa-share-alt device-photo-sharing-status-icon"></i>
                         Shared to <span data-device-photo-linked-to-count>{{ $linkedToCount }}</span>
                         <span data-device-photo-linked-to-label>device{{ $linkedToCount === 1 ? '' : 's' }}</span>
                     </span>
@@ -91,7 +91,7 @@
             <div id="{{ $linkedToCollapseId }}" class="collapse device-photo-linked-to-list" data-device-photo-linked-to-list>
                 @if ($can_upload)
                     <div class="text-muted device-photo-card-action-note">
-                        <i class="fa fa-link"></i> Link this photo to another device
+                        <i class="fa fa-link"></i> Share this photo with another device
                     </div>
 
                     <form method="post"
