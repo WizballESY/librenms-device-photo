@@ -216,7 +216,14 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'invalid_filename');
         }
 
-        $this->links->remove($deviceId, $ownerDeviceId, $filename);
+        if (! $this->links->remove($deviceId, $ownerDeviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('link_remove_failed', false, 500);
+            }
+
+            return $this->redirectAfterAction($request, $deviceId, 'link_remove_failed');
+        }
+
         $this->pruneOrderForDevice($deviceId);
 
         if ($this->wantsJsonResponse($request)) {
@@ -268,7 +275,14 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'invalid_target_device');
         }
 
-        $this->links->remove($targetDeviceId, $deviceId, $filename);
+        if (! $this->links->remove($targetDeviceId, $deviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('link_remove_failed', false, 500);
+            }
+
+            return $this->redirectAfterAction($request, $deviceId, 'link_remove_failed');
+        }
+
         $this->pruneOrderForDevice($targetDeviceId);
 
         if ($this->wantsJsonResponse($request)) {
