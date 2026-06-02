@@ -1422,21 +1422,30 @@ class ActionController extends Controller
              * Remove all links from other devices that pointed to this original photo.
              * Otherwise deleting an owned photo would leave broken linked-photo entries.
              */
+            $metadataUpdated = true;
             $targetDeviceIds = $this->linkedTargetDeviceIdsForPhoto($deviceId, $filename);
-            $this->links->removeAllForFilename($filename);
+
+            $metadataUpdated = $this->links->removeAllForFilename($filename)
+                && $metadataUpdated;
 
             $safeShortName = $this->photos->safeDevicePrefix($deviceId);
-            $this->order->remove($safeShortName, $filename);
+
+            $metadataUpdated = $this->order->remove($safeShortName, $filename)
+                && $metadataUpdated;
 
             foreach ($targetDeviceIds as $targetDeviceId) {
                 $this->pruneOrderForDevice((int) $targetDeviceId);
             }
 
+            $status = $metadataUpdated
+                ? 'deleted'
+                : 'deleted_with_warnings';
+
             if ($this->wantsJsonResponse($request)) {
-                return $this->jsonStatus('deleted');
+                return $this->jsonStatus($status);
             }
 
-            return $this->redirectAfterAction($request, $deviceId, 'deleted');
+            return $this->redirectAfterAction($request, $deviceId, $status);
         }
 
         if ($this->wantsJsonResponse($request)) {

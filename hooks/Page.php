@@ -606,6 +606,7 @@ class Page extends PageHook
         $messages = [
             'uploaded' => 'Photo uploaded.',
             'deleted' => 'Photo moved to deleted folder.',
+            'deleted_with_warnings' => 'Photo moved to deleted folder, but some photo metadata could not be updated. Please check linked photos and photo order manually.',
             'order_updated' => 'Photo order updated.',
             'order_update_failed' => 'Photo order could not be saved.',
             'link_added' => 'Photo link added.',
