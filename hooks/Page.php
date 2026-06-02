@@ -212,14 +212,16 @@ class Page extends PageHook
                 $thumbnailBytes += filesize($thumbPath);
             }
 
+            $dateData = $this->photoDateData($photoDir . '/' . $filename);
+
             $photoFilesByDevice[$ownerDeviceId][] = [
                 'filename' => $filename,
                 'url' => $this->photoUrl($filename),
                 'thumb_url' => $this->thumbUrl($filename),
-                'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
-                'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
-                'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
-                'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
+                'photo_taken_display' => $dateData['photo_taken_display'],
+                'photo_taken_iso' => $dateData['photo_taken_iso'],
+                'file_date_display' => $dateData['file_date_display'],
+                'file_date_iso' => $dateData['file_date_iso'],
                 'size' => $size,
                 'has_thumbnail' => $hasThumbnail,
             ];
@@ -757,16 +759,18 @@ class Page extends PageHook
                     $filename = basename($path);
 
                     if (is_file($path)) {
+                        $dateData = $this->photoDateData($photoDir . '/' . $filename);
+
                         $photos[$filename] = [
                             'filename' => $filename,
                             'photo_type' => 'owned',
                             'order_key' => $filename,
                             'url' => $this->photoUrl($filename),
                             'thumb_url' => $this->thumbUrl($filename),
-                            'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
-                            'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
-                            'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
-                            'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
+                            'photo_taken_display' => $dateData['photo_taken_display'],
+                            'photo_taken_iso' => $dateData['photo_taken_iso'],
+                            'file_date_display' => $dateData['file_date_display'],
+                            'file_date_iso' => $dateData['file_date_iso'],
                         ];
                     }
                 }
@@ -863,16 +867,18 @@ class Page extends PageHook
 
                 $ownerDevice = Device::find($ownerDeviceId);
 
+                $dateData = $this->photoDateData($photoDir . '/' . $filename);
+
                 $linkedPhotos[$filename] = [
                     'filename' => $filename,
                     'photo_type' => 'linked',
                     'order_key' => 'linked:' . $ownerDeviceId . ':' . $filename,
                     'url' => $this->photoUrl($filename),
                     'thumb_url' => $this->thumbUrl($filename),
-                    'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
-                    'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
-                    'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
-                    'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
+                    'photo_taken_display' => $dateData['photo_taken_display'],
+                    'photo_taken_iso' => $dateData['photo_taken_iso'],
+                    'file_date_display' => $dateData['file_date_display'],
+                    'file_date_iso' => $dateData['file_date_iso'],
                     'owner_device_id' => $ownerDeviceId,
                     'owner_name' => $this->deviceLabel($ownerDevice, $ownerDeviceId),
                 ];
@@ -953,14 +959,16 @@ class Page extends PageHook
                         $filename = basename($path);
 
                         if (is_file($path)) {
+                            $dateData = $this->photoDateData($photoDir . '/' . $filename);
+
                             $incomingOwnerPhotos[$filename] = [
                                 'filename' => $filename,
                                 'url' => $this->photoUrl($filename),
                                 'thumb_url' => $this->thumbUrl($filename),
-                                'photo_taken_display' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_display'],
-                                'photo_taken_iso' => $this->photoDateData($photoDir . '/' . $filename)['photo_taken_iso'],
-                                'file_date_display' => $this->photoDateData($photoDir . '/' . $filename)['file_date_display'],
-                                'file_date_iso' => $this->photoDateData($photoDir . '/' . $filename)['file_date_iso'],
+                                'photo_taken_display' => $dateData['photo_taken_display'],
+                                'photo_taken_iso' => $dateData['photo_taken_iso'],
+                                'file_date_display' => $dateData['file_date_display'],
+                                'file_date_iso' => $dateData['file_date_iso'],
                             ];
                         }
                     }
