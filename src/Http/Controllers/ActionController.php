@@ -427,18 +427,20 @@ class ActionController extends Controller
             $targetPath = (string) $upload['target_path'];
             $isHeicUpload = ! empty($upload['is_heic_upload']);
 
-            /*
-             * If this filename has been used before, remove stale links before storing
-             * the new file. Otherwise a newly uploaded photo could inherit old links.
-             */
-            $this->links->removeAllForFilename($targetName);
+            $temporaryPath = $this->temporaryUploadPath($targetExt);
+
+            if ($temporaryPath === '') {
+                return $this->redirect($deviceId, 'upload_failed');
+            }
 
             if ($isHeicUpload) {
-                if (! $this->images->convertHeicToJpeg($file->getRealPath(), $targetPath)) {
+                if (! $this->images->convertHeicToJpeg($file->getRealPath(), $temporaryPath)) {
+                    @unlink($temporaryPath);
+
                     return $this->redirect($deviceId, 'heic_convert_failed');
                 }
 
-                $convertedInfo = @getimagesize($targetPath);
+                $convertedInfo = @getimagesize($temporaryPath);
 
                 if (
                     $convertedInfo === false ||
@@ -446,15 +448,37 @@ class ActionController extends Controller
                     empty($convertedInfo[1]) ||
                     ((int) $convertedInfo[0] * (int) $convertedInfo[1]) > $maxPixels
                 ) {
-                    @unlink($targetPath);
+                    @unlink($temporaryPath);
 
                     return $this->redirect($deviceId, 'image_too_large_pixels');
                 }
             } else {
-                $file->move($this->paths->photosDir(), $targetName);
+                try {
+                    $file->move(dirname($temporaryPath), basename($temporaryPath));
+                } catch (\Throwable $e) {
+                    @unlink($temporaryPath);
+
+                    return $this->redirect($deviceId, 'upload_failed');
+                }
+
+                if (! is_file($temporaryPath)) {
+                    return $this->redirect($deviceId, 'upload_failed');
+                }
+            }
+
+            if (! $this->moveFileWithoutOverwrite($temporaryPath, $targetPath)) {
+                @unlink($temporaryPath);
+
+                return $this->redirect($deviceId, 'upload_failed');
             }
 
             @chmod($targetPath, 0664);
+
+            /*
+             * If this filename has been used before, remove stale links after the
+             * new file has safely reached its final no-overwrite target.
+             */
+            $this->links->removeAllForFilename($targetName);
 
             /*
              * Thumbnail generation is optional and fail-safe.
@@ -1102,6 +1126,32 @@ class ActionController extends Controller
 
             if (! is_file($this->paths->deletedPath($candidate))) {
                 return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    private function temporaryUploadPath(string $extension): string
+    {
+        $extension = strtolower(trim($extension));
+
+        if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return '';
+        }
+
+        for ($attempt = 1; $attempt <= 20; $attempt++) {
+            try {
+                $random = bin2hex(random_bytes(16));
+            } catch (\Throwable $e) {
+                $random = str_replace('.', '', uniqid('', true));
+            }
+
+            $temporaryName = '.device-photo-upload-' . $random . '.' . $extension;
+            $temporaryPath = $this->paths->photosDir() . '/' . $temporaryName;
+
+            if (! is_file($temporaryPath)) {
+                return $temporaryPath;
             }
         }
 
