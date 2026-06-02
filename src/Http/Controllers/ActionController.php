@@ -1439,7 +1439,8 @@ class ActionController extends Controller
                 && $metadataUpdated;
 
             foreach ($targetDeviceIds as $targetDeviceId) {
-                $this->pruneOrderForDevice((int) $targetDeviceId);
+                $metadataUpdated = $this->pruneOrderForDevice((int) $targetDeviceId)
+                    && $metadataUpdated;
             }
 
             $status = $metadataUpdated
