@@ -670,10 +670,10 @@ class ActionController extends Controller
         return $targetName;
     }
 
-    private function appendOwnedPhotoToOrder(int $deviceId, string $filename): void
+    private function appendOwnedPhotoToOrder(int $deviceId, string $filename): bool
     {
         if ($deviceId < 1 || $filename === '') {
-            return;
+            return false;
         }
 
         /*
@@ -687,7 +687,7 @@ class ActionController extends Controller
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
 
-        $this->order->appendOwnedPhoto($safeShortName, $filename);
+        return $this->order->appendOwnedPhoto($safeShortName, $filename);
     }
 
     private function restoreDeletedPhoto(Request $request)
@@ -1254,6 +1254,7 @@ class ActionController extends Controller
         $newLinkedKey = 'linked:' . $targetDeviceId . ':' . $targetName;
         $targetOrderReplaced = false;
         $linkMetadataUpdated = true;
+        $orderMetadataUpdated = true;
 
         $linkMetadataUpdated = $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName)
             && $linkMetadataUpdated;
@@ -1262,26 +1263,33 @@ class ActionController extends Controller
          * If the target device previously linked to this photo, the link would
          * now point to a photo owned by the same device. Remove that self-link.
          */
-        $linkMetadataUpdated = $this->links->remove($targetDeviceId, $targetDeviceId, $targetName)
-            && $linkMetadataUpdated;
+        if ($this->links->exists($targetDeviceId, $targetDeviceId, $targetName)) {
+            $linkMetadataUpdated = $this->links->remove($targetDeviceId, $targetDeviceId, $targetName)
+                && $linkMetadataUpdated;
+        }
 
-        $this->order->remove($safeShortName, $filename);
+        $orderMetadataUpdated = $this->order->remove($safeShortName, $filename)
+            && $orderMetadataUpdated;
 
         foreach ($linkedTargetDeviceIds as $linkedTargetDeviceId) {
             $linkedTargetDeviceId = (int) $linkedTargetDeviceId;
             $linkedSafeShortName = $this->photos->safeDevicePrefix($linkedTargetDeviceId);
 
             if ($linkedTargetDeviceId === $targetDeviceId) {
-                $targetOrderReplaced = $this->order->replaceKey($linkedSafeShortName, $oldLinkedKey, $targetName) || $targetOrderReplaced;
+                $replaceStatus = $this->order->replaceKeyWithStatus($linkedSafeShortName, $oldLinkedKey, $targetName);
+                $orderMetadataUpdated = ! empty($replaceStatus['written']) && $orderMetadataUpdated;
+                $targetOrderReplaced = ! empty($replaceStatus['replaced']) || $targetOrderReplaced;
             } else {
-                $this->order->replaceKey($linkedSafeShortName, $oldLinkedKey, $newLinkedKey);
+                $replaceStatus = $this->order->replaceKeyWithStatus($linkedSafeShortName, $oldLinkedKey, $newLinkedKey);
+                $orderMetadataUpdated = ! empty($replaceStatus['written']) && $orderMetadataUpdated;
             }
 
             $this->pruneOrderForDevice($linkedTargetDeviceId);
         }
 
         if (! $targetOrderReplaced) {
-            $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+            $orderMetadataUpdated = $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName)
+                && $orderMetadataUpdated;
         } else {
             $this->pruneOrderForDevice($targetDeviceId);
         }
@@ -1310,7 +1318,7 @@ class ActionController extends Controller
              */
         }
 
-        $status = $linkMetadataUpdated
+        $status = ($linkMetadataUpdated && $orderMetadataUpdated)
             ? 'photo_owner_changed'
             : 'photo_owner_changed_with_warnings';
 
