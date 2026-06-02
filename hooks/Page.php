@@ -607,6 +607,7 @@ class Page extends PageHook
             'uploaded' => 'Photo uploaded.',
             'deleted' => 'Photo moved to deleted folder.',
             'order_updated' => 'Photo order updated.',
+            'order_update_failed' => 'Photo order could not be saved.',
             'link_added' => 'Photo link added.',
             'link_removed' => 'Photo link removed.',
             'already_linked' => 'Photo is already linked.',

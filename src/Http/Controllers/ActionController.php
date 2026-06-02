@@ -165,7 +165,13 @@ class ActionController extends Controller
             }
         }
 
-        $this->order->save($safeShortName, $newOrder);
+        if (! $this->order->save($safeShortName, $newOrder)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('order_update_failed', false, 500);
+            }
+
+            return $this->redirectAfterAction($request, $deviceId, 'order_update_failed');
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('order_updated', true, 200, [
