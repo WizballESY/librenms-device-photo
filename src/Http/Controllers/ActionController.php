@@ -1023,11 +1023,21 @@ class ActionController extends Controller
             @mkdir($this->paths->deletedDir(), 02775, true);
         }
 
-        $pathInfo = pathinfo($filename);
-        $deletedName = $pathInfo['filename'] . '.deleted-' . date('Ymd-His') . '.' . strtolower((string) $pathInfo['extension']);
+        $deletedName = $this->nextAvailableDeletedFilename($filename);
 
-        if (@rename($this->paths->photoPath($filename), $this->paths->deletedPath($deletedName))) {
-            @chmod($this->paths->deletedPath($deletedName), 0664);
+        if ($deletedName === '') {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('delete_failed', false, 500);
+            }
+
+            return $this->redirect(0, 'delete_failed');
+        }
+
+        $sourcePath = $this->paths->photoPath($filename);
+        $deletedPath = $this->paths->deletedPath($deletedName);
+
+        if ($this->moveFileWithoutOverwrite($sourcePath, $deletedPath)) {
+            @chmod($deletedPath, 0664);
             $this->moveThumbnailToDeleted($filename, $deletedName);
 
             if ($this->wantsJsonResponse($request)) {
@@ -1068,6 +1078,34 @@ class ActionController extends Controller
         }
 
         return true;
+    }
+
+    private function nextAvailableDeletedFilename(string $filename): string
+    {
+        $pathInfo = pathinfo($filename);
+        $baseName = (string) ($pathInfo['filename'] ?? '');
+        $extension = strtolower((string) ($pathInfo['extension'] ?? ''));
+
+        if ($baseName === '' || ! preg_match('/^(jpg|jpeg|png|webp)$/i', $extension)) {
+            return '';
+        }
+
+        $timestamp = date('Ymd-His');
+        $deletedName = $baseName . '.deleted-' . $timestamp . '.' . $extension;
+
+        if (! is_file($this->paths->deletedPath($deletedName))) {
+            return $deletedName;
+        }
+
+        for ($counter = 2; $counter <= 999; $counter++) {
+            $candidate = $baseName . '.deleted-' . $timestamp . '-' . $counter . '.' . $extension;
+
+            if (! is_file($this->paths->deletedPath($candidate))) {
+                return $candidate;
+            }
+        }
+
+        return '';
     }
 
     private function changePhotoOwner(Request $request, int $deviceId)
@@ -1273,10 +1311,9 @@ class ActionController extends Controller
             @mkdir($this->paths->deletedDir(), 02775, true);
         }
 
-        $timestamp = date('Ymd-His');
-        $deletedName = preg_replace('/\\.(jpg|jpeg|png|webp)$/i', '.deleted-' . $timestamp . '.$1', $filename);
+        $deletedName = $this->nextAvailableDeletedFilename($filename);
 
-        if (! is_string($deletedName) || $deletedName === '') {
+        if ($deletedName === '') {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('delete_failed', false, 500);
             }
@@ -1286,7 +1323,7 @@ class ActionController extends Controller
 
         $deletedPath = $this->paths->deletedPath($deletedName);
 
-        if (@rename($photoPath, $deletedPath)) {
+        if ($this->moveFileWithoutOverwrite($photoPath, $deletedPath)) {
             @chmod($deletedPath, 0664);
 
             $this->moveThumbnailToDeleted($filename, $deletedName);
