@@ -2097,10 +2097,10 @@ class ActionController extends Controller
         return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'link_added');
     }
 
-    private function pruneOrderForDevice(int $deviceId): void
+    private function pruneOrderForDevice(int $deviceId): bool
     {
         if ($deviceId < 1) {
-            return;
+            return false;
         }
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
@@ -2135,7 +2135,7 @@ class ActionController extends Controller
             $validOrderKeys[] = 'linked:' . $ownerDeviceId . ':' . $filename;
         }
 
-        $this->order->prune($safeShortName, $validOrderKeys);
+        return $this->order->prune($safeShortName, $validOrderKeys);
     }
 
     private function linkedTargetDeviceIdsForPhoto(int $ownerDeviceId, string $filename): array
