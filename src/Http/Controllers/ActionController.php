@@ -608,9 +608,10 @@ class ActionController extends Controller
          * Update existing linked-photo JSON entries that pointed to the old orphaned filename.
          * PhotoLinkService performs this as a locked read-modify-write operation.
          */
-        $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
+        $metadataUpdated = $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
 
-        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+        $metadataUpdated = $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName)
+            && $metadataUpdated;
 
         /*
          * Thumbnails are cache only. Run thumbnail work after link/order state has
@@ -634,11 +635,15 @@ class ActionController extends Controller
              */
         }
 
+        $status = $metadataUpdated
+            ? 'assigned'
+            : 'assigned_with_warnings';
+
         if ($this->wantsJsonResponse($request)) {
-            return $this->jsonStatus('assigned');
+            return $this->jsonStatus($status);
         }
 
-        return $this->redirect(0, 'assigned');
+        return $this->redirect(0, $status);
     }
 
     private function nextAvailablePhotoFilename(int $deviceId, string $ext): string

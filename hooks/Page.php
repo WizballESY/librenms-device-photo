@@ -611,6 +611,7 @@ class Page extends PageHook
             'link_removed' => 'Photo link removed.',
             'already_linked' => 'Photo is already linked.',
             'assigned' => 'Orphaned photo assigned.',
+            'assigned_with_warnings' => 'Orphaned photo assigned, but some photo metadata could not be updated. Please check linked photos and photo order manually.',
             'thumbnails_generated' => 'Missing thumbnails were generated.',
             'thumbnails_cleaned' => 'Stale thumbnails were removed.',
             'thumbnails_none_missing' => 'No missing thumbnails found.',
