@@ -1940,7 +1940,13 @@ class ActionController extends Controller
             return $this->redirect($deviceId, 'already_linked');
         }
 
-        $this->links->add($targetDeviceId, $deviceId, $filename);
+        if (! $this->links->add($targetDeviceId, $deviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('link_add_failed', false, 500);
+            }
+
+            return $this->redirect($deviceId, 'link_add_failed');
+        }
 
         if ($this->wantsJsonResponse($request)) {
             return $this->jsonStatus('link_added', true, 200, [
@@ -2017,7 +2023,13 @@ class ActionController extends Controller
             return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'already_linked');
         }
 
-        $this->links->add($deviceId, $ownerDeviceId, $filename);
+        if (! $this->links->add($deviceId, $ownerDeviceId, $filename)) {
+            if ($this->wantsJsonResponse($request)) {
+                return $this->jsonStatus('link_add_failed', false, 500);
+            }
+
+            return $this->redirectAfterIncomingLink($request, $deviceId, $ownerDeviceId, 'link_add_failed');
+        }
 
         if ($this->wantsJsonResponse($request)) {
             $photoPath = $this->paths->photoPath($filename);

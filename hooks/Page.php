@@ -609,6 +609,7 @@ class Page extends PageHook
             'order_updated' => 'Photo order updated.',
             'order_update_failed' => 'Photo order could not be saved.',
             'link_added' => 'Photo link added.',
+            'link_add_failed' => 'Photo link could not be saved.',
             'link_removed' => 'Photo link removed.',
             'already_linked' => 'Photo is already linked.',
             'assigned' => 'Orphaned photo assigned.',
