@@ -150,13 +150,15 @@ class PhotoLinkService
         );
     }
 
-    public function removeAllForFilename(string $filename): void
+    public function removeAllForFilename(string $filename): bool
     {
         $filename = basename($filename);
 
         if ($filename === '') {
-            return;
+            return false;
         }
+
+        $ok = true;
 
         foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
             $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
@@ -165,7 +167,7 @@ class PhotoLinkService
                 continue;
             }
 
-            $this->json->mutateArrayWithLock(
+            $written = $this->json->mutateArrayWithLock(
                 $this->paths->linksFile($targetDeviceId),
                 function (array $links) use ($filename): array {
                     $cleanLinks = [];
@@ -196,17 +198,25 @@ class PhotoLinkService
                 },
                 true
             );
+
+            if (! $written) {
+                $ok = false;
+            }
         }
+
+        return $ok;
     }
 
-    public function updateFilenameReferences(string $oldFilename, int $newOwnerDeviceId, string $newFilename): void
+    public function updateFilenameReferences(string $oldFilename, int $newOwnerDeviceId, string $newFilename): bool
     {
         $oldFilename = basename($oldFilename);
         $newFilename = basename($newFilename);
 
         if ($oldFilename === '' || $newOwnerDeviceId < 1 || $newFilename === '') {
-            return;
+            return false;
         }
+
+        $ok = true;
 
         foreach (glob($this->paths->linksDir() . '/device-*.json') ?: [] as $linkFile) {
             $targetDeviceId = (int) preg_replace('/[^0-9]/', '', basename($linkFile, '.json'));
@@ -215,7 +225,7 @@ class PhotoLinkService
                 continue;
             }
 
-            $this->json->mutateArrayWithLock(
+            $written = $this->json->mutateArrayWithLock(
                 $this->paths->linksFile($targetDeviceId),
                 function (array $links) use ($oldFilename, $newOwnerDeviceId, $newFilename): array {
                     $cleanLinks = [];
@@ -247,6 +257,12 @@ class PhotoLinkService
                 },
                 true
             );
+
+            if (! $written) {
+                $ok = false;
+            }
         }
+
+        return $ok;
     }
 }
