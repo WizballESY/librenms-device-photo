@@ -436,6 +436,7 @@ class ActionController extends Controller
             }
 
             $validatedUploads[$index]['target_name'] = $targetName;
+            $validatedUploads[$index]['target_ext'] = $targetExt;
             $validatedUploads[$index]['target_path'] = $this->paths->photoPath($targetName);
         }
 
@@ -445,6 +446,7 @@ class ActionController extends Controller
         foreach ($validatedUploads as $upload) {
             $file = $upload['file'];
             $targetName = (string) $upload['target_name'];
+            $targetExt = (string) $upload['target_ext'];
             $targetPath = (string) $upload['target_path'];
             $isHeicUpload = ! empty($upload['is_heic_upload']);
 
