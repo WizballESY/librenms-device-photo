@@ -1253,14 +1253,17 @@ class ActionController extends Controller
         $oldLinkedKey = 'linked:' . $deviceId . ':' . $filename;
         $newLinkedKey = 'linked:' . $targetDeviceId . ':' . $targetName;
         $targetOrderReplaced = false;
+        $linkMetadataUpdated = true;
 
-        $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName);
+        $linkMetadataUpdated = $this->links->updateFilenameReferences($filename, $targetDeviceId, $targetName)
+            && $linkMetadataUpdated;
 
         /*
          * If the target device previously linked to this photo, the link would
          * now point to a photo owned by the same device. Remove that self-link.
          */
-        $this->links->remove($targetDeviceId, $targetDeviceId, $targetName);
+        $linkMetadataUpdated = $this->links->remove($targetDeviceId, $targetDeviceId, $targetName)
+            && $linkMetadataUpdated;
 
         $this->order->remove($safeShortName, $filename);
 
@@ -1307,11 +1310,15 @@ class ActionController extends Controller
              */
         }
 
+        $status = $linkMetadataUpdated
+            ? 'photo_owner_changed'
+            : 'photo_owner_changed_with_warnings';
+
         if ($this->wantsJsonResponse($request)) {
-            return $this->jsonStatus('photo_owner_changed');
+            return $this->jsonStatus($status);
         }
 
-        return $this->redirectAfterAction($request, $targetDeviceId, 'photo_owner_changed');
+        return $this->redirectAfterAction($request, $targetDeviceId, $status);
     }
 
     private function deletePhoto(Request $request, int $deviceId)
