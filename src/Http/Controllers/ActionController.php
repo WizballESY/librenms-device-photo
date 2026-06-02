@@ -1423,21 +1423,49 @@ class ActionController extends Controller
 
     private function moveThumbnailToDeleted(string $filename, string $deletedName): void
     {
-        $thumbPath = $this->paths->thumbPath($filename);
-
-        if (! is_file($thumbPath)) {
-            return;
-        }
-
         if (! is_dir($this->paths->deletedThumbsDir())) {
             @mkdir($this->paths->deletedThumbsDir(), 02775, true);
         }
 
         $deletedThumbPath = $this->paths->deletedThumbPath($deletedName);
 
-        if (@rename($thumbPath, $deletedThumbPath)) {
-            @chmod($deletedThumbPath, 0664);
+        if (is_file($deletedThumbPath)) {
+            return;
         }
+
+        $thumbPath = $this->paths->thumbPath($filename);
+
+        if (is_file($thumbPath)) {
+            if ($this->moveFileWithoutOverwrite($thumbPath, $deletedThumbPath)) {
+                @chmod($deletedThumbPath, 0664);
+            }
+
+            return;
+        }
+
+        /*
+         * Thumbnail files are cache only. If the active thumbnail was already
+         * missing before delete, generate a deleted thumbnail from the deleted
+         * original so the restore/deleted view does not report a missing thumb.
+         */
+        $deletedOriginalPath = $this->paths->deletedPath($deletedName);
+
+        if (! is_file($deletedOriginalPath)) {
+            return;
+        }
+
+        $generatedThumbPath = $this->paths->thumbPath($deletedName);
+
+        if (
+            $this->images->createThumbnail($deletedOriginalPath, $deletedName)
+            && is_file($generatedThumbPath)
+            && $this->moveFileWithoutOverwrite($generatedThumbPath, $deletedThumbPath)
+        ) {
+            @chmod($deletedThumbPath, 0664);
+            return;
+        }
+
+        @unlink($generatedThumbPath);
     }
 
     private function setPhotoTaken(Request $request, int $deviceId)
