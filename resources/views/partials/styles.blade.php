@@ -801,6 +801,15 @@
         color: #8ecbff !important;
     }
 
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box] .device-photo-linked-to-device-name a {
+        color: #8ecbff !important;
+    }
+
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box] .device-photo-linked-to-device-name a:hover,
+    html.dark .device-photo-plugin .device-photo-owned-photo-card [data-device-photo-linked-to-box] .device-photo-linked-to-device-name a:focus {
+        color: #b7dcff !important;
+    }
+
     html.dark .device-photo-plugin .device-photo-linked-photo-card code {
         background: rgba(255,255,255,0.08) !important;
         color: #ffb4c8 !important;
@@ -1729,6 +1738,10 @@
         margin-bottom: 8px;
         padding-bottom: 8px;
         border-bottom: 1px solid #eadfbf;
+    }
+
+    .device-photo-owned-photo-card [data-device-photo-linked-to-box].alert-info .device-photo-linked-to-row {
+        border-bottom-color: #8fa9bc;
     }
 
     .device-photo-linked-to-row:last-child {
