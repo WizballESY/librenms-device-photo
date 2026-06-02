@@ -1311,17 +1311,20 @@ class ActionController extends Controller
                 $orderMetadataUpdated = ! empty($replaceStatus['written']) && $orderMetadataUpdated;
             }
 
-            $this->pruneOrderForDevice($linkedTargetDeviceId);
+            $orderMetadataUpdated = $this->pruneOrderForDevice($linkedTargetDeviceId)
+                && $orderMetadataUpdated;
         }
 
         if (! $targetOrderReplaced) {
             $orderMetadataUpdated = $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName)
                 && $orderMetadataUpdated;
         } else {
-            $this->pruneOrderForDevice($targetDeviceId);
+            $orderMetadataUpdated = $this->pruneOrderForDevice($targetDeviceId)
+                && $orderMetadataUpdated;
         }
 
-        $this->pruneOrderForDevice($deviceId);
+        $orderMetadataUpdated = $this->pruneOrderForDevice($deviceId)
+            && $orderMetadataUpdated;
 
         /*
          * Thumbnails are cache only. Run thumbnail work after link/order state has
