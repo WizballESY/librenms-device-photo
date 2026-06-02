@@ -126,16 +126,24 @@ class PhotoOrderService
 
     public function replaceKey(string $safeShortName, string $oldKey, string $newKey): bool
     {
+        return (bool) ($this->replaceKeyWithStatus($safeShortName, $oldKey, $newKey)['replaced'] ?? false);
+    }
+
+    public function replaceKeyWithStatus(string $safeShortName, string $oldKey, string $newKey): array
+    {
         $oldKey = trim($oldKey);
         $newKey = trim($newKey);
 
         if ($safeShortName === '' || $oldKey === '' || $newKey === '' || $oldKey === $newKey) {
-            return false;
+            return [
+                'written' => false,
+                'replaced' => false,
+            ];
         }
 
         $replaced = false;
 
-        $this->json->mutateArrayWithLock(
+        $written = $this->json->mutateArrayWithLock(
             $this->paths->orderFile($safeShortName),
             function (array $order) use ($oldKey, $newKey, &$replaced): array {
                 $cleaned = [];
@@ -167,7 +175,10 @@ class PhotoOrderService
             }
         );
 
-        return $replaced;
+        return [
+            'written' => (bool) $written,
+            'replaced' => $replaced,
+        ];
     }
 
     public function prune(string $safeShortName, array $validOrderKeys): bool
