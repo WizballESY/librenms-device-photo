@@ -440,6 +440,7 @@ class ActionController extends Controller
         }
 
         $uploadedCount = 0;
+        $metadataUpdated = true;
 
         foreach ($validatedUploads as $upload) {
             $file = $upload['file'];
@@ -498,7 +499,8 @@ class ActionController extends Controller
              * If this filename has been used before, remove stale links after the
              * new file has safely reached its final no-overwrite target.
              */
-            $this->links->removeAllForFilename($targetName);
+            $metadataUpdated = $this->links->removeAllForFilename($targetName)
+                && $metadataUpdated;
 
             /*
              * Thumbnail generation is optional and fail-safe.
@@ -519,7 +521,7 @@ class ActionController extends Controller
          * New uploaded photos are appended automatically when rendering if
          * they do not already exist in the saved order.
          */
-        return $this->redirect($deviceId, 'uploaded');
+        return $this->redirect($deviceId, $metadataUpdated ? 'uploaded' : 'uploaded_with_warnings');
     }
 
     private function assignOrphanPhoto(Request $request)
