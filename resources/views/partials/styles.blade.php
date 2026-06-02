@@ -1173,6 +1173,10 @@
         border-radius: 6px;
     }
 
+    .device-photo-linked-owner-device {
+        margin-top: 8px;
+    }
+
     .device-photo-card-action {
         margin-bottom: 8px;
     }

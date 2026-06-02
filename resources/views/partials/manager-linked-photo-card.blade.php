@@ -55,7 +55,7 @@
             <i class="fa fa-link"></i> Linked from
         </strong>
 
-        <div style="margin-top: 8px;">
+        <div class="device-photo-linked-owner-device">
             <a href="{{ url('plugin/device-photo') }}?device_id={{ $photo['owner_device_id'] }}">
                 @if (!empty($photo['owner_name']))
                     {{ $photo['owner_name'] }}
