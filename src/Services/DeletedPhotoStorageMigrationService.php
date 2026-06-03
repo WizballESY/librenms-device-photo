@@ -112,7 +112,7 @@ class DeletedPhotoStorageMigrationService
                 continue;
             }
 
-            if (@rename($sourcePath, $targetPath)) {
+            if ($this->moveFileWithoutOverwrite($sourcePath, $targetPath)) {
                 @chmod($targetPath, 0664);
                 $result['moved']++;
                 continue;
@@ -122,6 +122,32 @@ class DeletedPhotoStorageMigrationService
         }
 
         return $result;
+    }
+
+    private function moveFileWithoutOverwrite(string $sourcePath, string $targetPath): bool
+    {
+        if (! is_file($sourcePath) || $targetPath === '' || is_file($targetPath)) {
+            return false;
+        }
+
+        /*
+         * Use link()+unlink() instead of rename() so an unexpected target file
+         * can never be overwritten. link() fails if the target already exists.
+         */
+        if (! @link($sourcePath, $targetPath)) {
+            return false;
+        }
+
+        if (! is_file($targetPath)) {
+            return false;
+        }
+
+        if (! @unlink($sourcePath)) {
+            @unlink($targetPath);
+            return false;
+        }
+
+        return true;
     }
 
     private function isExpectedDeletedFilename(string $filename): bool
