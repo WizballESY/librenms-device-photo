@@ -6,6 +6,102 @@ Items here are not necessarily bugs. Some are polish, hardening or future improv
 
 ## Follow-up candidates
 
+### Optional predefined photo types
+
+Status: idea.
+
+Consider adding an optional predefined photo type/tag per photo.
+
+This should stay simple and metadata-only. It should not change filenames, ownership, order keys or link references.
+
+Possible photo types:
+
+~~~text
+location
+room
+rack
+device
+label
+cabling
+power
+other
+~~~
+
+Possible UI:
+
+~~~text
+Photo type:
+[ Other ▼ ]
+
+Options:
+- Location
+- Room
+- Rack
+- Device
+- Label / serial
+- Cabling
+- Power
+- Other
+~~~
+
+Suggested storage model:
+
+~~~text
+storage/app/device-photos-meta/device-108.json
+~~~
+
+Example:
+
+~~~json
+{
+  "device-108-1.jpg": {
+    "type": "rack"
+  },
+  "device-108-2.jpg": {
+    "type": "device"
+  }
+}
+~~~
+
+Design principles:
+
+~~~text
+Metadata must be optional.
+Photos must still work if metadata is missing.
+Photos must still work if metadata JSON is invalid or deleted.
+The original image file remains the source of truth.
+Do not encode photo type in the filename.
+Do not mix this metadata into order/link JSON.
+~~~
+
+Possible future use cases:
+
+~~~text
+Show devices missing a rack photo.
+Show devices missing a label/serial photo.
+Show overview badges for available photo types.
+Allow filtering by photo type.
+Use photo type as a default sort/grouping hint.
+~~~
+
+Out of scope for now:
+
+~~~text
+GPS/EXIF location extraction.
+OCR/device-name detection.
+Automatic image analysis.
+~~~
+
+Needs design clarification:
+
+~~~text
+Should each photo have exactly one type, or multiple tags?
+Should there be configurable required photo types?
+Should linked photos count toward required photo types?
+Should photo type metadata follow owner transfer automatically?
+Should this be editable only by upload/delete roles or by reorder roles too?
+~~~
+
 ### Overview filter for devices without photos
 
 Status: idea.
