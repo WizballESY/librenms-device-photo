@@ -31,36 +31,45 @@ It is under active development and may contain bugs, incomplete documentation or
 
 ## Features
 
-- Upload photos to LibreNMS devices.
-- View photos directly from the normal LibreNMS device overview page.
-- Manage photos per device.
-- Global photo overview page.
-- Private photo storage outside the public webroot.
-- Authenticated image delivery through LibreNMS.
-- Drag and drop upload.
-- Upload multiple files at once.
-- Supported upload types: `jpg`, `jpeg`, `png`, `webp`, `heic`, `heif`.
-- HEIC/HEIF conversion to JPG when ImageMagick supports HEIC/HEIF.
-- Thumbnail generation.
-- JPEG thumbnail auto-rotation based on EXIF Orientation.
-- Missing thumbnail detection and generation.
-- Stale thumbnail detection and cleanup.
-- Full-size image viewer with zoom and pan.
-- Photo date display:
-  - `Photo taken` from EXIF when available.
-  - `File date` from the server file timestamp.
-- Write `Photo taken` back to JPG/JPEG EXIF metadata using ExifTool.
+- Upload and manage photos for LibreNMS devices.
+- Show device photos directly on the normal LibreNMS device page.
+- Use a dedicated management page for upload, reorder, delete, restore and metadata actions.
+- Link photos between devices without duplicating the original image file.
 - Reorder owned and linked photos together.
-- Link photos between devices.
-- Automatically clean stale links and mixed-order entries when photos or links change.
-- Detect broken photo links.
-- Detect orphaned photos from removed LibreNMS devices.
-- Assign orphaned photos to existing devices.
-- Soft-delete photos by moving them to a deleted folder.
-- Restore deleted photos to a selected target device.
-- Search, pagination and sortable overview table.
-- Browser-saved page size preference for the overview table.
-- Cache-busting image URLs.
+- Restore deleted photos from a deleted-photo area.
+- Detect orphaned photos, broken links, missing thumbnails and stale thumbnails.
+- Generate and clean thumbnails from the maintenance panel.
+- Store photos privately outside the public webroot.
+- Serve images through authenticated LibreNMS endpoints.
+- Optional support for ExifTool and HEIC/HEIF conversion.
+
+---
+
+## Owned and linked photos
+
+A photo is always owned by one LibreNMS device.
+
+An owned photo is stored with the owner device ID in the filename, for example:
+
+~~~text
+device-108-1.jpg
+~~~
+
+A linked photo is not copied. Instead, another device can show a reference to the owner device photo.
+
+Example:
+
+~~~text
+Device 109 owns:
+device-109-2.jpg
+
+Device 108 can link to that photo and show it as:
+linked:109:device-109-2.jpg
+~~~
+
+This makes it possible to reuse the same physical photo across related devices, racks, stacks, modules or shared installation views without storing duplicate image files.
+
+Deleting an owned photo removes the original photo and cleans up links that pointed to it. Removing a link only removes the reference from the target device; it does not delete the original photo.
 
 ---
 
