@@ -801,7 +801,7 @@ class ActionController extends Controller
 
         @chmod($targetPath, 0664);
 
-        $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
+        $metadataUpdated = $this->appendOwnedPhotoToOrder($targetDeviceId, $targetName);
 
         /*
          * Thumbnails are cache only. Run thumbnail work after active photo/order
@@ -825,13 +825,17 @@ class ActionController extends Controller
              */
         }
 
+        $status = $metadataUpdated
+            ? 'restored'
+            : 'restored_with_warnings';
+
         if ($this->wantsJsonResponse($request)) {
-            return $this->jsonStatus('restored', true, 200, [
+            return $this->jsonStatus($status, true, 200, [
                 'deleted_stats' => $this->deletedFolderStats(),
             ]);
         }
 
-        return $this->redirectRestoreDeleted('restored');
+        return $this->redirectRestoreDeleted($status);
     }
 
     private function deleteDeletedPhoto(Request $request)

@@ -630,6 +630,7 @@ class Page extends PageHook
             'deleted_storage_migrated_with_skips' => 'Deleted photo storage was migrated, but some files already existed in the new storage location.',
             'deleted_storage_migration_manual_check' => 'Deleted photo storage migration completed, but some files could not be moved. Please check the old deleted photo storage manually.',
             'restored' => 'Photo restored.',
+            'restored_with_warnings' => 'Photo restored, but photo order metadata could not be updated. Please check photo order manually.',
             'photo_owner_changed' => 'Photo moved to another device.',
             'photo_owner_changed_with_warnings' => 'Photo moved to another device, but some photo metadata could not be updated. Please check linked photos and photo order manually.',
             'restore_failed' => 'Could not restore photo.',
