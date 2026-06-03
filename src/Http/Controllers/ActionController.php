@@ -679,24 +679,27 @@ class ActionController extends Controller
         }
 
         $targetPrefix = 'device-' . $deviceId;
-        $nextNumber = 1;
+        $usedNumbers = [];
 
         foreach (glob($this->paths->photosDir() . '/' . $targetPrefix . '-*.*') ?: [] as $existingPath) {
             $existingName = basename($existingPath);
 
-            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d+)\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
-                $nextNumber = max($nextNumber, ((int) $numberMatches[1]) + 1);
+            if (preg_match('/^' . preg_quote($targetPrefix, '/') . '-(\d{1,3})\.(jpg|jpeg|png|webp)$/i', $existingName, $numberMatches)) {
+                $usedNumbers[(int) $numberMatches[1]] = true;
             }
         }
 
-        $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+        for ($i = 1; $i <= 999; $i++) {
+            if (! isset($usedNumbers[$i])) {
+                $targetName = $targetPrefix . '-' . $i . '.' . $ext;
 
-        while (is_file($this->paths->photoPath($targetName))) {
-            $nextNumber++;
-            $targetName = $targetPrefix . '-' . $nextNumber . '.' . $ext;
+                if (! is_file($this->paths->photoPath($targetName))) {
+                    return $targetName;
+                }
+            }
         }
 
-        return $targetName;
+        return '';
     }
 
     private function appendOwnedPhotoToOrder(int $deviceId, string $filename): bool
