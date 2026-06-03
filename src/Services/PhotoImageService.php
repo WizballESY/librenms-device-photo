@@ -4,6 +4,8 @@ namespace WizballEsy\LibreNmsDevicePhoto\Services;
 
 class PhotoImageService
 {
+    private ?bool $heicConversionAvailable = null;
+
     public function __construct(
         private readonly PhotoPathService $paths,
     ) {
@@ -30,25 +32,29 @@ class PhotoImageService
 
     public function heicConversionAvailable(): bool
     {
+        if ($this->heicConversionAvailable !== null) {
+            return $this->heicConversionAvailable;
+        }
+
         $magick = $this->findBinary('magick');
 
         if (! $magick) {
-            return false;
+            return $this->heicConversionAvailable = false;
         }
 
         $output = (string) @shell_exec(escapeshellarg($magick) . ' -list format 2>/dev/null');
 
         if ($output === '') {
-            return false;
+            return $this->heicConversionAvailable = false;
         }
 
         foreach (preg_split('/\R/', $output) ?: [] as $line) {
             if (preg_match('/^\s*(HEIC|HEIF)\s+HEIC\s+.*r/i', $line)) {
-                return true;
+                return $this->heicConversionAvailable = true;
             }
         }
 
-        return false;
+        return $this->heicConversionAvailable = false;
     }
 
     public function convertHeicToJpeg(string $sourcePath, string $targetPath): bool
