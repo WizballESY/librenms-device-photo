@@ -60,22 +60,26 @@ Use page reload after successful orphan assignment.
 
 ### Manual-check warning after partial state update failure
 
-Owner-change, orphan assignment and restore can physically move a file successfully, then update link/order JSON state.
+Status: mostly implemented in alpha29.
 
-If a JSON write fails after the physical file move, the original file is not lost, but UI/link/order state can become partially inconsistent.
+Owner-change, orphan assignment, restore, upload and delete can physically move or create a file successfully, then update link/order JSON state.
 
-Possible future behavior:
+If a JSON write fails after the physical file operation, the original file is not lost, but UI/link/order state can become partially inconsistent. In these cases the plugin now returns warning statuses instead of plain success.
+
+Implemented status keys include:
 
 ~~~text
-Photo moved, but some link/order metadata may need manual review.
+uploaded_with_warnings
+deleted_with_warnings
+assigned_with_warnings
+restored_with_warnings
+photo_owner_changed_with_warnings
 ~~~
 
-Potential status key:
+Future work:
 
 ~~~text
-photo_owner_changed_with_warnings
-photo_assigned_with_warnings
-photo_restored_with_warnings
+Review whether warning-state should also include more best-effort prune operations or remain limited to the current metadata-sensitive flows.
 ~~~
 
 This needs service methods to return reliable status values.
