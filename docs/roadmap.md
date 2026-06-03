@@ -4,7 +4,7 @@ This document tracks ideas, follow-up tasks and technical debt for the LibreNMS 
 
 Items here are not necessarily bugs. Some are polish, hardening or future improvements.
 
-## Alpha 28 candidates
+## Follow-up candidates
 
 ### Orphan assignment hardening
 
