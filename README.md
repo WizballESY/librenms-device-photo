@@ -149,24 +149,26 @@ Do not run `./scripts/github-remove` unless you intentionally want to remove loc
 
 ## Storage directories
 
-The plugin stores uploaded photos and metadata under LibreNMS `storage/app`.
+The plugin stores photos and metadata under LibreNMS `storage/app`.
 
 Default paths:
 
-```text
-storage/app/device-photos
-storage/app/device-photos/thumbs
-storage/app/device-photos-deleted
-storage/app/device-photos-deleted/thumbs
-storage/app/device-photos-order
-storage/app/device-photos-links
-```
+~~~text
+storage/app/device-photos                 Uploaded photos
+storage/app/device-photos/thumbs          Active thumbnails
+storage/app/device-photos-deleted         Deleted photos
+storage/app/device-photos-deleted/thumbs  Deleted thumbnails
+storage/app/device-photos-order           Per-device photo order JSON
+storage/app/device-photos-links           Linked-photo JSON
+~~~
 
-These directories are normally created automatically when the plugin page is opened or when photos are uploaded.
+These directories are normally created automatically.
 
-If you get permission warnings, verify ownership and permissions. Many LibreNMS installs use `librenms:librenms`:
+Photos are stored outside the public webroot and are served through authenticated LibreNMS plugin endpoints.
 
-```bash
+If you need to repair permissions, many LibreNMS installs use `librenms:librenms`:
+
+~~~bash
 cd /opt/librenms
 
 mkdir -p \
@@ -180,13 +182,7 @@ chown -R librenms:librenms \
   storage/app/device-photos-deleted \
   storage/app/device-photos-order \
   storage/app/device-photos-links
-
-find storage/app/device-photos storage/app/device-photos-deleted storage/app/device-photos-order storage/app/device-photos-links \
-  -type d -exec chmod 2775 {} \;
-
-find storage/app/device-photos storage/app/device-photos-deleted storage/app/device-photos-order storage/app/device-photos-links \
-  -type f -exec chmod 664 {} \;
-```
+~~~
 
 ---
 
@@ -223,9 +219,11 @@ Keep this backup somewhere safe before making major changes.
 
 ## Configuration
 
-Default configuration:
+The default configuration is suitable for most installs.
 
-```php
+Main defaults:
+
+~~~php
 'photos_path' => 'app/device-photos',
 'order_path' => 'app/device-photos-order',
 'links_path' => 'app/device-photos-links',
@@ -239,78 +237,73 @@ Default configuration:
     'heic',
     'heif',
 ],
-```
+~~~
 
 ### Link and order metadata
 
-Linked photo metadata is stored under:
+A photo is owned by one device, but it can be linked to other devices.
 
-    storage/app/device-photos-links/device-<target-device-id>.json
+Link metadata is stored per target device:
 
-Each link entry points from the target device to a photo owned by another device.
+~~~text
+storage/app/device-photos-links/device-<target-device-id>.json
+~~~
 
-Example link entry:
+Example:
 
-    [
-        {
-            "owner_device_id": 109,
-            "filename": "device-109-2.png"
-        }
-    ]
+~~~json
+[
+  {
+    "owner_device_id": 109,
+    "filename": "device-109-2.png"
+  }
+]
+~~~
 
-Custom photo ordering is stored under:
+Photo order is stored per device:
 
-    storage/app/device-photos-order/device-<device-id>.json
+~~~text
+storage/app/device-photos-order/device-<device-id>.json
+~~~
 
-The order file can contain both owned photos and linked photos.
+Order files may contain both owned photos and linked photo keys:
 
-Owned photo key example:
+~~~json
+[
+  "device-108-1.jpg",
+  "linked:109:device-109-2.png",
+  "device-108-2.jpg"
+]
+~~~
 
-    device-108-1.jpg
-
-Linked photo key format:
-
-    linked:<owner-device-id>:<filename>
-
-Example mixed order file:
-
-    [
-        "device-108-1.jpg",
-        "linked:109:device-109-2.png",
-        "device-108-2.jpg"
-    ]
-
-The plugin keeps existing order where possible, removes stale order entries, and appends new valid uploaded or linked photos to the saved order.
+The plugin keeps existing order where possible, removes stale order entries, and appends new valid photos or links.
 
 ### Deleted photo restore
 
 Deleted photos are moved to:
 
-    storage/app/device-photos-deleted
+~~~text
+storage/app/device-photos-deleted
+storage/app/device-photos-deleted/thumbs
+~~~
 
-Deleted thumbnails are moved to:
+Deleted filenames include the original filename and a deletion timestamp:
 
-    storage/app/device-photos-deleted/thumbs
-
-Older alpha releases stored deleted photos under `storage/app/device-photos/deleted`.
-Alpha 19 and newer use `storage/app/device-photos-deleted` instead. The maintenance panel can detect and migrate the old deleted photo storage.
-
-Deleted photo filenames include the original filename plus a deletion timestamp before the file extension.
-
-Example deleted filename:
-
-    device-108-5.deleted-20260518-174625.jpg
+~~~text
+device-108-5.deleted-20260518-174625.jpg
+device-108-5.deleted-20260518-174625-2.jpg
+~~~
 
 When restoring a deleted photo, the admin selects the target LibreNMS device. The plugin does not blindly restore the photo to the old device ID from the deleted filename.
 
-Instead, the restored photo is renamed to match the selected target device using the next available filename.
-
 Example:
 
-    device-108-5.deleted-20260518-174625.jpg
-    -> device-109-3.jpg
+~~~text
+device-108-5.deleted-20260518-174625.jpg
+-> device-109-3.jpg
+~~~
 
-Restoring a photo does not rewrite the saved mixed order file. Existing owned and linked photo order is preserved, and the restored owned photo is appended automatically when the target device photo manager is rendered.
+Older alpha releases stored deleted photos under `storage/app/device-photos/deleted`. The maintenance panel can detect and migrate that old deleted photo storage.
 
 ---
 
