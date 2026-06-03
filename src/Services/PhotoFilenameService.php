@@ -9,7 +9,7 @@ class PhotoFilenameService
         $filename = basename($filename);
 
         return (bool) preg_match('/^device-\d+-\d+\.(jpg|jpeg|png|webp)$/i', $filename)
-            || (bool) preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename);
+            || (bool) preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename);
     }
 
     public function contentType(string $filename): string

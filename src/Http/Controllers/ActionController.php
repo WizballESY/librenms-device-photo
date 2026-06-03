@@ -740,7 +740,7 @@ class ActionController extends Controller
         $filename = basename((string) $request->input('filename', ''));
         $targetInput = trim((string) $request->input('target_device_query', $request->input('target_device_id', '')));
 
-        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('invalid_filename', false, 422);
             }
@@ -856,7 +856,7 @@ class ActionController extends Controller
 
         $filename = basename((string) $request->input('filename', ''));
 
-        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+        if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
             if ($this->wantsJsonResponse($request)) {
                 return $this->jsonStatus('invalid_filename', false, 422);
             }
@@ -1696,7 +1696,7 @@ class ActionController extends Controller
 
             $filename = basename($sourcePath);
 
-            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
                 continue;
             }
 
@@ -1838,7 +1838,7 @@ class ActionController extends Controller
 
             $filename = basename($sourcePath);
 
-            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
                 continue;
             }
 

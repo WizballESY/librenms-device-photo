@@ -241,7 +241,7 @@ class Page extends PageHook
 
             $filename = basename($deletedPath);
 
-            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
                 continue;
             }
 
@@ -250,7 +250,7 @@ class Page extends PageHook
             $deletedPhotoCount++;
             $deletedPhotoBytes += $size;
 
-            $originalFilename = preg_replace('/\.deleted-\d{8}-\d{6}\./i', '.', $filename);
+            $originalFilename = preg_replace('/\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\./i', '.', $filename);
             $thumbPath = $this->deletedThumbsDir() . '/' . $filename;
             $hasThumbnail = is_file($thumbPath);
 
@@ -262,7 +262,7 @@ class Page extends PageHook
             $deletedAtIso = null;
             $deletedAtDisplay = null;
 
-            if (preg_match('/\.deleted-(\d{8})-(\d{6})\./', $filename, $deletedMatches)) {
+            if (preg_match('/\.deleted-(\d{8})-(\d{6})(?:-\d{1,3})?\./', $filename, $deletedMatches)) {
                 $deletedAt = \DateTime::createFromFormat(
                     'Ymd His',
                     $deletedMatches[1] . ' ' . $deletedMatches[2]

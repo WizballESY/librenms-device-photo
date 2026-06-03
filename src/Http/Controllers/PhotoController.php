@@ -33,7 +33,7 @@ class PhotoController extends Controller
         $isDeletedAction = ($action === 'deleted_photo' || $action === 'deleted_thumb');
 
         if ($isDeletedAction) {
-            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename)) {
+            if (! preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename)) {
                 abort(400, 'Invalid filename');
             }
         } elseif (! $this->filenames->isValidImageFilename($filename)) {

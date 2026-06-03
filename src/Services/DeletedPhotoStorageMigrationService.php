@@ -126,7 +126,7 @@ class DeletedPhotoStorageMigrationService
 
     private function isExpectedDeletedFilename(string $filename): bool
     {
-        return (bool) preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}\.(jpg|jpeg|png|webp)$/i', $filename);
+        return (bool) preg_match('/^device-\d+-\d+\.deleted-\d{8}-\d{6}(?:-\d{1,3})?\.(jpg|jpeg|png|webp)$/i', $filename);
     }
 
     private function countFiles(string $dir): int
