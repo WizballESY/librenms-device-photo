@@ -712,11 +712,13 @@ class ActionController extends Controller
          * Do not rebuild order from listFilenamesForDevice(), because that only
          * contains owned photos and would drop linked:<owner>:<filename> entries.
          */
-        $this->pruneOrderForDevice($deviceId);
+        $pruned = $this->pruneOrderForDevice($deviceId);
 
         $safeShortName = $this->photos->safeDevicePrefix($deviceId);
 
-        return $this->order->appendOwnedPhoto($safeShortName, $filename);
+        $appended = $this->order->appendOwnedPhoto($safeShortName, $filename);
+
+        return $pruned && $appended;
     }
 
     private function restoreDeletedPhoto(Request $request)
