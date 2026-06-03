@@ -1612,6 +1612,21 @@
         line-height: 1;
     }
 
+    .device-photo-plugin .fa-spin,
+    .device-photo-maintenance-overlay .fa-spin {
+        animation: device-photo-spin 1s infinite linear;
+    }
+
+    @keyframes device-photo-spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(359deg);
+        }
+    }
+
     .device-photo-maintenance-overlay-title {
         font-size: 17px;
         font-weight: 600;
