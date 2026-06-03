@@ -646,10 +646,7 @@ class ActionController extends Controller
             $oldThumbPath = $this->paths->thumbPath($filename);
             $newThumbPath = $this->paths->thumbPath($targetName);
 
-            if (is_file($oldThumbPath)) {
-                @rename($oldThumbPath, $newThumbPath);
-                @chmod($newThumbPath, 0664);
-            }
+            $this->moveThumbnailWithoutOverwriteFailSafe($oldThumbPath, $newThumbPath);
 
             $this->images->createThumbnail($targetPath, $targetName);
         } catch (\Throwable $e) {
@@ -815,10 +812,7 @@ class ActionController extends Controller
             $oldThumbPath = $this->paths->deletedThumbPath($filename);
             $newThumbPath = $this->paths->thumbPath($targetName);
 
-            if (is_file($oldThumbPath)) {
-                @rename($oldThumbPath, $newThumbPath);
-                @chmod($newThumbPath, 0664);
-            }
+            $this->moveThumbnailWithoutOverwriteFailSafe($oldThumbPath, $newThumbPath);
 
             $this->images->createThumbnail($targetPath, $targetName);
         } catch (\Throwable $e) {
@@ -1142,6 +1136,25 @@ class ActionController extends Controller
         return true;
     }
 
+    private function moveThumbnailWithoutOverwriteFailSafe(string $sourcePath, string $targetPath): bool
+    {
+        if (! is_file($sourcePath)) {
+            return true;
+        }
+
+        if ($targetPath === '' || is_file($targetPath)) {
+            return true;
+        }
+
+        if (! $this->moveFileWithoutOverwrite($sourcePath, $targetPath)) {
+            return false;
+        }
+
+        @chmod($targetPath, 0664);
+
+        return true;
+    }
+
     private function nextAvailableDeletedFilename(string $filename): string
     {
         $pathInfo = pathinfo($filename);
@@ -1346,10 +1359,7 @@ class ActionController extends Controller
             $oldThumbPath = $this->paths->thumbPath($filename);
             $newThumbPath = $this->paths->thumbPath($targetName);
 
-            if (is_file($oldThumbPath)) {
-                @rename($oldThumbPath, $newThumbPath);
-                @chmod($newThumbPath, 0664);
-            }
+            $this->moveThumbnailWithoutOverwriteFailSafe($oldThumbPath, $newThumbPath);
 
             $this->images->createThumbnail($targetPath, $targetName);
         } catch (\Throwable $e) {
