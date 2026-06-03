@@ -6,6 +6,36 @@ Items here are not necessarily bugs. Some are polish, hardening or future improv
 
 ## Follow-up candidates
 
+### Overview filter for devices without photos
+
+Status: idea.
+
+Consider adding an overview option/filter to show devices that currently have no owned photos and no linked photos.
+
+Possible use cases:
+
+~~~text
+Find devices that still need photos.
+Find devices that are missing both uploaded and linked documentation photos.
+Help with rollout/completeness checks.
+~~~
+
+Possible UI:
+
+~~~text
+Overview filter:
+[ ] Show devices without photos
+[ ] Include devices without owned or linked photos
+~~~
+
+Needs design clarification:
+
+~~~text
+Should linked photos count as "has photos"?
+Should this include all devices or only devices visible in the current LibreNMS device list/search scope?
+Should this be admin-only or visible to all users with plugin read access?
+~~~
+
 ### Orphan assignment hardening
 
 Status: started.
