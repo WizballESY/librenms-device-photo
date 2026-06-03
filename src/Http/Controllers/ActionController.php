@@ -1864,7 +1864,7 @@ class ActionController extends Controller
             $created = $this->images->createThumbnail($sourcePath, $filename);
             $generatedThumbPath = $this->paths->thumbPath($filename);
 
-            if ($created && is_file($generatedThumbPath) && @rename($generatedThumbPath, $thumbPath) && is_file($thumbPath)) {
+            if ($created && $this->moveThumbnailWithoutOverwriteFailSafe($generatedThumbPath, $thumbPath) && is_file($thumbPath)) {
                 $generated++;
             } else {
                 if (is_file($generatedThumbPath)) {
