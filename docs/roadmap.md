@@ -4,7 +4,7 @@ This document tracks ideas, follow-up tasks and technical debt for the LibreNMS 
 
 Items here are not necessarily bugs. Some are polish, hardening or future improvements.
 
-## Follow-up candidates
+## Feature ideas
 
 ### Optional predefined photo types
 
@@ -132,23 +132,7 @@ Should this include all devices or only devices visible in the current LibreNMS 
 Should this be admin-only or visible to all users with plugin read access?
 ~~~
 
-### Orphan assignment hardening
-
-Status: started.
-
-- Use no-overwrite move for assigning orphaned photos.
-- Move orphan thumbnail handling after link/order state updates.
-- Make orphan thumbnail handling fail-safe with `try/catch`.
-- Test orphan assignment with a device that had no photos before assignment.
-
-### Restore deleted photo hardening
-
-Status: planned.
-
-- Review restore deleted photo file move behavior.
-- Consider using no-overwrite move when restoring deleted photos.
-- Move thumbnail handling after active photo/order state is updated.
-- Make restored thumbnail handling fail-safe.
+## Known UX issues
 
 ### AJAX stale state after orphan assignment
 
@@ -182,7 +166,25 @@ Recommended alpha approach:
 Use page reload after successful orphan assignment.
 ~~~
 
-## Beta candidates
+## Completed / mostly implemented hardening
+
+### Orphan assignment hardening
+
+Status: started.
+
+- Use no-overwrite move for assigning orphaned photos.
+- Move orphan thumbnail handling after link/order state updates.
+- Make orphan thumbnail handling fail-safe with `try/catch`.
+- Test orphan assignment with a device that had no photos before assignment.
+
+### Restore deleted photo hardening
+
+Status: planned.
+
+- Review restore deleted photo file move behavior.
+- Consider using no-overwrite move when restoring deleted photos.
+- Move thumbnail handling after active photo/order state is updated.
+- Make restored thumbnail handling fail-safe.
 
 ### Manual-check warning after partial state update failure
 
@@ -242,6 +244,8 @@ $dateData = $this->photoDateData($path);
 ~~~
 
 Then reuse the values.
+
+## Beta hardening candidates
 
 ### Device search scalability
 
