@@ -576,6 +576,11 @@
 
                         var card = template.content.firstElementChild;
 
+                        if (!grid) {
+                            window.location.reload();
+                            return;
+                        }
+
                         if (grid && card) {
                             /*
                              * Server-rendered linked cards include CSS order for initial page load.
